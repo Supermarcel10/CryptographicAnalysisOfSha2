@@ -1,0 +1,27 @@
+hard_tabs = true
+
+comment_width = 100
+normalize_comments = true
+normalize_doc_attributes = true
+wrap_comments = true
+format_code_in_doc_comments = true
+
+imports_granularity = "Module"
+imports_layout = "Vertical"
+group_imports = "StdExternalCrate"
+
+hex_literal_case = "Upper"
+
+match_block_trailing_comma = false
+trailing_comma = "Never"
+merge_derives = false
+overflow_delimited_expr = true
+
+reorder_impl_items = true
+
+space_before_colon = true
+single_line_let_else_max_width = 0
+struct_lit_single_line = false
+combine_control_expr = false
+condense_wildcard_suffixes = true
+use_try_shorthand = true
