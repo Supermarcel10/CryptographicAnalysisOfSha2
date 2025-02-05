@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use bitvec::field::BitField;
-use bitvec::macros::internal::funty::{Integral, Unsigned};
+use bitvec::macros::internal::funty::Unsigned;
 use bitvec::prelude::{BitArray, BitStore, Msb0};
 
 
@@ -65,6 +65,104 @@ impl<T: Unsigned + BitStore> Word<T> {
 	}
 
 	pub fn not(&mut self) {
-		self.bits = !self.bits
+		self.bits = !self.bits;
+	}
+
+	pub fn load(&self) -> T {
+		self.bits.load()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::Word;
+
+	#[test]
+	fn test_load() {
+		let word = Word::new(7u8);
+		assert_eq!(word.load(), 7); // 7 == 7
+	}
+
+	#[test]
+	fn test_rotate_right() {
+		let mut word = Word::new(0b0100u8);
+		word.rotate_right(2);
+		assert_eq!(word.load(), 0b0001);
+	}
+
+	#[test]
+	fn test_rotate_right_overflow() {
+		let mut word = Word::new(0b0001u8);
+		word.rotate_right(1);
+		assert_eq!(word.load(), 0b1000_0000);
+	}
+
+	#[test]
+	fn test_rotate_left() {
+		let mut word = Word::new(0b0001u8);
+		word.rotate_left(1);
+
+		assert_eq!(word.load(), 0b0010);
+	}
+
+	#[test]
+	fn test_rotate_left_overflow() {
+		let mut word = Word::new(0b1000_0000u8);
+		word.rotate_left(1);
+
+		assert_eq!(word.load(), 0b0001);
+	}
+
+	#[test]
+	fn test_mod_add() {
+		let mut word1 = Word::new(3u8);
+		let word2 = Word::new(5u8);
+
+		word1.mod_add(word2);
+		assert_eq!(word1.load(), 8) // (3 + 5) % 255 = 8
+	}
+
+	#[test]
+	fn test_mod_add_overflow() {
+		let mut word1 = Word::new(255u8);
+		let word2 = Word::new(5u8);
+
+		word1.mod_add(word2);
+		assert_eq!(word1.load(), 4) // (255 + 4) % 255 = 259 % 255 = 4
+	}
+
+	#[test]
+	fn test_and() {
+		let mut word1 = Word::new(0b0001_0101u8);
+		let word2 = Word::new(0b0011u8);
+		word1.and(word2);
+
+		assert_eq!(word1.load(), 0b0001);
+	}
+
+	#[test]
+	fn test_or() {
+		let mut word1 = Word::new(0b0001_0101u8);
+		let word2 = Word::new(0b0011u8);
+		word1.or(word2);
+
+		assert_eq!(word1.load(), 0b0001_0111);
+	}
+
+	#[test]
+	fn test_xor() {
+		let mut word1 = Word::new(0b0001_0101u8);
+		let word2 = Word::new(0b0011u8);
+		word1.xor(word2);
+
+		assert_eq!(word1.load(), 0b0001_0110);
+	}
+
+	#[test]
+	fn test_not() {
+		let mut word = Word::new(0b0000_1111u8);
+		word.not();
+
+		assert_eq!(word.load(), 0b1111_0000);
 	}
 }
