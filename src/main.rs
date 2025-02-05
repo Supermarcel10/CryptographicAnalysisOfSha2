@@ -2,7 +2,6 @@ use std::cmp::PartialEq;
 use bitvec::prelude::*;
 
 mod structs;
-mod solver;
-
+mod heuristics;
 
 fn main() {}
