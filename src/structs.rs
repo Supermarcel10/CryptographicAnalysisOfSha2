@@ -9,22 +9,6 @@ pub struct ShaHash<T: Unsigned + BitStore> {
 	message_block: [Word<T>; 16]
 }
 
-impl<T: Unsigned + BitStore> Display for MessageBlock<T> {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		// write!(f, "{}", self.words.load::<T>())
-		todo!();
-	}
-}
-
-impl<T: Unsigned + BitStore> MessageBlock<T> {
-	pub fn new() -> Self {
-		// TODO: Construct a proper message block based on a starting hash
-		MessageBlock {
-			words: [Word::new(0); 16],
-		}
-	}
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct Word<T: Unsigned + BitStore> {
 	bits: BitArray<T, Msb0>
