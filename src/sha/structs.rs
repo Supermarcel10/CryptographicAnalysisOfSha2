@@ -78,6 +78,18 @@ impl Word for u64 {
 	}
 }
 
+#[derive(Debug)]
+pub struct HashResult {
+	pub data: Box<[u8]>,
+}
+
+impl FromIterator<u8> for HashResult {
+	fn from_iter<T: IntoIterator<Item=u8>>(iter: T) -> Self {
+		let data = iter.into_iter().collect::<Box<_>>().into();
+		HashResult { data }
+	}
+}
+
 #[derive(thiserror::Error, Debug, PartialEq)]
 pub enum HashError {
 	#[error("requested rounds {requested} exceeds maximum rounds {maximum} for hash function")]

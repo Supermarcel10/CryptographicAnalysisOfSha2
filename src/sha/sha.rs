@@ -1,4 +1,4 @@
-use crate::sha::structs::{HashError, HashFunction, Word};
+use crate::sha::structs::{HashError, HashFunction, HashResult, Word};
 
 /// # Arguments
 ///
@@ -85,7 +85,7 @@ fn process_block<T: Word + Default>(
 /// println!("My hash is {:?}!", hashed_sha256.unwrap());
 /// // Panics with HashError::TooManyRounds!
 /// ```
-pub fn sha(message: &str, hash_function: HashFunction, rounds: u32) -> Result<Vec<u8>, HashError> {
+pub fn sha(message: &str, hash_function: HashFunction, rounds: u32) -> Result<HashResult, HashError> {
 	// Validate rounds
 	let max_rounds = hash_function.max_rounds();
 	if rounds > max_rounds {
