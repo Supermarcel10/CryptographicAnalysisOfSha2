@@ -1,201 +1,214 @@
-use crate::sha::sha::Hash::{SHA256, SHA512};
+use crate::sha::structs::{HashError, HashFunction, Word};
 
-// TODO: Generalise SHA implementation
-// TODO: Utilise structs and bitvec::bitarray to simplify further
+/// # Arguments
+///
+/// * `state`: Initial hash values (H) (first 32 bits of the fractional parts of the square roots of the first 8 primes 2..19)
+/// * `block`: Initial block to process from padded message
+/// * `rounds`: Number of compresison loop iterations
+/// * `k`: Round constants (first 32 bits of the fractional parts of the cube roots of the first 64 primes 2..311)
+///
+/// # Returns
+/// `Vec<T, Global>`
+fn process_block<T: Word + Default>(
+	mut state: Vec<T>,
+	block: &[u8],
+	rounds: u32,
+	k: &[T],
+) -> Vec<T> {
+	let word_size = size_of::<T>();
+	let mut w = vec![T::default(); k.len()];
 
-#[derive(Debug, Clone, Copy)]
-enum Hash {
-	SHA256,
-	SHA512,
+	// Break chunk into words
+	for i in 0..16 {
+		w[i] = T::from_be_bytes(&block[i * word_size..(i + 1) * word_size]);
+	}
+
+	// Extend words
+	for i in 16..k.len() {
+		w[i] = w[i-16].wrapping_add(T::gamma0(w[i-15]))
+			.wrapping_add(w[i-7])
+			.wrapping_add(T::gamma1(w[i-2]));
+	}
+
+	// Initialize working variables
+	let mut working_vars = state.clone();
+
+	// Compression loop
+	for i in 0..rounds as usize {
+		let t1 = working_vars[7]
+			.wrapping_add(T::sigma1(working_vars[4]))
+			.wrapping_add(T::ch(working_vars[4], working_vars[5], working_vars[6]))
+			.wrapping_add(k[i])
+			.wrapping_add(w[i]);
+		let t2 = T::sigma0(working_vars[0])
+			.wrapping_add(T::maj(working_vars[0], working_vars[1], working_vars[2]));
+
+		// Rotate working variables
+		working_vars.rotate_right(1);
+		working_vars[0] = t1.wrapping_add(t2);
+		working_vars[4] = working_vars[4].wrapping_add(t1);
+	}
+
+	// Update state
+	for i in 0..8 {
+		state[i] = state[i].wrapping_add(working_vars[i]);
+	}
+
+	state
 }
 
-#[derive(Debug)]
-struct HashParams {
-	pub block_size: usize,
-	pub len_size: usize,
-}
+/// Generic sha function with control over number of rounds.
+/// Returns vector of u8 hash or Error.
+///
+/// # Arguments
+///
+/// * `message`: The message to hash
+/// * `hash_function`: The hashing function to use
+/// * `rounds`: The number of rounds to hash for
+///
+/// # Returns
+/// `Result<Vec<u8, Global>, HashError>`
+///
+/// # Examples
+/// ## Valid call
+/// ```
+/// let message = String::from("abc");
+/// let hashed_sha256 = sha(&message, HashFunction::SHA256, 4);
+/// println!("My hash is {:?}!", hashed_sha256.unwrap());
+/// // Outputs "My hash is [63, 90, 220, 205, 132, 42, 246, 44, 150, 217, 205, 31, 2, 186, 225, 7, 117, 238, 90, 207, 148, 46, 162, 119, 152, 82, 83, 52, 86, 11, 19, 59]!"
+/// ```
+///
+/// ## Erroneous sha call
+/// ```should_panic
+/// let message = "abc";
+/// let hashed_sha256 = sha(message, HashFunction::SHA256, 90);
+/// println!("My hash is {:?}!", hashed_sha256.unwrap());
+/// // Panics with HashError::TooManyRounds!
+/// ```
+pub fn sha(message: &str, hash_function: HashFunction, rounds: u32) -> Result<Vec<u8>, HashError> {
+	// Validate rounds
+	let max_rounds = hash_function.max_rounds();
+	if rounds > max_rounds {
+		return Err(HashError::TooManyRounds {
+			requested: rounds,
+			maximum: max_rounds,
+		});
+	}
 
-impl Hash {
-	pub fn params(self) -> HashParams {
-		match self {
-			SHA256 => HashParams { block_size: 64, len_size: 8 },
-			SHA512 => HashParams { block_size: 128, len_size: 16 },
-		}
+	let padded_message = pad_message(message.as_bytes(), hash_function);
+
+	let chunk_size_bits = hash_function.chunk_size().bits();
+
+	match hash_function {
+		HashFunction::SHA256 => {
+			use super::constants::sha256::*;
+
+			let mut state: Vec<u32> = H_INIT.to_vec();
+
+			for chunk in padded_message.chunks(chunk_size_bits) {
+				state = process_block(state, chunk, rounds, &K);
+			}
+
+			Ok(state.into_iter().flat_map(|x| x.to_be_bytes()).collect())
+		},
+		HashFunction::SHA512 => {
+			use super::constants::sha512::*;
+
+			let mut state: Vec<u64> = H_INIT.to_vec();
+
+			for chunk in padded_message.chunks(chunk_size_bits) {
+				state = process_block(state, chunk, rounds, &K);
+			}
+
+			Ok(state.into_iter().flat_map(|x| x.to_be_bytes()).collect())
+		},
 	}
 }
 
-pub fn sha256(message: &[u8], rounds: usize) -> [u8; 32] {
-	let padded = pad(message, SHA256);
+/// Pads the given message with SHA2 rules.
+/// Returns vector of padded message, with block size length of given hash function.
+///
+/// # Arguments
+///
+/// * `message`: Message to pad
+/// * `hash_function`: Hash function to pad for
+///
+/// # Returns
+/// `Vec<u8, Global>`
+///
+/// # Examples
+///
+/// ```
+/// let message = b"abc";
+/// let padded_message = pad_message(message, HashFunction::SHA256);
+/// ```
+fn pad_message(message: &[u8], hash_function: HashFunction) -> Vec<u8> {
+	// Example message "ABC" (3 char, 24b) for SHA 256
+	// | Original Message | Single 1 | Padding (0's)             | Length (64b)          |
+	// |------------------|----------|---------------------------|-----------------------|
+	// | 24b              |    1b    | 423b of zero-padding      | 64b representing "24" |
 
-	// SHA-256 initial hash values
-	use super::constants::sha256::*;
-	let (mut h0, mut h1, mut h2, mut h3, mut h4, mut h5, mut h6, mut h7) =
-		(H0, H1, H2, H3, H4, H5, H6, H7);
+	let original_len_bits = (message.len() as u128) * 8;
+	let block_size_bytes = hash_function.block_size().bytes();
+	let length_size_bytes = hash_function.length_size().bytes();
 
-	// Process each 512-bit block
-	for chunk in padded.chunks(64) {
-		let mut w = [0u32; 64];
-
-		for (i, word_bytes) in chunk.chunks(4).enumerate().take(16) {
-			w[i] = u32::from_be_bytes(word_bytes.try_into().unwrap());
-		}
-
-		for i in 16..64 {
-			let s0 = w[i - 15].rotate_right(7) ^ w[i - 15].rotate_right(18) ^ (w[i - 15] >> 3);
-			let s1 = w[i - 2].rotate_right(17) ^ w[i - 2].rotate_right(19) ^ (w[i - 2] >> 10);
-			w[i] = w[i - 16]
-				.wrapping_add(s0)
-				.wrapping_add(w[i - 7])
-				.wrapping_add(s1);
-		}
-
-		let (mut a, mut b, mut c, mut d, mut e, mut f, mut g, mut h) =
-			(h0, h1, h2, h3, h4, h5, h6, h7);
-
-		let effective_rounds = rounds.min(64);
-		for i in 0..effective_rounds {
-			let s1 = e.rotate_right(6) ^ e.rotate_right(11) ^ e.rotate_right(25);
-			let ch = (e & f) ^ ((!e) & g);
-			let temp1 = h
-				.wrapping_add(s1)
-				.wrapping_add(ch)
-				.wrapping_add(K[i])
-				.wrapping_add(w[i]);
-			let s0 = a.rotate_right(2) ^ a.rotate_right(13) ^ a.rotate_right(22);
-			let maj = (a & b) ^ (a & c) ^ (b & c);
-			let temp2 = s0.wrapping_add(maj);
-
-			h = g;
-			g = f;
-			f = e;
-			e = d.wrapping_add(temp1);
-			d = c;
-			c = b;
-			b = a;
-			a = temp1.wrapping_add(temp2);
-		}
-
-		h0 = h0.wrapping_add(a);
-		h1 = h1.wrapping_add(b);
-		h2 = h2.wrapping_add(c);
-		h3 = h3.wrapping_add(d);
-		h4 = h4.wrapping_add(e);
-		h5 = h5.wrapping_add(f);
-		h6 = h6.wrapping_add(g);
-		h7 = h7.wrapping_add(h);
-	}
-
-	let mut digest = [0u8; 32];
-	digest[0..4].copy_from_slice(&h0.to_be_bytes());
-	digest[4..8].copy_from_slice(&h1.to_be_bytes());
-	digest[8..12].copy_from_slice(&h2.to_be_bytes());
-	digest[12..16].copy_from_slice(&h3.to_be_bytes());
-	digest[16..20].copy_from_slice(&h4.to_be_bytes());
-	digest[20..24].copy_from_slice(&h5.to_be_bytes());
-	digest[24..28].copy_from_slice(&h6.to_be_bytes());
-	digest[28..32].copy_from_slice(&h7.to_be_bytes());
-
-	digest
-}
-
-pub fn sha512(message: &[u8], rounds: usize) -> [u8; 64] {
-	let padded = pad(message, SHA512);
-
-	// SHA-512 initial hash values
-	use super::constants::sha512::*;
-	let (mut h0, mut h1, mut h2, mut h3, mut h4, mut h5, mut h6, mut h7) =
-		(H0, H1, H2, H3, H4, H5, H6, H7);
-
-	// Process each 1024-bit block
-	for chunk in padded.chunks(128) {
-		let mut w = [0u64; 80];
-
-		for (i, word_bytes) in chunk.chunks(8).enumerate().take(16) {
-			w[i] = u64::from_be_bytes(word_bytes.try_into().unwrap());
-		}
-
-		for i in 16..80 {
-			let s0 = w[i - 15].rotate_right(1) ^ w[i - 15].rotate_right(8) ^ (w[i - 15] >> 7);
-			let s1 = w[i - 2].rotate_right(19) ^ w[i - 2].rotate_right(61) ^ (w[i - 2] >> 6);
-			w[i] = w[i - 16]
-				.wrapping_add(s0)
-				.wrapping_add(w[i - 7])
-				.wrapping_add(s1);
-		}
-
-		let (mut a, mut b, mut c, mut d, mut e, mut f, mut g, mut h) =
-			(h0, h1, h2, h3, h4, h5, h6, h7);
-
-		let effective_rounds = rounds.min(80);
-		for i in 0..effective_rounds {
-			let s1 = e.rotate_right(14) ^ e.rotate_right(18) ^ e.rotate_right(41);
-			let ch = (e & f) ^ ((!e) & g);
-			let temp1 = h
-				.wrapping_add(s1)
-				.wrapping_add(ch)
-				.wrapping_add(K[i])
-				.wrapping_add(w[i]);
-			let s0 = a.rotate_right(28) ^ a.rotate_right(34) ^ a.rotate_right(39);
-			let maj = (a & b) ^ (a & c) ^ (b & c);
-			let temp2 = s0.wrapping_add(maj);
-
-			h = g;
-			g = f;
-			f = e;
-			e = d.wrapping_add(temp1);
-			d = c;
-			c = b;
-			b = a;
-			a = temp1.wrapping_add(temp2);
-		}
-
-		h0 = h0.wrapping_add(a);
-		h1 = h1.wrapping_add(b);
-		h2 = h2.wrapping_add(c);
-		h3 = h3.wrapping_add(d);
-		h4 = h4.wrapping_add(e);
-		h5 = h5.wrapping_add(f);
-		h6 = h6.wrapping_add(g);
-		h7 = h7.wrapping_add(h);
-	}
-
-	let mut digest = [0u8; 64];
-	digest[0..8].copy_from_slice(&h0.to_be_bytes());
-	digest[8..16].copy_from_slice(&h1.to_be_bytes());
-	digest[16..24].copy_from_slice(&h2.to_be_bytes());
-	digest[24..32].copy_from_slice(&h3.to_be_bytes());
-	digest[32..40].copy_from_slice(&h4.to_be_bytes());
-	digest[40..48].copy_from_slice(&h5.to_be_bytes());
-	digest[48..56].copy_from_slice(&h6.to_be_bytes());
-	digest[56..64].copy_from_slice(&h7.to_be_bytes());
-
-	digest
-}
-
-fn pad(message: &[u8], hash_function: Hash) -> Vec<u8> {
-	let params = hash_function.params();
-
-	let mut padded = message.to_vec();
+	// Create a vector with the message followed by 1
+	let mut padded = Vec::with_capacity(block_size_bytes);
+	padded.extend_from_slice(message);
 	padded.push(0x80);
 
-	while padded.len() % params.block_size != (params.block_size - params.len_size) {
-		padded.push(0);
-	}
+	// Pad message with 0s
+	padded.resize(block_size_bytes - length_size_bytes, 0);
 
-	let bit_len = (message.len() * 8) as u128;
-	padded.extend_from_slice(&bit_len.to_be_bytes()[16 - params.len_size..]);
+	// Append length
+	match hash_function {
+		HashFunction::SHA256 => padded.extend_from_slice(&(original_len_bits as u64).to_be_bytes()),
+		HashFunction::SHA512 => padded.extend_from_slice(&original_len_bits.to_be_bytes()),
+	};
 
 	padded
 }
 
 #[cfg(test)]
 mod tests {
+	use super::HashFunction::SHA256;
 	use super::*;
 
 	#[test]
+	fn test_padding() {
+		// Example message "ABC" (3 char, 24b) for SHA 256
+		// | Original Message | Single 1 | Padding (0's)             | Length (64b)          |
+		// |------------------|----------|---------------------------|-----------------------|
+		// | 24b              |    1b    | 423b of zero-padding      | 64b representing "24" |
+
+		let message = b"ABC";
+		let expected = vec![
+			// Original message for characters
+			65, 66, 67,
+			// Single 1 as Big Endian
+			128, // Binary 1000 0000
+			// Padding of 0s
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0,
+			// Lenth of message in bits
+			24
+		];
+
+		assert_eq!(pad_message(message, SHA256), expected);
+	}
+
+	#[test]
 	/// Using 64 rounds should match the standard SHA-256 for "abc".
-	fn test_sha256_standard() {
-		let hash = sha256(b"abc", 64);
+	fn test_sha256_correctness() {
+		let message = "abc";
+		let result = sha(message, HashFunction::SHA256, 64);
+
 		let expected = [
 			0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
 			0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
@@ -203,13 +216,15 @@ mod tests {
 			0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad,
 		];
 
-		assert_eq!(hash, expected);
+		assert_eq!(result.unwrap(), expected);
 	}
 
 	#[test]
 	/// Using 80 rounds should match the standard SHA-512 for "abc".
-	fn test_sha512_standard() {
-		let hash = sha512(b"abc", 80);
+	fn test_sha512_correctness() {
+		let message = "abc";
+		let result = sha(message, HashFunction::SHA512, 80);
+
 		let expected = [
 			0xdd, 0xaf, 0x35, 0xa1, 0x93, 0x61, 0x7a, 0xba,
 			0xcc, 0x41, 0x73, 0x49, 0xae, 0x20, 0x41, 0x31,
@@ -221,6 +236,34 @@ mod tests {
 			0x2a, 0x9a, 0xc9, 0x4f, 0xa5, 0x4c, 0xa4, 0x9f,
 		];
 
-		assert_eq!(hash, expected);
+		assert_eq!(result.unwrap(), expected);
+	}
+
+	#[test]
+	fn test_sha256_round_difference() {
+		let message = "abc";
+		let result_32r = sha(message, HashFunction::SHA256, 32);
+		let result_64r = sha(message, HashFunction::SHA256, 64);
+
+		assert_ne!(result_32r, result_64r);
+	}
+
+	#[test]
+	fn test_sha512_round_difference() {
+		let message = "abc";
+		let result_40r = sha(message, HashFunction::SHA512, 40);
+		let result_80r = sha(message, HashFunction::SHA512, 80);
+
+		assert_ne!(result_40r, result_80r);
+	}
+
+	#[test]
+	fn test_too_many_rounds() {
+		let message = "Hello, World!";
+		let result = sha(message, HashFunction::SHA256, 65);
+		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
+
+		let result = sha(message, HashFunction::SHA512, 81);
+		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
 	}
 }

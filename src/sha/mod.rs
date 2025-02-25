@@ -1,2 +1,6 @@
 mod constants;
-pub mod sha;
+mod sha;
+mod structs;
+
+pub use sha::sha;
+pub use structs::HashFunction;

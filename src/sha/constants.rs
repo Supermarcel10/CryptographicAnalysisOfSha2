@@ -18,26 +18,13 @@ pub(super) mod sha256 {
         0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
     ];
 
-    pub const H0: u32 = 0x6a09e667;
-    pub const H1: u32 = 0xbb67ae85;
-    pub const H2: u32 = 0x3c6ef372;
-    pub const H3: u32 = 0xa54ff53a;
-    pub const H4: u32 = 0x510e527f;
-    pub const H5: u32 = 0x9b05688c;
-    pub const H6: u32 = 0x1f83d9ab;
-    pub const H7: u32 = 0x5be0cd19;
+	pub const H_INIT: [u32; 8] = [
+		0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+		0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+	];
 }
 
 pub(super) mod sha512 {
-    pub const H0: u64 = 0x6a09e667f3bcc908;
-    pub const H1: u64 = 0xbb67ae8584caa73b;
-    pub const H2: u64 = 0x3c6ef372fe94f82b;
-    pub const H3: u64 = 0xa54ff53a5f1d36f1;
-    pub const H4: u64 = 0x510e527fade682d1;
-    pub const H5: u64 = 0x9b05688c2b3e6c1f;
-    pub const H6: u64 = 0x1f83d9abfb41bd6b;
-    pub const H7: u64 = 0x5be0cd19137e2179;
-
     pub const K: [u64; 80] = [
         0x428a2f98d728ae22, 0x7137449123ef65cd, 0xb5c0fbcfec4d3b2f, 0xe9b5dba58189dbbc,
         0x3956c25bf348b538, 0x59f111f1b605d019, 0x923f82a4af194f9b, 0xab1c5ed5da6d8118,
@@ -60,4 +47,9 @@ pub(super) mod sha512 {
         0x28db77f523047d84, 0x32caab7b40c72493, 0x3c9ebe0a15c9bebc, 0x431d67c49c100d4c,
         0x4cc5d4becb3e42b6, 0x597f299cfc657e2a, 0x5fcb6fab3ad6faec, 0x6c44198c4a475817,
     ];
+
+	pub const H_INIT: [u64; 8] = [
+		0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
+		0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179,
+	];
 }
