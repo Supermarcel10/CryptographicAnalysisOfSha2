@@ -171,7 +171,7 @@ fn pad_message(message: &[u8], hash_function: HashFunction) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-	use super::HashFunction::SHA256;
+	use super::HashFunction::{SHA256, SHA512};
 	use super::*;
 
 	#[test]
@@ -207,23 +207,23 @@ mod tests {
 	/// Using 64 rounds should match the standard SHA-256 for "abc".
 	fn test_sha256_correctness() {
 		let message = "abc";
-		let result = sha(message, HashFunction::SHA256, 64);
+		let result = sha(message, SHA256, 64);
 
-		let expected = [
+		let expected: [u8; 32] = [
 			0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
 			0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
 			0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c,
 			0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad,
 		];
 
-		assert_eq!(result.unwrap(), expected);
+		assert_eq!(result.unwrap().into(), expected);
 	}
 
 	#[test]
 	/// Using 80 rounds should match the standard SHA-512 for "abc".
 	fn test_sha512_correctness() {
 		let message = "abc";
-		let result = sha(message, HashFunction::SHA512, 80);
+		let result = sha(message, SHA512, 80);
 
 		let expected = [
 			0xdd, 0xaf, 0x35, 0xa1, 0x93, 0x61, 0x7a, 0xba,
@@ -236,14 +236,14 @@ mod tests {
 			0x2a, 0x9a, 0xc9, 0x4f, 0xa5, 0x4c, 0xa4, 0x9f,
 		];
 
-		assert_eq!(result.unwrap(), expected);
+		assert_eq!(result.unwrap().into(), expected);
 	}
 
 	#[test]
 	fn test_sha256_round_difference() {
 		let message = "abc";
-		let result_32r = sha(message, HashFunction::SHA256, 32);
-		let result_64r = sha(message, HashFunction::SHA256, 64);
+		let result_32r = sha(message, SHA256, 32);
+		let result_64r = sha(message, SHA256, 64);
 
 		assert_ne!(result_32r, result_64r);
 	}
@@ -251,8 +251,8 @@ mod tests {
 	#[test]
 	fn test_sha512_round_difference() {
 		let message = "abc";
-		let result_40r = sha(message, HashFunction::SHA512, 40);
-		let result_80r = sha(message, HashFunction::SHA512, 80);
+		let result_40r = sha(message, SHA512, 40);
+		let result_80r = sha(message, SHA512, 80);
 
 		assert_ne!(result_40r, result_80r);
 	}
@@ -260,10 +260,10 @@ mod tests {
 	#[test]
 	fn test_too_many_rounds() {
 		let message = "Hello, World!";
-		let result = sha(message, HashFunction::SHA256, 65);
+		let result = sha(message, SHA256, 65);
 		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
 
-		let result = sha(message, HashFunction::SHA512, 81);
+		let result = sha(message, SHA512, 81);
 		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
 	}
 }
