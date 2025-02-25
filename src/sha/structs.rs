@@ -78,17 +78,7 @@ impl Word for u64 {
 	}
 }
 
-#[derive(Debug)]
-pub struct HashResult {
-	pub data: Box<[u8]>,
-}
-
-impl FromIterator<u8> for HashResult {
-	fn from_iter<T: IntoIterator<Item=u8>>(iter: T) -> Self {
-		let data = iter.into_iter().collect::<Box<_>>().into();
-		HashResult { data }
-	}
-}
+pub type HashResult = Box<[u8]>;
 
 #[derive(thiserror::Error, Debug, PartialEq)]
 pub enum HashError {

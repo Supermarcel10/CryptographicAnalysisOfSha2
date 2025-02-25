@@ -10,7 +10,7 @@ fn main() {
 	match hash256_full {
 		Ok(hash) => {
 			println!("SHA256(abc) [64 rounds]: {:02x?}", hash);
-			println!("{}", hash.data.len());
+			println!("{}", hash.len());
 		},
 		Err(err) => println!("{}", err),
 	};
@@ -19,7 +19,7 @@ fn main() {
 	match hash512_full {
 		Ok(hash) => {
 			println!("SHA512(abc) [80 rounds]: {:02x?}", hash);
-			println!("{}", hash.data.len());
+			println!("{}", hash.len());
 		},
 		Err(err) => println!("{}", err),
 	};

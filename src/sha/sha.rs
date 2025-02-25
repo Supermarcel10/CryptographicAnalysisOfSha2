@@ -216,7 +216,7 @@ mod tests {
 			0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad,
 		];
 
-		assert_eq!(result.unwrap().into(), expected);
+		assert_eq!(*result.unwrap(), expected);
 	}
 
 	#[test]
@@ -236,7 +236,7 @@ mod tests {
 			0x2a, 0x9a, 0xc9, 0x4f, 0xa5, 0x4c, 0xa4, 0x9f,
 		];
 
-		assert_eq!(result.unwrap().into(), expected);
+		assert_eq!(*result.unwrap(), expected);
 	}
 
 	#[test]
