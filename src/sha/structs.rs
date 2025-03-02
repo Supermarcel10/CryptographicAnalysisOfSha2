@@ -84,8 +84,8 @@ pub type HashResult = Box<[u8]>;
 pub enum HashError {
 	#[error("requested rounds {requested} exceeds maximum rounds {maximum} for hash function")]
 	TooManyRounds {
-		requested: u32,
-		maximum: u32,
+		requested: u8,
+		maximum: u8,
 	},
 }
 
@@ -108,7 +108,7 @@ pub enum HashFunction {
 }
 
 impl HashFunction {
-	pub fn max_rounds(&self) -> u32 {
+	pub fn max_rounds(&self) -> u8 {
 		match self {
 			HashFunction::SHA256 => 64,
 			HashFunction::SHA512 => 80,
