@@ -1,10 +1,8 @@
-use crate::bit_differential::BitDifferential;
 use crate::sha::*;
 
 mod heuristics;
 mod sha;
-mod structs;
-mod bit_differential;
+mod verification;
 
 fn main() {
 	let message = "abc";
