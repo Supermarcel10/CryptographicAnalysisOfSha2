@@ -1,5 +1,7 @@
+use std::fmt::{Debug, Formatter, LowerHex};
+
 // Math implemented as defined on Wikipedia https://en.wikipedia.org/wiki/SHA-2
-pub trait Word: Copy + Default {
+pub trait Word: Copy + Default + Debug + LowerHex {
 	fn ch(e: Self, f: Self, g: Self) -> Self;
 	fn maj(a: Self, b: Self, c: Self) -> Self;
 	fn sigma0(a: Self) -> Self;
@@ -8,6 +10,7 @@ pub trait Word: Copy + Default {
 	fn gamma1(x: Self) -> Self;
 	fn from_be_bytes(bytes: &[u8]) -> Self;
 	fn wrapping_add(self, rhs: Self) -> Self;
+	fn from_u64_vec(slice: Vec<u64>) -> Vec<Self>;
 }
 
 impl Word for u32 {
@@ -41,6 +44,10 @@ impl Word for u32 {
 
 	fn wrapping_add(self, rhs: Self) -> Self {
 		self.wrapping_add(rhs)
+	}
+
+	fn from_u64_vec(slice: Vec<u64>) -> Vec<Self> {
+		slice.into_iter().map(|x| x as u32).collect()
 	}
 }
 
@@ -76,17 +83,39 @@ impl Word for u64 {
 	fn wrapping_add(self, rhs: Self) -> Self {
 		self.wrapping_add(rhs)
 	}
+
+	fn from_u64_vec(slice: Vec<u64>) -> Vec<Self> {
+		slice
+	}
 }
 
-pub type HashResult = Box<[u8]>;
+#[derive(Debug, PartialEq, Clone)]
+pub struct HashResult<W: Word> {
+	pub data: Box<[W]>,
+}
 
-#[derive(thiserror::Error, Debug, PartialEq)]
+impl<W: Word> std::fmt::Display for HashResult<W> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		let word_size_bytes = size_of::<W>();
+		let format_width = word_size_bytes * 2;
+
+		for word in self.data.iter() {
+			// TODO: Look if this can be simplified
+			write!(f, "{:0width$x} ", word, width = format_width)?;
+		}
+		Ok(())
+	}
+}
+
+#[derive(thiserror::Error, Debug, PartialEq, Clone)]
 pub enum HashError {
 	#[error("requested rounds {requested} exceeds maximum rounds {maximum} for hash function")]
 	TooManyRounds {
 		requested: u8,
 		maximum: u8,
 	},
+	#[error("failed to convert message bytes to blocks")]
+	ByteToBlockConversionFailed
 }
 
 pub struct Bits(usize);
@@ -103,36 +132,33 @@ impl Bits {
 
 #[derive(Debug, Clone, Copy)]
 pub enum HashFunction {
+	SHA224,
 	SHA256,
 	SHA512,
 }
 
 impl HashFunction {
 	pub fn max_rounds(&self) -> u8 {
+		use HashFunction::*;
 		match self {
-			HashFunction::SHA256 => 64,
-			HashFunction::SHA512 => 80,
+			SHA224 | SHA256 => 64,
+			SHA512 => 80,
 		}
 	}
 
 	pub fn length_size(&self) -> Bits {
+		use HashFunction::*;
 		match self {
-			HashFunction::SHA256 => Bits(64),
-			HashFunction::SHA512 => Bits(128),
-		}
-	}
-
-	pub fn chunk_size(&self) -> Bits {
-		match self {
-			HashFunction::SHA256 => Bits(64),
-			HashFunction::SHA512 => Bits(128),
+			SHA224 | SHA256 => Bits(64),
+			SHA512 => Bits(128),
 		}
 	}
 
 	pub fn block_size(&self) -> Bits {
+		use HashFunction::*;
 		match self {
-			HashFunction::SHA256 => Bits(512),
-			HashFunction::SHA512 => Bits(1024),
+			SHA224 | SHA256 => Bits(512),
+			SHA512 => Bits(1024),
 		}
 	}
 }
