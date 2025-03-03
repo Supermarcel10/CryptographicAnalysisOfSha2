@@ -82,7 +82,7 @@ impl<T: BitDifferential + Copy> BitDifferential for Vec<T> {
 
 #[cfg(test)]
 mod test {
-	use crate::bit_differential::BitDifferential;
+	use super::BitDifferential;
 
 	#[test]
 	fn test_differential_same() {
