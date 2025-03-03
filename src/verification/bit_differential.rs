@@ -20,14 +20,14 @@ impl DiffType {
 }
 
 pub trait BitDifferential {
-	fn show_differential(self, other: Self) -> String;
+	fn bit_diff(self, other: Self) -> String;
 }
 
 macro_rules! impl_bit_differential_for {
     ($($t:ty),*) => {
         $(
             impl BitDifferential for $t {
-                fn show_differential(self, other: Self) -> String {
+                fn bit_diff(self, other: Self) -> String {
 					let size = size_of::<Self>() * 8;
 					let mut s: String = String::with_capacity(size);
 
@@ -57,26 +57,26 @@ macro_rules! impl_bit_differential_for {
 impl_bit_differential_for!(u8, u16,u32, u64, u128);
 
 impl<T: BitDifferential + Copy, const N: usize> BitDifferential for [T; N] {
-	fn show_differential(self, other: Self) -> String {
+	fn bit_diff(self, other: Self) -> String {
 		self.into_iter()
 			.zip(other)
-			.map(|(s, o)| s.show_differential(o))
+			.map(|(s, o)| s.bit_diff(o))
 			.collect::<String>()
 	}
 }
 
 impl<T: BitDifferential + Copy> BitDifferential for &[T] {
-	fn show_differential(self, other: Self) -> String {
+	fn bit_diff(self, other: Self) -> String {
 		self.into_iter()
 			.zip(other)
-			.map(|(s, o)| s.show_differential(*o))
+			.map(|(s, o)| s.bit_diff(*o))
 			.collect::<String>()
 	}
 }
 
 impl<T: BitDifferential + Copy> BitDifferential for Vec<T> {
-	fn show_differential(self, other: Self) -> String {
-		(&self[..]).show_differential(&other[..])
+	fn bit_diff(self, other: Self) -> String {
+		(&self[..]).bit_diff(&other[..])
 	}
 }
 
@@ -89,7 +89,7 @@ mod test {
 		let a = 5u8;
 		let b = 5u8;
 
-		assert_eq!(a.show_differential(b), "========");
+		assert_eq!(a.bit_diff(b), "========");
 	}
 
 	#[test]
@@ -97,27 +97,27 @@ mod test {
 		let a = 123u8;
 		let b = 5u8;
 
-		assert_eq!(a.show_differential(b), "=uuuunu=");
+		assert_eq!(a.bit_diff(b), "=uuuunu=");
 	}
 
 	#[test]
 	fn test_differential_slice() {
 		let a = [2u8; 2];
 		let b = [1, 3];
-		assert_eq!(a.show_differential(b), "======un=======n");
+		assert_eq!(a.bit_diff(b), "======un=======n");
 	}
 
 	#[test]
 	fn test_differential_boxed_slice() {
 		let a = Box::<[u8]>::from([2; 2]);
 		let b = Box::<[u8]>::from([1, 3]);
-		assert_eq!(a.show_differential(&b), "======un=======n");
+		assert_eq!(a.bit_diff(&b), "======un=======n");
 	}
 
 	#[test]
 	fn test_differential_vec() {
 		let a = Vec::from([2u8; 2]);
 		let b = Vec::from([1, 3]);
-		assert_eq!(a.show_differential(b), "======un=======n");
+		assert_eq!(a.bit_diff(b), "======un=======n");
 	}
 }

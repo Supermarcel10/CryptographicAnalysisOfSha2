@@ -105,17 +105,17 @@ pub struct State<W: Word> {
 }
 
 impl<W: Word> BitDifferential for State<W> {
-	fn show_differential(self, other: Self) -> String {
-		let a_delta = self.a.show_differential(other.a);
-		let e_delta = self.e.show_differential(other.e);
-		let w_delta = self.w.show_differential(other.w);
+	fn bit_diff(self, other: Self) -> String {
+		let a_delta = self.a.bit_diff(other.a);
+		let e_delta = self.e.bit_diff(other.e);
+		let w_delta = self.w.bit_diff(other.w);
 
 		format!("{a_delta} | {e_delta} | {w_delta}")
 	}
 }
 
 impl<W: Word> BitDifferential for Vec<State<W>> {
-	fn show_differential(self, other: Self) -> String {
+	fn bit_diff(self, other: Self) -> String {
 		let padding = size_of::<W>() * 8;
 		let mut output = String::new();
 
@@ -127,7 +127,7 @@ impl<W: Word> BitDifferential for Vec<State<W>> {
 
 		// Append differential for each compression round
 		for i in 0..self.len() {
-			let diff = self[i].clone().show_differential(other[i].clone());
+			let diff = self[i].clone().bit_diff(other[i].clone());
 			output += &format!("{i:2} | {diff}\n");
 		}
 
