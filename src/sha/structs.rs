@@ -97,11 +97,10 @@ pub struct HashResult<W: Word> {
 impl<W: Word> std::fmt::Display for HashResult<W> {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		let word_size_bytes = size_of::<W>();
-		let format_width = word_size_bytes * 2;
+		let width = word_size_bytes * 2;
 
 		for word in self.data.iter() {
-			// TODO: Look if this can be simplified
-			write!(f, "{:0width$x} ", word, width = format_width)?;
+			write!(f, "{word:0width$x} ")?;
 		}
 		Ok(())
 	}
