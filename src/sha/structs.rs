@@ -161,6 +161,14 @@ impl HashFunction {
 			SHA512 => Bits(1024),
 		}
 	}
+
+	pub fn truncate_to_length(&self) -> Option<usize> {
+		use HashFunction::*;
+		match self {
+			SHA224 => Some(7),
+			_ => None,
+		}
+	}
 }
 
 #[cfg(test)]

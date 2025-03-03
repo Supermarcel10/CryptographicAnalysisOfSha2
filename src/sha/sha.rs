@@ -167,8 +167,16 @@ impl<W: Word> Sha<W> {
 			self.state[i] = self.state[i].wrapping_add(working_vars[i]);
 		}
 
+		// Truncate
+		let truncate_to_length = self.hash_function
+			.truncate_to_length()
+			.or(Some(self.state.len()))
+			.unwrap();
+
+		let truncated_state = &self.state[..truncate_to_length];
+
 		HashResult {
-			data: Box::from(self.state),
+			data: Box::from(truncated_state),
 		}
 	}
 
@@ -362,17 +370,15 @@ mod tests {
 	}
 
 	#[test]
-	#[ignore]
 	/// Using 64 rounds should match the standard SHA-224 for "abc".
 	fn test_sha224_correctness() {
-		// TODO: Add truncation to make this correct
 		let result = Sha::<u32>::from_string(MESSAGE, SHA224, 64, IV)
 			.unwrap()
 			.execute();
 
 		let expected = [
 			0x23097d22, 0x3405d822, 0x8642a477, 0xbda255b3,
-			0x2aadbce4, 0xbda0b3f7, 0xe36c9da7, 0x0,
+			0x2aadbce4, 0xbda0b3f7, 0xe36c9da7,
 		];
 
 		assert_eq!(*result.data, expected);
@@ -508,10 +514,8 @@ mod tests {
 	}
 
 	#[test]
-	#[ignore]
 	/// Example in Li et al. (p.27, Table 10)
 	fn test_dual_cv_collision_sha224() {
-		// TODO: Add truncation to make this correct
 		let cv = CV([
 			0x791c9c6b, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
 			0xc90690c5, 0x5591553c, 0x43a5d984, 0xaf92402d,
@@ -522,30 +526,30 @@ mod tests {
 			0xc90690c5, 0x5591553c, 0x43a5d984, 0xbf92402d,
 		]);
 
-		let m: [u64; 16] = [
+		let m = [
 			0xf41d61b4, 0xce033ba2, 0xdd1bc208, 0xa268189b,
 			0xee6bda2c, 0x5ddbe94d, 0x9675bbd3, 0x32c1ba8a,
 			0x7eba797d, 0x88b06a8f, 0x3bc3015c, 0xd36f38cc,
 			0xcfcb88e0, 0x3c70f7f3, 0xfaa0c1fe, 0x35c62535,
 		];
 
-		let m_prime: [u64; 16] = [
+		let m_prime = [
 			0xe41d61b4, 0xce033ba2, 0xdd1bc208, 0xa268189b,
 			0xee6bda2c, 0x5ddbe94d, 0x9675bbd3, 0x32c1ba8a,
 			0x7eba797d, 0x98b06a8f, 0x39e3055c, 0xc36f38cc,
 			0xce4b002d, 0x3c74f1f3, 0xfaa0c1fe, 0x35c62535,
 		];
 
-		let expected: [u64; 8] = [
-			0xdceb3d88adf54bd2, 0x966c4cb1ab0cf400, 0x01e701fdf10ab603, 0x796d6e5028a5e89a,
-			0xf29a7517b216c09f, 0x46dbae73b1db8cce, 0x8ea44d45041010ea, 0x26a7a6b902f2632f,
+		let expected = [
+			0x9af50cac, 0xc165a72f, 0xb6f1c9f3, 0xef54bad9,
+			0xaf0cfb1f, 0x57d357c9, 0xc6462616,
 		];
 
-		let result_m = Sha::<u64>::from_message_block(m, SHA224, 40, cv)
+		let result_m = Sha::<u32>::from_message_block(m, SHA224, 40, cv)
 			.unwrap()
 			.execute();
 
-		let result_m_prime = Sha::<u64>::from_message_block(m_prime, SHA224, 40, cv_prime)
+		let result_m_prime = Sha::<u32>::from_message_block(m_prime, SHA224, 40, cv_prime)
 			.unwrap()
 			.execute();
 
