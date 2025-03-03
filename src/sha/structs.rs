@@ -1,7 +1,8 @@
 use std::fmt::{Debug, Formatter, LowerHex};
+use crate::verification::bit_differential::BitDifferential;
 
 // Math implemented as defined on Wikipedia https://en.wikipedia.org/wiki/SHA-2
-pub trait Word: Copy + Default + Debug + LowerHex {
+pub trait Word: Copy + Default + Debug + LowerHex + BitDifferential {
 	fn ch(e: Self, f: Self, g: Self) -> Self;
 	fn maj(a: Self, b: Self, c: Self) -> Self;
 	fn sigma0(a: Self) -> Self;
@@ -91,7 +92,48 @@ impl Word for u64 {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct HashResult<W: Word> {
-	pub data: Box<[W]>,
+	pub hash: Box<[W]>,
+	pub states: Vec<State<W>>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct State<W: Word> {
+	pub i: u8,
+	pub w: W,
+	pub a: W,
+	pub e: W,
+}
+
+impl<W: Word> BitDifferential for State<W> {
+	fn show_differential(self, other: Self) -> String {
+		let a_delta = self.a.show_differential(other.a);
+		let e_delta = self.e.show_differential(other.e);
+		let w_delta = self.w.show_differential(other.w);
+
+		format!("{a_delta} | {e_delta} | {w_delta}")
+	}
+}
+
+impl<W: Word> BitDifferential for Vec<State<W>> {
+	fn show_differential(self, other: Self) -> String {
+		let padding = size_of::<W>() * 8;
+		let mut output = String::new();
+
+		// Append heading
+		output += &format!(
+			" i | {:^padding$} | {:^padding$} | {:^padding$}\n",
+			"ΔAᵢ", "ΔEᵢ", "ΔWᵢ"
+		);
+
+		// Append differential for each compression round
+		for i in 0..self.len() {
+			let diff = self[i].clone().show_differential(other[i].clone());
+			output += &format!("{i:2} | {diff}\n");
+		}
+
+		output.shrink_to_fit();
+		output
+	}
 }
 
 impl<W: Word> std::fmt::Display for HashResult<W> {
@@ -99,7 +141,7 @@ impl<W: Word> std::fmt::Display for HashResult<W> {
 		let word_size_bytes = size_of::<W>();
 		let width = word_size_bytes * 2;
 
-		for word in self.data.iter() {
+		for word in self.hash.iter() {
 			write!(f, "{word:0width$x} ")?;
 		}
 		Ok(())

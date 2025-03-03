@@ -1,6 +1,6 @@
 use std::cmp::PartialEq;
 use crate::sha::HashError::ByteToBlockConversionFailed;
-use crate::sha::structs::{HashError, HashFunction, HashResult, Word};
+use crate::sha::structs::{HashError, HashFunction, HashResult, State, Word};
 
 #[derive(Debug)]
 pub struct Sha<W: Word> {
@@ -130,6 +130,7 @@ impl<W: Word> Sha<W> {
 	pub fn execute(mut self) -> HashResult<W> {
 		let k = self.get_constant();
 		let mut w = vec![W::default(); k.len()];
+		let mut states = Vec::<State<W>>::with_capacity(self.rounds as usize);
 
 		// Initialization of first 16 words with current block
 		w[..16].copy_from_slice(&self.blocks);
@@ -147,6 +148,13 @@ impl<W: Word> Sha<W> {
 
 		// Compression loop
 		for i in 0..self.rounds as usize {
+			states.push(State {
+				i: i as u8,
+				w: w[i].clone(),
+				a: working_vars[0],
+				e: working_vars[4],
+			});
+
 			let t1 = working_vars[7]
 				.wrapping_add(W::sigma1(working_vars[4]))
 				.wrapping_add(W::ch(working_vars[4], working_vars[5], working_vars[6]))
@@ -176,7 +184,8 @@ impl<W: Word> Sha<W> {
 		let truncated_state = &self.state[..truncate_to_length];
 
 		HashResult {
-			data: Box::from(truncated_state),
+			hash: Box::from(truncated_state),
+			states,
 		}
 	}
 
@@ -381,7 +390,7 @@ mod tests {
 			0x2aadbce4, 0xbda0b3f7, 0xe36c9da7,
 		];
 
-		assert_eq!(*result.data, expected);
+		assert_eq!(*result.hash, expected);
 	}
 
 	#[test]
@@ -396,7 +405,7 @@ mod tests {
 			0xb00361a3, 0x96177a9c, 0xb410ff61, 0xf20015ad,
 		];
 
-		assert_eq!(*result.data, expected);
+		assert_eq!(*result.hash, expected);
 	}
 
 	#[test]
@@ -411,7 +420,7 @@ mod tests {
 			0x2192992a274fc1a8, 0x36ba3c23a3feebbd, 0x454d4423643ce80e, 0x2a9ac94fa54ca49f,
 		];
 
-		assert_eq!(*result.data, expected);
+		assert_eq!(*result.hash, expected);
 	}
 
 	#[test]
@@ -475,8 +484,8 @@ mod tests {
 			.unwrap()
 			.execute();
 
-		assert_eq!(*result_m.data, expected);
-		assert_eq!(*result_m.data, *result_m_prime.data);
+		assert_eq!(*result_m.hash, expected);
+		assert_eq!(*result_m.hash, *result_m_prime.hash);
 	}
 
 	#[test]
@@ -509,8 +518,8 @@ mod tests {
 			.unwrap()
 			.execute();
 
-		assert_eq!(*result_m.data, expected);
-		assert_eq!(*result_m.data, *result_m_prime.data);
+		assert_eq!(*result_m.hash, expected);
+		assert_eq!(*result_m.hash, *result_m_prime.hash);
 	}
 
 	#[test]
@@ -553,8 +562,8 @@ mod tests {
 			.unwrap()
 			.execute();
 
-		assert_eq!(*result_m.data, expected);
-		assert_eq!(*result_m.data, *result_m_prime.data);
+		assert_eq!(*result_m.hash, expected);
+		assert_eq!(*result_m.hash, *result_m_prime.hash);
 	}
 
 	#[test]
