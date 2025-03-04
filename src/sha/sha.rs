@@ -148,13 +148,6 @@ impl<W: Word> Sha<W> {
 
 		// Compression loop
 		for i in 0..self.rounds as usize {
-			states.push(State {
-				i: i as u8,
-				w: w[i].clone(),
-				a: working_vars[0],
-				e: working_vars[4],
-			});
-
 			let t1 = working_vars[7]
 				.wrapping_add(W::sigma1(working_vars[4]))
 				.wrapping_add(W::ch(working_vars[4], working_vars[5], working_vars[6]))
@@ -168,6 +161,13 @@ impl<W: Word> Sha<W> {
 			working_vars.rotate_right(1);
 			working_vars[0] = t1.wrapping_add(t2);
 			working_vars[4] = working_vars[4].wrapping_add(t1);
+
+			states.push(State {
+				i: i as u8,
+				w: w[i].clone(),
+				a: working_vars[0],
+				e: working_vars[4],
+			});
 		}
 
 		// Update state
