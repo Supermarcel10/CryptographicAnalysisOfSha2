@@ -171,7 +171,8 @@ impl Bits {
 	}
 }
 
-#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "benchmarking", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum HashFunction {
 	SHA224,
 	SHA256,

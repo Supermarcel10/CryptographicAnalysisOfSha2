@@ -14,7 +14,8 @@ pub struct Sha<W: Word> {
 	rounds: u8,
 }
 
-#[derive(Eq, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "benchmarking", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum StartVector<W: Word> {
 	/// Initial Vector
 	IV,
