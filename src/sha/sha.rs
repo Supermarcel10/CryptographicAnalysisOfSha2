@@ -182,10 +182,10 @@ impl<W: Word> Sha<W> {
 			.or(Some(self.state.len()))
 			.unwrap();
 
-		let truncated_state = &self.state[..truncate_to_length];
+		let hash = Box::from(&self.state[..truncate_to_length]);
 
 		HashResult {
-			hash: Box::from(truncated_state),
+			hash,
 			states,
 		}
 	}
