@@ -6,10 +6,11 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+plotters = { version = "0.3.7", default-features = false, features = ["svg_backend", "line_series", "point_series"], optional = true }
 thiserror = "2.0.11"
 serde = { version = "1.0.218", features = ["derive"], optional = true }
 serde_json = { version = "1.0.139", optional = true }
 
 [features]
 default = ["benchmarking"]
-benchmarking = ["serde", "serde_json"]
+benchmarking = ["plotters", "serde", "serde_json"]
