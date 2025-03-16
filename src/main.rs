@@ -2,5 +2,7 @@
 mod heuristics;
 mod sha;
 mod verification;
+mod smt_lib;
+
 
 fn main() {}
