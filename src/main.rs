@@ -4,7 +4,6 @@ use crate::structs::hash_function::HashFunction::*;
 
 #[cfg(feature = "benchmarking")] mod benchmarking;
 #[cfg(feature = "graphing")] mod graphing;
-mod heuristics;
 mod sha;
 mod verification;
 mod smt_lib;
