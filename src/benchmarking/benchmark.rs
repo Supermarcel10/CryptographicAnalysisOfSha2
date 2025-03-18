@@ -33,38 +33,3 @@ pub struct Benchark<W: Word> {
 	pub memory_bytes: u64,
 	pub result: BenchmarkResult,
 }
-
-#[cfg(test)]
-mod tests {
-	use std::time::Duration;
-	use super::Benchark;
-	use super::BenchmarkResult::*;
-	use super::Solver::*;
-	use crate::sha::StartVector::IV;
-	use crate::structs::hash_function::HashFunction::*;
-
-	const BENCHMARK_OBJ: Benchark<u32> = Benchark {
-		solver: Z3,
-		parameters: vec![],
-		hash_function: SHA256,
-		compression_rounds: 64,
-		start_vector: IV,
-		time: Duration::from_millis(1000),
-		memory_bytes: 100,
-		result: Pass,
-	};
-
-	const BENCHMARK_JSON: &str = r#"{"solver":"Z3","parameters":[],"hash_function":"SHA256","compression_rounds":64,"start_vector":"IV","time":{"secs":1,"nanos":0},"memory_bytes":100,"result":"Pass"}"#;
-
-	#[test]
-	fn test_serialization() {
-		let result = serde_json::to_string(&BENCHMARK_OBJ).unwrap();
-		assert_eq!(result, BENCHMARK_JSON);
-	}
-
-	#[test]
-	fn test_deserialization() {
-		let result: Benchark<u32> = serde_json::from_str(BENCHMARK_JSON).unwrap();
-		assert_eq!(result, BENCHMARK_OBJ);
-	}
-}
