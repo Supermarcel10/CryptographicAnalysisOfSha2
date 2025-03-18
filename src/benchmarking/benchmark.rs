@@ -1,6 +1,7 @@
-use crate::sha::{HashFunction, StartVector, Word};
+use crate::sha::{StartVector, Word};
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
+use crate::structs::hash_function::HashFunction;
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Solver {
@@ -39,8 +40,8 @@ mod tests {
 	use super::Benchark;
 	use super::BenchmarkResult::*;
 	use super::Solver::*;
-	use crate::sha::HashFunction::*;
 	use crate::sha::StartVector::IV;
+	use crate::structs::hash_function::HashFunction::*;
 
 	const BENCHMARK_OBJ: Benchark<u32> = Benchark {
 		solver: Z3,

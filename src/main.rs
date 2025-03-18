@@ -1,6 +1,6 @@
-use crate::sha::HashFunction::*;
 use crate::structs::collision_type::CollisionType::*;
 use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::structs::hash_function::HashFunction::*;
 
 #[cfg(feature = "benchmarking")] mod benchmarking;
 #[cfg(feature = "graphing")] mod graphing;

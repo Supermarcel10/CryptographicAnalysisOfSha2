@@ -1,6 +1,8 @@
 use std::cmp::PartialEq;
-use crate::sha::HashError::ByteToBlockConversionFailed;
-use crate::sha::structs::{HashError, HashFunction, HashResult, State, Word};
+use crate::sha::structs::{HashError, Word};
+use crate::structs::hash_function::HashFunction;
+use crate::structs::hash_result::HashResult;
+use crate::structs::sha_state::ShaState;
 
 #[derive(Debug)]
 pub struct Sha<W: Word> {
@@ -152,7 +154,7 @@ impl<W: Word> Sha<W> {
 	pub fn execute(mut self) -> HashResult<W> {
 		let k = W::from_u64_vec(self.hash_function.get_constant());
 		let mut w = vec![W::default(); k.len()];
-		let mut states = Vec::<State<W>>::with_capacity(self.rounds as usize);
+		let mut states = Vec::<ShaState<W>>::with_capacity(self.rounds as usize);
 
 		// Initialization of first 16 words with current block
 		w[..16].copy_from_slice(&self.blocks);
@@ -184,7 +186,7 @@ impl<W: Word> Sha<W> {
 			working_vars[0] = t1.wrapping_add(t2);
 			working_vars[4] = working_vars[4].wrapping_add(t1);
 
-			states.push(State {
+			states.push(ShaState {
 				i: i as u8,
 				w: w[i].clone(),
 				a: working_vars[0],
@@ -268,7 +270,7 @@ impl<W: Word> Sha<W> {
 			.try_into();
 
 		if value.is_err() {
-			return Err(ByteToBlockConversionFailed)
+			return Err(HashError::ByteToBlockConversionFailed)
 		}
 
 		Ok(value.unwrap())

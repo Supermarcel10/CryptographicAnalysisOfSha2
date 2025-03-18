@@ -1,8 +1,9 @@
 use std::fs::File;
 use std::io::{Error, Write};
 use std::path::PathBuf;
-use crate::sha::{HashError, HashFunction, StartVector};
+use crate::sha::{HashError, StartVector};
 use crate::structs::collision_type::CollisionType;
+use crate::structs::hash_function::HashFunction;
 
 pub struct SmtBuilder {
 	/// Sha defined in SMTLIB2 format
