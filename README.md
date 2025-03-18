@@ -26,6 +26,7 @@
 ### Available Flags
 `benchmarking` to enable benchmark module.
 `graphing` to enable creating charts from benchmark data.
+`smt-gen` to enable generating SMT2 files.
 
 ### Default Flags
 - `benchmarking`

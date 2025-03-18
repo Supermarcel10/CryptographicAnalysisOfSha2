@@ -1,9 +1,12 @@
+use std::error::Error;
 use std::fs::File;
-use std::io::{Error, Write};
+use std::io::Write;
 use std::path::PathBuf;
 use crate::sha::{HashError, StartVector};
 use crate::structs::collision_type::CollisionType;
+use crate::structs::collision_type::CollisionType::*;
 use crate::structs::hash_function::HashFunction;
+use crate::structs::hash_function::HashFunction::*;
 
 pub struct SmtBuilder {
 	/// Sha defined in SMTLIB2 format
@@ -32,7 +35,7 @@ impl SmtBuilder {
 		})
 	}
 
-	pub fn to_file(self, file_path: PathBuf) -> Result<File, Error> {
+	pub fn to_file(self, file_path: PathBuf) -> Result<File, std::io::Error> {
 		let mut file = File::create(file_path)?;
 
 		file.write(self.smt.as_bytes())?;
@@ -337,4 +340,18 @@ fn msg_prefix(
 	} else {
 		format!("m{message}_")
 	}
+}
+
+fn generate_all_smt_files() -> Result<(), Box<dyn Error>> {
+	for sha_function in [SHA256, SHA512] {
+		for collision_type in [Standard, SemiFreeStart, FreeStart] {
+			for rounds in 0..sha_function.max_rounds() {
+				let mut builder = SmtBuilder::new(sha_function, rounds, collision_type)?;
+				builder.default();
+				builder.to_file(format!("data/{sha_function}_{collision_type}_{rounds}.smt2").into())?;
+			}
+		}
+	}
+
+	Ok(())
 }

@@ -15,3 +15,4 @@ serde_json = { version = "1.0.139", optional = true }
 default = ["benchmarking"]
 benchmarking = ["serde", "serde_json"]
 graphing = ["plotters"]
+smt-gen = []
