@@ -235,11 +235,6 @@ impl SmtBuilder {
 		self.smt += "(check-sat)\n";
 	}
 
-	fn get_model(&mut self) {
-		self.title("GET OUTPUT");
-		self.smt += "(get-model)\n";
-	}
-
 	fn get_full_model(&mut self) {
 		self.title("GET OUTPUT");
 
