@@ -24,12 +24,12 @@
 > To configure compilation flags refer to the [rustc book](https://doc.rust-lang.org/rustc/command-line-arguments.html#--cfg-configure-the-compilation-environment).
 
 ### Available Flags
-`benchmarking` to enable benchmark module.
+`benchmarking` to enable benchmarking smt2 files and tracking data.
 `graphing` to enable creating charts from benchmark data.
 `smt-gen` to enable generating SMT2 files.
 
 ### Default Flags
-- `benchmarking`
+None
 
 ## 🧪 Tested Architectures
 - `x86_64-unknown-linux-gnu`

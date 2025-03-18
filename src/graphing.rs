@@ -4,7 +4,8 @@ use std::path::PathBuf;
 use plotters::prelude::*;
 use crate::benchmarking::benchmark::Benchark;
 use crate::benchmarking::benchmark::BenchmarkResult::Pass;
-use crate::sha::{HashFunction, Word};
+use crate::sha::Word;
+use crate::structs::hash_function::HashFunction;
 
 type Data<W> = Vec<Benchark<W>>;
 
@@ -153,8 +154,8 @@ mod tests {
 	use crate::benchmarking::benchmark::Benchark;
 	use crate::benchmarking::benchmark::BenchmarkResult::{MemOut, Pass};
 	use crate::benchmarking::benchmark::Solver::Z3;
-	use crate::sha::HashFunction::{SHA224, SHA256};
 	use crate::sha::StartVector::IV;
+	use crate::structs::hash_function::HashFunction::*;
 	use super::{create_time_and_memory_chart, filter_data};
 
 	fn cleanup_test(chart_result: Result<PathBuf, Box<dyn Error>>) {

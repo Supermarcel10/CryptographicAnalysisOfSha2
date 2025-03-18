@@ -1,6 +1,6 @@
-use crate::sha::{StartVector, Word};
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
+use crate::sha::{StartVector, Word};
 use crate::structs::hash_function::HashFunction;
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
