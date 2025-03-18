@@ -1,5 +1,5 @@
 use crate::sha::HashFunction::*;
-use crate::smt_lib::smt_lib::CollisionType::*;
+use crate::structs::collision_type::CollisionType::*;
 use crate::smt_lib::smt_lib::SmtBuilder;
 
 #[cfg(feature = "benchmarking")] mod benchmarking;
@@ -8,7 +8,7 @@ mod heuristics;
 mod sha;
 mod verification;
 mod smt_lib;
-
+mod structs;
 
 fn main() {
 	for sha_function in [SHA256, SHA512] {

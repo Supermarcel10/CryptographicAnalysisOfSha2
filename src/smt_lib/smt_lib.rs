@@ -1,29 +1,8 @@
-use std::cmp::PartialEq;
-use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{Error, Write};
 use std::path::PathBuf;
 use crate::sha::{HashError, HashFunction, StartVector};
-
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub enum CollisionType {
-	/// Use the fixed iv for both m0 and m1, where m0 != m1
-	Standard,
-	/// Use a shared cv for both m0 and m1, where m0 != m1
-	SemiFreeStart,
-	/// Use cv0 for m0, cv1 for m1, where cv0 != cv1 and m0 ?= m1
-	FreeStart,
-}
-
-impl Display for CollisionType {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		match self {
-			CollisionType::Standard => f.write_str("STD"),
-			CollisionType::SemiFreeStart => f.write_str("SFS"),
-			CollisionType::FreeStart => f.write_str("FS"),
-		}
-	}
-}
+use crate::structs::collision_type::CollisionType;
 
 pub struct SmtBuilder {
 	/// Sha defined in SMTLIB2 format
