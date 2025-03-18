@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use crate::sha::HashError;
-use crate::structs::bits::Bits;
+use crate::structs::bits::Size;
 
 #[cfg_attr(feature = "benchmarking", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -29,27 +29,27 @@ impl HashFunction {
 		}
 	}
 
-	pub fn length_size(&self) -> Bits {
+	pub fn length_size(&self) -> Size {
 		use HashFunction::*;
 		match self {
-			SHA224 | SHA256 => Bits(64),
-			SHA512 => Bits(128),
+			SHA224 | SHA256 => Size::from_bits(64),
+			SHA512 => Size::from_bits(128),
 		}
 	}
 
-	pub fn block_size(&self) -> Bits {
+	pub fn block_size(&self) -> Size {
 		use HashFunction::*;
 		match self {
-			SHA224 | SHA256 => Bits(512),
-			SHA512 => Bits(1024),
+			SHA224 | SHA256 => Size::from_bits(512),
+			SHA512 => Size::from_bits(1024),
 		}
 	}
 
-	pub fn word_size(&self) -> Bits {
+	pub fn word_size(&self) -> Size {
 		use HashFunction::*;
 		match self {
-			SHA224 | SHA256 => Bits(32),
-			SHA512 => Bits(64),
+			SHA224 | SHA256 => Size::from_bits(32),
+			SHA512 => Size::from_bits(64),
 		}
 	}
 
