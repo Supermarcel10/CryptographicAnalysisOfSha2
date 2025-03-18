@@ -3,6 +3,7 @@ use crate::smt_lib::smt_lib::CollisionType::*;
 use crate::smt_lib::smt_lib::SmtBuilder;
 
 #[cfg(feature = "benchmarking")] mod benchmarking;
+#[cfg(feature = "graphing")] mod graphing;
 mod heuristics;
 mod sha;
 mod verification;

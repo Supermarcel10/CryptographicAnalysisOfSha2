@@ -24,7 +24,8 @@
 > To configure compilation flags refer to the [rustc book](https://doc.rust-lang.org/rustc/command-line-arguments.html#--cfg-configure-the-compilation-environment).
 
 ### Available Flags
-`benchmarking` to enable charting and benchmark module.
+`benchmarking` to enable benchmark module.
+`graphing` to enable creating charts from benchmark data.
 
 ### Default Flags
 - `benchmarking`

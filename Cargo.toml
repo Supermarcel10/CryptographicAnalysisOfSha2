@@ -13,4 +13,5 @@ serde_json = { version = "1.0.139", optional = true }
 
 [features]
 default = ["benchmarking"]
-benchmarking = ["plotters", "serde", "serde_json"]
+benchmarking = ["serde", "serde_json"]
+graphing = ["plotters"]
