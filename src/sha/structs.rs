@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display, LowerHex};
+use std::fmt::{Debug, LowerHex};
 use crate::verification::bit_differential::BitDifferential;
 
 // Math implemented as defined on Wikipedia https://en.wikipedia.org/wiki/SHA-2
