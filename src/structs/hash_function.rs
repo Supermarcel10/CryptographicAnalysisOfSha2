@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use crate::sha::HashError;
-use crate::structs::bits::Size;
+use crate::structs::size::Size;
 
 #[cfg_attr(feature = "benchmarking", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]

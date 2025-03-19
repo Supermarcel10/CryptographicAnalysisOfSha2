@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-	use crate::sha::HashFunction::{SHA224, SHA256, SHA512};
 	use crate::sha::Sha;
 	use crate::sha::StartVector::{CV, IV};
+	use crate::structs::hash_function::HashFunction::*;
 	use crate::verification::bit_differential::BitDifferential;
 
 	#[test]
