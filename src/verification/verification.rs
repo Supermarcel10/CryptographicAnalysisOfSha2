@@ -1,16 +1,16 @@
 #[cfg(test)]
 mod tests {
-	use crate::sha::Sha;
-	use crate::sha::StartVector::{CV, IV};
+	use crate::sha::{Sha, StartVector};
+	use crate::sha::StartVector::IV;
 	use crate::structs::hash_function::HashFunction::*;
 	use crate::verification::bit_differential::BitDifferential;
 
 	#[test]
 	/// Example in Li et al. (p.17, Table 4)
 	fn test_sha256_state_collision_table() {
-		let cv = CV([
-			0x02b19d5a, 0x88e1df04, 0x5ea3c7b7, 0xf2f7d1a4,
-			0x86cb1b1f, 0xc8ee51a5, 0x1b4d0541, 0x651b92e7,
+		let cv = StartVector::from([
+			0x02b19d5a_u32, 0x88e1df04, 0x5ea3c7b7, 0xf2f7d1a4,
+			0x86cb1b1f_u32, 0xc8ee51a5, 0x1b4d0541, 0x651b92e7,
 		]);
 
 		let m: [u32; 16] = [
@@ -32,13 +32,15 @@ mod tests {
 			0x3baae1ab, 0x038a195a, 0xccf54a19, 0x1c40606d,
 		];
 
-		let result_m = Sha::<u32>::from_message_block(m, SHA256, 39, cv)
+		let result_m = Sha::from_message_block(m.into(), SHA256, 39, cv)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
-		let result_m_prime = Sha::<u32>::from_message_block(m_prime, SHA256, 39, cv)
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA256, 39, cv)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
 		println!("{}", result_m.states.bit_diff(result_m_prime.states));
 		// TODO: Assertion vs paper!
@@ -66,13 +68,15 @@ mod tests {
 			0xf29a7517b216c09f, 0x46dbae73b1db8cce, 0x8ea44d45041010ea, 0x26a7a6b902f2632f,
 		];
 
-		let result_m = Sha::<u64>::from_message_block(m, SHA512, 28, IV)
+		let result_m = Sha::from_message_block(m.into(), SHA512, 28, IV)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
-		let result_m_prime = Sha::<u64>::from_message_block(m_prime, SHA512, 28, IV)
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA512, 28, IV)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
 		println!("{}", result_m.states.bit_diff(result_m_prime.states));
 		// TODO: Assertion vs paper!
@@ -81,24 +85,24 @@ mod tests {
 	#[test]
 	/// Example in Li et al. (p.27, Table 10)
 	fn test_sha224_state_collision_table() {
-		let cv = CV([
-			0x791c9c6b, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
-			0xc90690c5, 0x5591553c, 0x43a5d984, 0xaf92402d,
+		let cv = StartVector::from([
+			0x791c9c6b_u32, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
+			0xc90690c5_u32, 0x5591553c, 0x43a5d984, 0xaf92402d,
 		]);
 
-		let cv_prime = CV([
-			0x791c9c6b, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
-			0xc90690c5, 0x5591553c, 0x43a5d984, 0xbf92402d,
+		let cv_prime = StartVector::from([
+			0x791c9c6b_u32, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
+			0xc90690c5_u32, 0x5591553c, 0x43a5d984, 0xbf92402d,
 		]);
 
-		let m = [
+		let m: [u32; 16] = [
 			0xf41d61b4, 0xce033ba2, 0xdd1bc208, 0xa268189b,
 			0xee6bda2c, 0x5ddbe94d, 0x9675bbd3, 0x32c1ba8a,
 			0x7eba797d, 0x88b06a8f, 0x3bc3015c, 0xd36f38cc,
 			0xcfcb88e0, 0x3c70f7f3, 0xfaa0c1fe, 0x35c62535,
 		];
 
-		let m_prime = [
+		let m_prime: [u32; 16] = [
 			0xe41d61b4, 0xce033ba2, 0xdd1bc208, 0xa268189b,
 			0xee6bda2c, 0x5ddbe94d, 0x9675bbd3, 0x32c1ba8a,
 			0x7eba797d, 0x98b06a8f, 0x39e3055c, 0xc36f38cc,
@@ -110,13 +114,15 @@ mod tests {
 			0xaf0cfb1f, 0x57d357c9, 0xc6462616,
 		];
 
-		let result_m = Sha::<u32>::from_message_block(m, SHA224, 40, cv)
+		let result_m = Sha::from_message_block(m.into(), SHA224, 40, cv)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
-		let result_m_prime = Sha::<u32>::from_message_block(m_prime, SHA224, 40, cv_prime)
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA224, 40, cv_prime)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
 		println!("{}", result_m.states.bit_diff(result_m_prime.states));
 		// TODO: Assertion vs paper!

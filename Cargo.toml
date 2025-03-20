@@ -12,7 +12,7 @@ serde = { version = "1.0.218", features = ["derive"], optional = true }
 serde_json = { version = "1.0.139", optional = true }
 
 [features]
-default = []
+default = ["benchmarking", "graphing", "smt-gen"]
 benchmarking = ["serde", "serde_json"]
 graphing = ["serde", "serde_json", "plotters"]
 smt-gen = []

@@ -1,58 +1,83 @@
 use std::cmp::PartialEq;
+use std::fmt::{Debug};
 use crate::sha::structs::{HashError, Word};
 use crate::structs::hash_function::HashFunction;
 use crate::structs::hash_result::HashResult;
 use crate::structs::sha_state::ShaState;
 
+#[cfg_attr(feature = "benchmarking", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum StartVector {
+	/// Initial Vector
+	IV,
+	/// Chaining Vector
+	CV([Word; 8])
+}
+
+impl StartVector {
+	/// Retrieves initial vector (IV), often referred to as H variables
+	pub fn get_vector(self, hash_function: HashFunction) -> [Word; 8] {
+		let vec = match (self, hash_function) {
+			(StartVector::IV, HashFunction::SHA224) => Word::from_u32_vec(vec![
+				0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
+				0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4,
+			]),
+			(StartVector::IV, HashFunction::SHA256) => Word::from_u32_vec(vec![
+				0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+				0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+			]),
+			(StartVector::IV, HashFunction::SHA512) => Word::from_u64_vec(vec![
+				0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
+				0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179,
+			]),
+			(StartVector::CV(vec), _) => return vec,
+		};
+
+		vec.try_into().expect("Failed to convert initial vector; vector size mismatch!")
+	}
+}
+
 #[derive(Debug)]
-pub struct Sha<W: Word> {
+pub struct MessageBlock([Word; 16]);
+
+// TODO: Maybe use a macro here
+impl From<[u32; 8]> for StartVector {
+	fn from(arr: [u32; 8]) -> Self {
+		StartVector::CV(arr.map(Word::from))
+	}
+}
+
+impl From<[u32; 16]> for MessageBlock {
+	fn from(arr: [u32; 16]) -> Self {
+		MessageBlock(arr.map(Word::from))
+	}
+}
+
+impl From<[u64; 8]> for StartVector {
+	fn from(arr: [u64; 8]) -> Self {
+		StartVector::CV(arr.map(Word::from))
+	}
+}
+
+impl From<[u64; 16]> for MessageBlock {
+	fn from(arr: [u64; 16]) -> Self {
+		MessageBlock(arr.map(Word::from))
+	}
+}
+
+#[derive(Debug)]
+pub struct Sha {
 	/// Message blocks
-	blocks: [W; 16],
+	block: MessageBlock,
 	/// Current state of sha function
-	state: [W; 8],
+	state: [Word; 8],
 	/// Hash function to use
 	hash_function: HashFunction,
 	/// Number of compression rounds
 	rounds: u8,
 }
 
-#[cfg_attr(feature = "benchmarking", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub enum StartVector<W: Word> {
-	/// Initial Vector
-	IV,
-	/// Chaining Vector
-	CV([W; 8])
-}
-
-impl<W: Word> StartVector<W> {
-	/// Retrieves initial vector (IV), often referred to as H variables
-	pub fn get_vector(self, hash_function: HashFunction) -> [W; 8] {
-		match self {
-			StartVector::IV => {
-				let vec = match hash_function {
-					HashFunction::SHA224 => W::from_u64_vec(vec![
-						0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
-						0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4,
-					]),
-					HashFunction::SHA256 => W::from_u64_vec(vec![
-						0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-						0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
-					]),
-					HashFunction::SHA512 => W::from_u64_vec(vec![
-						0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
-						0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179,
-					]),
-				};
-
-				vec.try_into().expect("Failed to convert initial vector; vector size mismatch!")
-			},
-			StartVector::CV(vec) => vec,
-		}
-	}
-}
-
-impl<W: Word> Sha<W> {
+impl Sha {
 	/// Construct an SHA digest from a string message.
 	///
 	/// # Arguments
@@ -70,23 +95,23 @@ impl<W: Word> Sha<W> {
 	/// # Examples
 	///
 	/// ```
-	/// let sha_digest = Sha::<u32>::from_string("abc", SHA256, 64, IV);
+	/// let sha_digest = Sha::from_string("abc", SHA256, 64, IV);
 	/// ```
 	pub fn from_string(
 		message: &str,
 		hash_function: HashFunction,
 		rounds: u8,
-		start_vector: StartVector<W>
+		start_vector: StartVector
 	) -> Result<Self, HashError> {
 		hash_function.validate_rounds(rounds)?;
 
 		let bytes = Self::pad_message(message.as_bytes(), hash_function);
-		let blocks = Self::bytes_to_blocks(&bytes)?;
+		let block = Self::bytes_to_block(&bytes, hash_function)?;
 
 		let state = start_vector.get_vector(hash_function);
 
 		Ok(Sha {
-			blocks,
+			block,
 			state,
 			hash_function,
 			rounds,
@@ -117,20 +142,20 @@ impl<W: Word> Sha<W> {
 	/// 	0x4b0d8011, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
 	/// ];
 	///
-	/// let sha_digest = Sha::<u32>::from_hash(message, SHA256, 64, IV);
+	/// let sha_digest = Sha::from_hash(message, SHA256, 64, IV);
 	/// ```
 	pub fn from_message_block(
-		blocks: [W; 16],
+		block: MessageBlock,
 		hash_function: HashFunction,
 		rounds: u8,
-		start_vector: StartVector<W>,
+		start_vector: StartVector,
 	) -> Result<Self, HashError> {
 		hash_function.validate_rounds(rounds)?;
 
 		let state = start_vector.get_vector(hash_function);
 
 		Ok(Sha {
-			blocks,
+			block,
 			state,
 			hash_function,
 			rounds,
@@ -147,24 +172,24 @@ impl<W: Word> Sha<W> {
 	/// # Examples
 	///
 	/// ```
-	/// let sha_digest = Sha::<u32>::from_hash(message, SHA256, 64, IV)?;
+	/// let sha_digest = Sha::from_hash(message, SHA256, 64, IV)?;
 	///
 	/// let hash = sha_digest.execute();
 	/// ```
-	pub fn execute(mut self) -> HashResult<W> {
-		let k = W::from_u64_vec(self.hash_function.get_constant());
-		let mut w = vec![W::default(); k.len()];
-		let mut states = Vec::<ShaState<W>>::with_capacity(self.rounds as usize);
+	pub fn execute(mut self) -> Result<HashResult, HashError> {
+		let k = self.hash_function.get_constant();
+		let mut w = vec![self.hash_function.default_word(); k.len()];
+		let mut states = Vec::<ShaState>::with_capacity(self.rounds as usize);
 
 		// Initialization of first 16 words with current block
-		w[..16].copy_from_slice(&self.blocks);
+		w[..16].copy_from_slice(&self.block.0);
 
 		// Message schedule expansion
 		for i in 16..self.rounds as usize {
 			w[i] = w[i-16]
-				.wrapping_add(W::gamma0(w[i-15]))
-				.wrapping_add(w[i-7])
-				.wrapping_add(W::gamma1(w[i-2]));
+				.wrapping_add(Word::gamma0(w[i-15]))?
+				.wrapping_add(w[i-7])?
+				.wrapping_add(Word::gamma1(w[i-2]))?;
 		}
 
 		// Initialize working variables
@@ -173,18 +198,18 @@ impl<W: Word> Sha<W> {
 		// Compression loop
 		for i in 0..self.rounds as usize {
 			let t1 = working_vars[7]
-				.wrapping_add(W::sigma1(working_vars[4]))
-				.wrapping_add(W::ch(working_vars[4], working_vars[5], working_vars[6]))
-				.wrapping_add(k[i])
-				.wrapping_add(w[i]);
+				.wrapping_add(Word::sigma1(working_vars[4]))?
+				.wrapping_add(Word::ch(working_vars[4], working_vars[5], working_vars[6])?)?
+				.wrapping_add(k[i])?
+				.wrapping_add(w[i])?;
 
-			let t2 = W::sigma0(working_vars[0])
-				.wrapping_add(W::maj(working_vars[0], working_vars[1], working_vars[2]));
+			let t2 = Word::sigma0(working_vars[0])
+				.wrapping_add(Word::maj(working_vars[0], working_vars[1], working_vars[2])?)?;
 
 			// Rotate working variables
 			working_vars.rotate_right(1);
-			working_vars[0] = t1.wrapping_add(t2);
-			working_vars[4] = working_vars[4].wrapping_add(t1);
+			working_vars[0] = t1.wrapping_add(t2)?;
+			working_vars[4] = working_vars[4].wrapping_add(t1)?;
 
 			states.push(ShaState {
 				i: i as u8,
@@ -196,7 +221,7 @@ impl<W: Word> Sha<W> {
 
 		// Update state
 		for i in 0..8 {
-			self.state[i] = self.state[i].wrapping_add(working_vars[i]);
+			self.state[i] = self.state[i].wrapping_add(working_vars[i])?;
 		}
 
 		// Truncate
@@ -207,10 +232,10 @@ impl<W: Word> Sha<W> {
 
 		let hash = Box::from(&self.state[..truncate_to_length]);
 
-		HashResult {
+		Ok(HashResult {
 			hash,
 			states,
-		}
+		})
 	}
 
 	/// Pads the given message with SHA2 rules.
@@ -261,19 +286,15 @@ impl<W: Word> Sha<W> {
 	///
 	/// # Returns
 	/// `Result<[W; 16], HashError>` 16 blocks of words
-	fn bytes_to_blocks(bytes: &[u8]) -> Result<[W; 16], HashError> {
-		let word_size_bytes = size_of::<W>();
+	fn bytes_to_block(bytes: &[u8], hash_function: HashFunction) -> Result<MessageBlock, HashError> {
+		let mut words = [hash_function.default_word(); 16];
+		let size = hash_function.word_size().bytes();
 
-		let value: Result<[W; 16], _> = bytes.chunks_exact(word_size_bytes)
-			.map(|chunk| W::from_be_bytes(chunk))
-			.collect::<Vec<_>>()
-			.try_into();
-
-		if value.is_err() {
-			return Err(HashError::ByteToBlockConversionFailed)
+		for (i, chunk) in bytes.chunks_exact(size).enumerate() {
+			words[i] = Word::from_be_bytes(chunk)?;
 		}
 
-		Ok(value.unwrap())
+		Ok(MessageBlock(words))
 	}
 }
 
@@ -310,17 +331,18 @@ mod tests {
 			24
 		];
 
-		assert_eq!(Sha::<u32>::pad_message(MESSAGE.as_bytes(), SHA256), expected);
+		assert_eq!(Sha::pad_message(MESSAGE.as_bytes(), SHA256), expected);
 	}
 
 	#[test]
 	/// Using 64 rounds should match the standard SHA-224 for "abc".
 	fn test_sha224_correctness() {
-		let result = Sha::<u32>::from_string(MESSAGE, SHA224, 64, IV)
+		let result = Sha::from_string(MESSAGE, SHA224, 64, IV)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
-		let expected = [
+		let expected: [u32; 7] = [
 			0x23097d22, 0x3405d822, 0x8642a477, 0xbda255b3,
 			0x2aadbce4, 0xbda0b3f7, 0xe36c9da7,
 		];
@@ -331,11 +353,12 @@ mod tests {
 	#[test]
 	/// Using 64 rounds should match the standard SHA-256 for "abc".
 	fn test_sha256_correctness() {
-		let result = Sha::<u32>::from_string(MESSAGE, SHA256, 64, IV)
+		let result = Sha::from_string(MESSAGE, SHA256, 64, IV)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
-		let expected = [
+		let expected: [u32; 8] = [
 			0xba7816bf, 0x8f01cfea, 0x414140de, 0x5dae2223,
 			0xb00361a3, 0x96177a9c, 0xb410ff61, 0xf20015ad,
 		];
@@ -346,11 +369,12 @@ mod tests {
 	#[test]
 	/// Using 80 rounds should match the standard SHA-512 for "abc".
 	fn test_sha512_correctness() {
-		let result = Sha::<u64>::from_string(MESSAGE, SHA512, 80, IV)
+		let result = Sha::from_string(MESSAGE, SHA512, 80, IV)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
-		let expected = [
+		let expected: [u64; 8] = [
 			0xddaf35a193617aba, 0xcc417349ae204131, 0x12e6fa4e89a97ea2, 0x0a9eeee64b55d39a,
 			0x2192992a274fc1a8, 0x36ba3c23a3feebbd, 0x454d4423643ce80e, 0x2a9ac94fa54ca49f,
 		];
@@ -360,26 +384,30 @@ mod tests {
 
 	#[test]
 	fn test_sha256_round_difference() {
-		let result_32r = Sha::<u32>::from_string(MESSAGE, SHA256, 32, IV)
+		let result_32r = Sha::from_string(MESSAGE, SHA256, 32, IV)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
-		let result_64r = Sha::<u32>::from_string(MESSAGE, SHA256, 64, IV)
+		let result_64r = Sha::from_string(MESSAGE, SHA256, 64, IV)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
 		assert_ne!(result_32r, result_64r);
 	}
 
 	#[test]
 	fn test_sha512_round_difference() {
-		let result_40r = Sha::<u64>::from_string(MESSAGE, SHA512, 40, IV)
+		let result_40r = Sha::from_string(MESSAGE, SHA512, 40, IV)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
-		let result_80r = Sha::<u64>::from_string(MESSAGE, SHA512, 80, IV)
+		let result_80r = Sha::from_string(MESSAGE, SHA512, 80, IV)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
 		assert_ne!(result_40r, result_80r);
 	}
@@ -387,9 +415,9 @@ mod tests {
 	#[test]
 	/// Example in Li et al. (p.17, Table 5)
 	fn test_single_cv_collision_sha256() {
-		let cv = CV([
+		let cv = StartVector::from([
 			0x02b19d5a, 0x88e1df04, 0x5ea3c7b7, 0xf2f7d1a4,
-			0x86cb1b1f, 0xc8ee51a5, 0x1b4d0541, 0x651b92e7,
+			0x86cb1b1f, 0xc8ee51a5, 0x1b4d0541, 0x651b92e7_u32,
 		]);
 
 		let m: [u32; 16] = [
@@ -397,7 +425,7 @@ mod tests {
 			0xa79f2f1d, 0xf2b44c7b, 0x4c0ef36b, 0xa85d45cf,
 			0xf72b8c2f, 0x0def947c, 0xa0eab159, 0x8021370c,
 			0x4b0d8011, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
-		];
+		].into();
 
 		let m_prime: [u32; 16] = [
 			0xc61d6de7, 0x755336e8, 0x5e61d618, 0x18036de6,
@@ -411,13 +439,15 @@ mod tests {
 			0x3baae1ab, 0x038a195a, 0xccf54a19, 0x1c40606d,
 		];
 
-		let result_m = Sha::<u32>::from_message_block(m, SHA256, 39, cv)
+		let result_m = Sha::from_message_block(m.into(), SHA256, 39, cv)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
-		let result_m_prime = Sha::<u32>::from_message_block(m_prime, SHA256, 39, cv)
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA256, 39, cv)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
 		assert_eq!(*result_m.hash, expected);
 		assert_eq!(*result_m.hash, *result_m_prime.hash);
@@ -445,13 +475,15 @@ mod tests {
 			0xf29a7517b216c09f, 0x46dbae73b1db8cce, 0x8ea44d45041010ea, 0x26a7a6b902f2632f,
 		];
 
-		let result_m = Sha::<u64>::from_message_block(m, SHA512, 28, IV)
+		let result_m = Sha::from_message_block(m.into(), SHA512, 28, IV)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
-		let result_m_prime = Sha::<u64>::from_message_block(m_prime, SHA512, 28, IV)
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA512, 28, IV)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
 		assert_eq!(*result_m.hash, expected);
 		assert_eq!(*result_m.hash, *result_m_prime.hash);
@@ -460,42 +492,44 @@ mod tests {
 	#[test]
 	/// Example in Li et al. (p.27, Table 10)
 	fn test_dual_cv_collision_sha224() {
-		let cv = CV([
-			0x791c9c6b, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
-			0xc90690c5, 0x5591553c, 0x43a5d984, 0xaf92402d,
+		let cv = StartVector::from([
+			0x791c9c6b_u32, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
+			0xc90690c5_u32, 0x5591553c, 0x43a5d984, 0xaf92402d,
 		]);
 
-		let cv_prime = CV([
-			0x791c9c6b, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
-			0xc90690c5, 0x5591553c, 0x43a5d984, 0xbf92402d,
+		let cv_prime = StartVector::from([
+			0x791c9c6b_u32, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
+			0xc90690c5_u32, 0x5591553c, 0x43a5d984, 0xbf92402d,
 		]);
 
-		let m = [
+		let m: [u32; 16] = [
 			0xf41d61b4, 0xce033ba2, 0xdd1bc208, 0xa268189b,
 			0xee6bda2c, 0x5ddbe94d, 0x9675bbd3, 0x32c1ba8a,
 			0x7eba797d, 0x88b06a8f, 0x3bc3015c, 0xd36f38cc,
 			0xcfcb88e0, 0x3c70f7f3, 0xfaa0c1fe, 0x35c62535,
 		];
 
-		let m_prime = [
+		let m_prime: [u32; 16] = [
 			0xe41d61b4, 0xce033ba2, 0xdd1bc208, 0xa268189b,
 			0xee6bda2c, 0x5ddbe94d, 0x9675bbd3, 0x32c1ba8a,
 			0x7eba797d, 0x98b06a8f, 0x39e3055c, 0xc36f38cc,
 			0xce4b002d, 0x3c74f1f3, 0xfaa0c1fe, 0x35c62535,
 		];
 
-		let expected = [
+		let expected: [u32; 7] = [
 			0x9af50cac, 0xc165a72f, 0xb6f1c9f3, 0xef54bad9,
 			0xaf0cfb1f, 0x57d357c9, 0xc6462616,
 		];
 
-		let result_m = Sha::<u32>::from_message_block(m, SHA224, 40, cv)
+		let result_m = Sha::from_message_block(m.into(), SHA224, 40, cv)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
-		let result_m_prime = Sha::<u32>::from_message_block(m_prime, SHA224, 40, cv_prime)
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA224, 40, cv_prime)
 			.unwrap()
-			.execute();
+			.execute()
+			.unwrap();
 
 		assert_eq!(*result_m.hash, expected);
 		assert_eq!(*result_m.hash, *result_m_prime.hash);
@@ -503,13 +537,13 @@ mod tests {
 
 	#[test]
 	fn test_too_many_rounds() {
-		let result = Sha::<u32>::from_string(MESSAGE, SHA224, 65, IV);
+		let result = Sha::from_string(MESSAGE, SHA224, 65, IV);
 		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
 
-		let result = Sha::<u32>::from_string(MESSAGE, SHA256, 65, IV);
+		let result = Sha::from_string(MESSAGE, SHA256, 65, IV);
 		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
 
-		let result = Sha::<u32>::from_string(MESSAGE, SHA512, 81, IV);
+		let result = Sha::from_string(MESSAGE, SHA512, 81, IV);
 		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
 	}
 }

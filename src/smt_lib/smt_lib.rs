@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use crate::sha::{HashError, StartVector};
+use crate::sha::{HashError, StartVector, Word};
 use crate::structs::collision_type::CollisionType;
 use crate::structs::collision_type::CollisionType::*;
 use crate::structs::hash_function::HashFunction;
@@ -94,7 +94,7 @@ impl SmtBuilder {
 
 		let mut s = String::new();
 		for (i, val) in k.iter().take(self.rounds as usize).enumerate() {
-			s += &format!("(define-const k{i} Word {})\n", smt_hex(val, &self.hash_function))
+			s += &format!("(define-const k{i} Word {})\n", smt_hex(*val, &self.hash_function))
 		};
 
 		self.smt += &s;
@@ -115,7 +115,7 @@ impl SmtBuilder {
 			} else {
 				s += &format!(
 					"(define-const {msg}{i} Word {}) ; Irrelevant for {} rounds\n",
-					smt_hex(&0, &self.hash_function),
+					smt_hex(self.hash_function.default_word(), &self.hash_function),
 					self.rounds,
 				);
 			}
@@ -171,11 +171,11 @@ impl SmtBuilder {
 		self.comment("Define H constants (IV/CV)");
 		use CollisionType::*;
 
-		let iv_vec: [u64; 8] = StartVector::IV.get_vector(self.hash_function);
+		let iv_vec = StartVector::IV.get_vector(self.hash_function);
 		let mut s = String::new();
 		for (i, var) in ('a'..='h').enumerate() {
 			s += &match self.collision_type {
-				Standard => format!("(define-const {var}0 Word {})\n", smt_hex(&iv_vec[i], &self.hash_function)),
+				Standard => format!("(define-const {var}0 Word {})\n", smt_hex(iv_vec[i], &self.hash_function)),
 				SemiFreeStart => format!("(declare-const {var}0 Word)\n"),
 				FreeStart => format!("(declare-const m0_{var}0 Word)\n(declare-const m1_{var}0 Word)\n"),
 			}
@@ -316,7 +316,7 @@ impl SmtBuilder {
 	}
 }
 
-fn smt_hex(val: &u64, hash_function: &HashFunction) -> String {
+fn smt_hex(val: Word, hash_function: &HashFunction) -> String {
 	let size = hash_function.word_size().bytes() * 2;
 	format!("#x{:0size$x}", val)
 }
@@ -342,7 +342,7 @@ fn msg_prefix(
 	}
 }
 
-fn generate_all_smt_files() -> Result<(), Box<dyn Error>> {
+pub fn generate_all_smt_files() -> Result<(), Box<dyn Error>> {
 	for sha_function in [SHA256, SHA512] {
 		for collision_type in [Standard, SemiFreeStart, FreeStart] {
 			for rounds in 0..sha_function.max_rounds() {

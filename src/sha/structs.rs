@@ -1,94 +1,5 @@
-use std::fmt::{Debug, LowerHex};
+use std::fmt::{Formatter, LowerHex};
 use crate::verification::bit_differential::BitDifferential;
-
-// Math implemented as defined on Wikipedia https://en.wikipedia.org/wiki/SHA-2
-pub trait Word: Copy + PartialEq + Default + Debug + LowerHex + BitDifferential {
-	fn ch(e: Self, f: Self, g: Self) -> Self;
-	fn maj(a: Self, b: Self, c: Self) -> Self;
-	fn sigma0(a: Self) -> Self;
-	fn sigma1(e: Self) -> Self;
-	fn gamma0(x: Self) -> Self;
-	fn gamma1(x: Self) -> Self;
-	fn from_be_bytes(bytes: &[u8]) -> Self;
-	fn wrapping_add(self, rhs: Self) -> Self;
-	fn from_u64_vec(slice: Vec<u64>) -> Vec<Self>;
-}
-
-impl Word for u32 {
-	fn ch(e: Self, f: Self, g: Self) -> Self {
-		(e & f) ^ (!e & g)
-	}
-
-	fn maj(a: Self, b: Self, c: Self) -> Self {
-		(a & b) ^ (a & c) ^ (b & c)
-	}
-
-	fn sigma0(a: Self) -> Self {
-		a.rotate_right(2) ^ a.rotate_right(13) ^ a.rotate_right(22)
-	}
-
-	fn sigma1(e: Self) -> Self {
-		e.rotate_right(6) ^ e.rotate_right(11) ^ e.rotate_right(25)
-	}
-
-	fn gamma0(x: Self) -> Self {
-		x.rotate_right(7) ^ x.rotate_right(18) ^ (x >> 3)
-	}
-
-	fn gamma1(x: Self) -> Self {
-		x.rotate_right(17) ^ x.rotate_right(19) ^ (x >> 10)
-	}
-
-	fn from_be_bytes(bytes: &[u8]) -> Self {
-		u32::from_be_bytes(bytes.try_into().unwrap())
-	}
-
-	fn wrapping_add(self, rhs: Self) -> Self {
-		self.wrapping_add(rhs)
-	}
-
-	fn from_u64_vec(slice: Vec<u64>) -> Vec<Self> {
-		slice.into_iter().map(|x| x as u32).collect()
-	}
-}
-
-impl Word for u64 {
-	fn ch(e: Self, f: Self, g: Self) -> Self {
-		(e & f) ^ (!e & g)
-	}
-
-	fn maj(a: Self, b: Self, c: Self) -> Self {
-		(a & b) ^ (a & c) ^ (b & c)
-	}
-
-	fn sigma0(a: Self) -> Self {
-		a.rotate_right(28) ^ a.rotate_right(34) ^ a.rotate_right(39)
-	}
-
-	fn sigma1(e: Self) -> Self {
-		e.rotate_right(14) ^ e.rotate_right(18) ^ e.rotate_right(41)
-	}
-
-	fn gamma0(x: Self) -> Self {
-		x.rotate_right(1) ^ x.rotate_right(8) ^ (x >> 7)
-	}
-
-	fn gamma1(x: Self) -> Self {
-		x.rotate_right(19) ^ x.rotate_right(61) ^ (x >> 6)
-	}
-
-	fn from_be_bytes(bytes: &[u8]) -> Self {
-		u64::from_be_bytes(bytes.try_into().unwrap())
-	}
-
-	fn wrapping_add(self, rhs: Self) -> Self {
-		self.wrapping_add(rhs)
-	}
-
-	fn from_u64_vec(slice: Vec<u64>) -> Vec<Self> {
-		slice
-	}
-}
 
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
 pub enum HashError {
@@ -97,8 +8,155 @@ pub enum HashError {
 		requested: u8,
 		maximum: u8,
 	},
-	#[error("failed to convert message bytes to blocks")]
-	ByteToBlockConversionFailed
+	#[error("failed to convert bytes into valid word")]
+	FailedToConvertBytes,
+	#[error("attempted to {operation} on two different word sizes")]
+	WordMismatch {
+		operation: String,
+	}
+}
+
+#[cfg_attr(feature = "benchmarking", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum Word {
+	W32(u32),
+	W64(u64)
+}
+
+impl From<u32> for Word {
+	fn from(value: u32) -> Self {
+		Word::W32(value)
+	}
+}
+
+impl From<u64> for Word {
+	fn from(value: u64) -> Self {
+		Word::W64(value)
+	}
+}
+
+impl PartialEq<u32> for Word {
+	fn eq(&self, other: &u32) -> bool {
+		match self {
+			Word::W32(s) => s == other,
+			Word::W64(_) => false,
+		}
+	}
+
+	fn ne(&self, other: &u32) -> bool {
+		!self.eq(other)
+	}
+}
+
+impl PartialEq<u64> for Word {
+	fn eq(&self, other: &u64) -> bool {
+		match self {
+			Word::W32(_) => false,
+			Word::W64(s) => s == other,
+		}
+	}
+
+	fn ne(&self, other: &u64) -> bool {
+		!self.eq(other)
+	}
+}
+
+impl LowerHex for Word {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Word::W32(w) => f.write_str(&format!("{w:08x}")),
+			Word::W64(w) => f.write_str(&format!("{w:016x}")),
+		}?;
+
+		Ok(())
+	}
+}
+
+impl BitDifferential for Word {
+	fn bit_diff(self, rhs: Self) -> String {
+		use Word::*;
+		match (self, rhs) {
+			(W32(l), W32(r)) => l.bit_diff(r),
+			(W64(l), W64(r)) => l.bit_diff(r),
+			(_, _) => HashError::WordMismatch { operation: String::from("bit diff") }.to_string(),
+		}
+	}
+}
+
+impl Word {
+	pub(super) fn ch(e: Self, f: Self, g: Self) -> Result<Self, HashError> {
+		use Word::*;
+		match (e, f, g) {
+			(W32(e), W32(f), W32(g)) => Ok(W32((e & f) ^ (!e & g))),
+			(W64(e), W64(f), W64(g)) => Ok(W64((e & f) ^ (!e & g))),
+			(_, _, _) => Err(HashError::WordMismatch { operation: String::from("ch")}),
+		}
+	}
+
+	pub(super) fn maj(a: Self, b: Self, c: Self) -> Result<Self, HashError> {
+		use Word::*;
+		match (a, b, c) {
+			(W32(a), W32(b), W32(c)) => Ok(W32((a & b) ^ (a & c) ^ (b & c))),
+			(W64(a), W64(b), W64(c)) => Ok(W64((a & b) ^ (a & c) ^ (b & c))),
+			(_, _, _) => Err(HashError::WordMismatch { operation: String::from("maj")}),
+		}
+	}
+
+	pub(super) fn sigma0(a: Self) -> Self {
+		use Word::*;
+		match a {
+			W32(a) => W32(a.rotate_right(2) ^ a.rotate_right(13) ^ a.rotate_right(22)),
+			W64(a) => W64(a.rotate_right(28) ^ a.rotate_right(34) ^ a.rotate_right(39)),
+		}
+	}
+
+	pub(super) fn sigma1(e: Self) -> Self {
+		use Word::*;
+		match e {
+			W32(e) => W32(e.rotate_right(6) ^ e.rotate_right(11) ^ e.rotate_right(25)),
+			W64(e) => W64(e.rotate_right(14) ^ e.rotate_right(18) ^ e.rotate_right(41)),
+		}
+	}
+
+	pub(super) fn gamma0(x: Self) -> Self {
+		use Word::*;
+		match x {
+			W32(x) => W32(x.rotate_right(7) ^ x.rotate_right(18) ^ (x >> 3)),
+			W64(x) => W64(x.rotate_right(1) ^ x.rotate_right(8) ^ (x >> 7)),
+		}
+	}
+
+	pub(super) fn gamma1(x: Self) -> Self {
+		use Word::*;
+		match x {
+			W32(x) => W32(x.rotate_right(17) ^ x.rotate_right(19) ^ (x >> 10)),
+			W64(x) => W64(x.rotate_right(19) ^ x.rotate_right(61) ^ (x >> 6)),
+		}
+	}
+
+	pub fn from_u32_vec(slice: Vec<u32>) -> Vec<Self> {
+		slice.into_iter().map(|x| Word::W32(x)).collect()
+	}
+
+	pub fn from_u64_vec(slice: Vec<u64>) -> Vec<Self> {
+		slice.into_iter().map(|x| Word::W64(x)).collect()
+	}
+
+	pub(super) fn wrapping_add(self, rhs: Word) -> Result<Self, HashError> {
+		match (self, rhs) {
+			(Word::W32(l), Word::W32(r)) => Ok(Word::W32(l.wrapping_add(r))),
+			(Word::W64(l), Word::W64(r)) => Ok(Word::W64(l.wrapping_add(r))),
+			(_, _) => Err(HashError::WordMismatch { operation: String::from("wrapping add")})
+		}
+	}
+
+	pub(super) fn from_be_bytes(bytes: &[u8]) -> Result<Self, HashError> {
+		match bytes.len() {
+			4 => Ok(Word::W32(u32::from_be_bytes(bytes.try_into().unwrap()))),
+			8 => Ok(Word::W64(u64::from_be_bytes(bytes.try_into().unwrap()))),
+			_ => Err(HashError::FailedToConvertBytes),
+		}
+	}
 }
 
 #[cfg(test)]
@@ -107,70 +165,81 @@ mod tests {
 
 	#[test]
 	fn test_word_ch() {
-		let e = 20u32;
-		let f = 40u32;
-		let g = 60u32;
+		use Word::*;
 
-		assert_eq!(Word::ch(e, f, g), 40);
+		let e = W32(20);
+		let f = W32(40);
+		let g = W32(60);
 
-		let e = 20u64;
-		let f = 40u64;
-		let g = 60u64;
+		assert_eq!(Word::ch(e, f, g), Ok(W32(40)));
 
-		assert_eq!(Word::ch(e, f, g), 40);
+		let e = W64(20);
+		let f = W64(40);
+		let g = W64(60);
+
+		assert_eq!(Word::ch(e, f, g), Ok(W64(40)));
 	}
 
 	#[test]
 	fn test_word_maj() {
-		let a = 20u32;
-		let b = 40u32;
-		let c = 60u32;
+		use Word::*;
 
-		assert_eq!(Word::maj(a, b, c), 60);
+		let a = W32(20);
+		let b = W32(40);
+		let c = W32(60);
 
-		let a = 20u64;
-		let b = 40u64;
-		let c = 60u64;
+		assert_eq!(Word::maj(a, b, c).unwrap(), W32(60));
 
-		assert_eq!(Word::maj(a, b, c), 60);
+		let a = W64(20);
+		let b = W64(40);
+		let c = W64(60);
+
+		assert_eq!(Word::maj(a, b, c).unwrap(), W64(60));
 	}
 
 	#[test]
 	fn test_word_sigma0() {
-		assert_eq!(Word::sigma0(1u32), 1074267136);
-		assert_eq!(Word::sigma0(1u64), 69826772992);
+		use Word::*;
+		assert_eq!(Word::sigma0(W32(1)), W32(1074267136));
+		assert_eq!(Word::sigma0(W64(1)), W64(69826772992));
 	}
 
 	#[test]
 	fn test_word_sigma1() {
-		assert_eq!(Word::sigma1(1u32), 69206144);
-		assert_eq!(Word::sigma1(1u64), 1196268659408896);
+		use Word::*;
+		assert_eq!(Word::sigma1(W32(1)), W32(69206144));
+		assert_eq!(Word::sigma1(W64(1)), W64(1196268659408896));
 	}
 
 	#[test]
 	fn test_word_gamma0() {
-		assert_eq!(Word::gamma0(1u32), 33570816);
-		assert_eq!(Word::gamma0(1u64), 9295429630892703744);
+		use Word::*;
+		assert_eq!(Word::gamma0(W32(1)), W32(33570816));
+		assert_eq!(Word::gamma0(W64(1)), W64(9295429630892703744));
 	}
 
 	#[test]
 	fn test_word_gamma1() {
-		assert_eq!(Word::gamma1(1u32), 40960);
-		assert_eq!(Word::gamma1(1u64), 35184372088840);
+		use Word::*;
+		assert_eq!(Word::gamma1(W32(1)), W32(40960));
+		assert_eq!(Word::gamma1(W64(1)), W64(35184372088840));
 	}
 
 	#[test]
 	fn test_word_from_be_bytes() {
-		assert_eq!(<u32 as Word>::from_be_bytes(&8u32.to_be_bytes()), 8);
-		assert_eq!(<u64 as Word>::from_be_bytes(&8u64.to_be_bytes()), 8);
+		use Word::*;
+
+		assert_eq!(Word::from_be_bytes(&8u32.to_be_bytes()).unwrap(), W32(8));
+		assert_eq!(Word::from_be_bytes(&8u64.to_be_bytes()).unwrap(), W64(8));
 	}
 
 	#[test]
 	fn test_word_wrapping_add() {
-		assert_eq!(Word::wrapping_add(1u32, 2u32), 3);
-		assert_eq!(Word::wrapping_add(1u64, 2u64), 3);
+		use Word::*;
+		assert_eq!(Word::wrapping_add(W32(1), W32(2)).unwrap(), W32(3));
+		assert_eq!(Word::wrapping_add(W64(1), W64(2)).unwrap(), W64(3));
 
-		assert_eq!(Word::wrapping_add(u32::MAX,2), 1);
-		assert_eq!(Word::wrapping_add(u64::MAX, 2), 1);
+		assert_eq!(Word::wrapping_add(W32(u32::MAX), W32(2)).unwrap(), W32(1));
+		assert_eq!(Word::wrapping_add(W64(u64::MAX), W64(2)).unwrap(), W64(1));
 	}
 }

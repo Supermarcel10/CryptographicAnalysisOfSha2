@@ -2,12 +2,10 @@ use std::error::Error;
 use std::ops::Range;
 use std::path::PathBuf;
 use plotters::prelude::*;
-use crate::benchmarking::benchmark::Benchark;
-use crate::benchmarking::benchmark::BenchmarkResult::Pass;
-use crate::sha::Word;
+use crate::structs::benchmark::{Benchark, BenchmarkResult};
 use crate::structs::hash_function::HashFunction;
 
-type Data<W> = Vec<Benchark<W>>;
+type Data = Vec<Benchark>;
 
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
 pub enum ChartingError<'a> {
@@ -17,15 +15,15 @@ pub enum ChartingError<'a> {
 	},
 }
 
-fn filter_data<W: Word>(data: Data<W>, hash_function: HashFunction) -> Data<W> {
+fn filter_data(data: Data, hash_function: HashFunction) -> Data {
 	data.into_iter()
-		.filter(|b| b.hash_function == hash_function && b.result == Pass)
+		.filter(|b| b.hash_function == hash_function && b.result == BenchmarkResult::Pass)
 		.collect()
 }
 
-fn get_range<T: Copy + Ord, W: Word>(
-	data: &Data<W>,
-	retr: fn(&Benchark<W>) -> T,
+fn get_range<T: Copy + Ord>(
+	data: &Data,
+	retr: fn(&Benchark) -> T,
 ) -> Option<Range<T>> {
 	let mut it = data.into_iter();
 	let first = retr(it.next()?);
@@ -37,8 +35,8 @@ fn get_range<T: Copy + Ord, W: Word>(
 	Some(min..max)
 }
 
-fn create_time_and_memory_chart<W: Word>(
-	data: Data<W>,
+fn create_time_and_memory_chart(
+	data: Data,
 	color_palette: Vec<RGBColor>,
 	file_name: &str,
 ) -> Result<PathBuf, Box<dyn Error>> {
@@ -151,10 +149,8 @@ mod tests {
 	use std::path::PathBuf;
 	use std::time::Duration;
 	use plotters::style::RGBColor;
-	use crate::benchmarking::benchmark::Benchark;
-	use crate::benchmarking::benchmark::BenchmarkResult::{MemOut, Pass};
-	use crate::benchmarking::benchmark::Solver::Z3;
 	use crate::sha::StartVector::IV;
+	use crate::structs::benchmark::{Benchark, BenchmarkResult, Solver};
 	use crate::structs::hash_function::HashFunction::*;
 	use super::{create_time_and_memory_chart, filter_data};
 
@@ -168,65 +164,65 @@ mod tests {
 	fn test_filter_data() {
 		// Mock Data
 		let benchmarks = vec![
-			Benchark::<u32> {
-				solver: Z3,
+			Benchark {
+				solver: Solver::Z3,
 				parameters: vec![],
 				hash_function: SHA256,
 				compression_rounds: 16,
 				start_vector: IV,
 				time: Duration::from_millis(1000),
 				memory_bytes: 1000,
-				result: Pass,
+				result: BenchmarkResult::Pass,
 			},
 			Benchark {
-				solver: Z3,
+				solver: Solver::Z3,
 				parameters: vec![],
 				hash_function: SHA256,
 				compression_rounds: 17,
 				start_vector: IV,
 				time: Duration::from_millis(1400),
 				memory_bytes: 12503,
-				result: Pass,
+				result: BenchmarkResult::Pass,
 			},
 			Benchark {
-				solver: Z3,
+				solver: Solver::Z3,
 				parameters: vec![],
 				hash_function: SHA256,
 				compression_rounds: 18,
 				start_vector: IV,
 				time: Duration::from_millis(5000),
 				memory_bytes: 525503,
-				result: Pass,
+				result: BenchmarkResult::Pass,
 			},
 			Benchark {
-				solver: Z3,
+				solver: Solver::Z3,
 				parameters: vec![],
 				hash_function: SHA256,
 				compression_rounds: 19,
 				start_vector: IV,
 				time: Duration::from_millis(50000),
 				memory_bytes: 825503,
-				result: Pass,
+				result: BenchmarkResult::Pass,
 			},
 			Benchark {
-				solver: Z3,
+				solver: Solver::Z3,
 				parameters: vec![],
 				hash_function: SHA224,
 				compression_rounds: 19,
 				start_vector: IV,
 				time: Duration::from_millis(50000),
 				memory_bytes: 825503,
-				result: Pass,
+				result: BenchmarkResult::Pass,
 			},
 			Benchark {
-				solver: Z3,
+				solver: Solver::Z3,
 				parameters: vec![],
 				hash_function: SHA224,
 				compression_rounds: 20,
 				start_vector: IV,
 				time: Duration::from_millis(800000),
 				memory_bytes: 82550300,
-				result: MemOut,
+				result: BenchmarkResult::MemOut,
 			},
 		];
 
@@ -238,45 +234,45 @@ mod tests {
 	fn test_create_time_and_memory_chart() {
 		// Mock Data
 		let benchmarks = vec![
-			Benchark::<u32> {
-				solver: Z3,
+			Benchark {
+				solver: Solver::Z3,
 				parameters: vec![],
 				hash_function: SHA256,
 				compression_rounds: 16,
 				start_vector: IV,
 				time: Duration::from_millis(1000),
 				memory_bytes: 1000,
-				result: Pass,
+				result: BenchmarkResult::Pass,
 			},
 			Benchark {
-				solver: Z3,
+				solver: Solver::Z3,
 				parameters: vec![],
 				hash_function: SHA256,
 				compression_rounds: 17,
 				start_vector: IV,
 				time: Duration::from_millis(1400),
 				memory_bytes: 12503,
-				result: Pass,
+				result: BenchmarkResult::Pass,
 			},
 			Benchark {
-				solver: Z3,
+				solver: Solver::Z3,
 				parameters: vec![],
 				hash_function: SHA256,
 				compression_rounds: 18,
 				start_vector: IV,
 				time: Duration::from_millis(5000),
 				memory_bytes: 525503,
-				result: Pass,
+				result: BenchmarkResult::Pass,
 			},
 			Benchark {
-				solver: Z3,
+				solver: Solver::Z3,
 				parameters: vec![],
 				hash_function: SHA256,
 				compression_rounds: 19,
 				start_vector: IV,
 				time: Duration::from_millis(50000),
 				memory_bytes: 825503,
-				result: Pass,
+				result: BenchmarkResult::Pass,
 			},
 		];
 
