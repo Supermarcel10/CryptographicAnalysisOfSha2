@@ -9,6 +9,9 @@
     * [Available Flags](#available-flags)
     * [Default Flags](#default-flags)
   * [🧪 Tested Architectures](#-tested-architectures)
+  * [Runners](#runners)
+    * [Runner Specifications](#runner-specifications)
+    * [Solver Versions](#solver-versions)
 <!-- TOC -->
 
 ## 🔨 Building
@@ -33,3 +36,22 @@ None
 
 ## 🧪 Tested Architectures
 - `x86_64-unknown-linux-gnu`
+
+## Runners
+### Runner Specifications
+|            |                    **R1**                    |            **R2**            |
+|-----------:|:--------------------------------------------:|:----------------------------:|
+|    **CPU** |              AMD Ryzen 5 5600X               |      AMD Ryzen 9 5900X       |
+|    **MEM** |         4 x 8GiB DDR4 3600MHz CL 36          | 4 x 32GiB DDR4 3600MHz CL 36 |
+|     **OS** | NixOS 24.11.20250103.d29ab98 (Vicuna) x86_64 |             TBD              |
+| **KERNEL** |                 Linux 6.12.8                 |             TBD              |
+
+### Solver Versions
+
+| **Solver** | **R1** | **R2** |
+|-----------:|:------:|:------:|
+|         Z3 | 4.8.17 |  None  |
+|       CVC5 | 1.2.0  |  None  |
+|      Yices | 2.6.5  |  None  |
+|   Bitwuzla | 0.6.0  |  None  |
+|  Boolector | 3.2.3  |  None  |
