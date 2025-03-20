@@ -17,7 +17,7 @@ pub enum ChartingError<'a> {
 
 fn filter_data(data: Data, hash_function: HashFunction) -> Data {
 	data.into_iter()
-		.filter(|b| b.hash_function == hash_function && b.result == BenchmarkResult::Pass)
+		.filter(|b| b.hash_function == hash_function && b.result == BenchmarkResult::Sat)
 		.collect()
 }
 
@@ -50,21 +50,21 @@ fn create_time_and_memory_chart(
 	//? Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
 
 	// Define ranges
-	let x_range: Range<u32> = get_range(&data, |b| b.compression_rounds as u32)
+	let x_range: Range<u32> = get_range(&data, |b| b.rounds as u32)
 		.ok_or(ChartingError::GetRangeFailed { variable: "x_range"})?;
 	let y_range_mem = get_range(&data, |b| b.memory_bytes / 1024^2)
 		.ok_or(ChartingError::GetRangeFailed { variable: "y_range_mem"})?;
-	let y_range_time = get_range(&data, |b| b.time.as_secs())
+	let y_range_time = get_range(&data, |b| b.execution_time.as_secs())
 		.ok_or(ChartingError::GetRangeFailed { variable: "y_range_time"})?;
 
 	// Define Cartesian mapped data
 	let memory_data = data
 		.iter()
-		.map(|b| (b.compression_rounds as u32, b.memory_bytes / 1024^2));
+		.map(|b| (b.rounds as u32, b.memory_bytes / 1024^2));
 
 	let time_data = data
 		.iter()
-		.map(|b| (b.compression_rounds as u32, b.time.as_secs()));
+		.map(|b| (b.rounds as u32, b.execution_time.as_secs()));
 
 	let path_clone_bind = path.clone();
 	let root = SVGBackend::new(&path_clone_bind, output_size)
@@ -149,8 +149,8 @@ mod tests {
 	use std::path::PathBuf;
 	use std::time::Duration;
 	use plotters::style::RGBColor;
-	use crate::sha::StartVector::IV;
 	use crate::structs::benchmark::{Benchark, BenchmarkResult, Solver};
+	use crate::structs::collision_type::CollisionType;
 	use crate::structs::hash_function::HashFunction::*;
 	use super::{create_time_and_memory_chart, filter_data};
 
@@ -166,63 +166,69 @@ mod tests {
 		let benchmarks = vec![
 			Benchark {
 				solver: Solver::Z3,
-				parameters: vec![],
+				arguments: vec![],
 				hash_function: SHA256,
-				compression_rounds: 16,
-				start_vector: IV,
-				time: Duration::from_millis(1000),
+				rounds: 16,
+				collision_type: CollisionType::Standard,
+				execution_time: Duration::from_millis(1000),
 				memory_bytes: 1000,
-				result: BenchmarkResult::Pass,
+				result: BenchmarkResult::Sat,
+				console_output: String::new(),
 			},
 			Benchark {
 				solver: Solver::Z3,
-				parameters: vec![],
+				arguments: vec![],
 				hash_function: SHA256,
-				compression_rounds: 17,
-				start_vector: IV,
-				time: Duration::from_millis(1400),
+				rounds: 17,
+				collision_type: CollisionType::Standard,
+				execution_time: Duration::from_millis(1400),
 				memory_bytes: 12503,
-				result: BenchmarkResult::Pass,
+				result: BenchmarkResult::Sat,
+				console_output: String::new(),
 			},
 			Benchark {
 				solver: Solver::Z3,
-				parameters: vec![],
+				arguments: vec![],
 				hash_function: SHA256,
-				compression_rounds: 18,
-				start_vector: IV,
-				time: Duration::from_millis(5000),
+				rounds: 18,
+				collision_type: CollisionType::Standard,
+				execution_time: Duration::from_millis(5000),
 				memory_bytes: 525503,
-				result: BenchmarkResult::Pass,
+				result: BenchmarkResult::Sat,
+				console_output: String::new(),
 			},
 			Benchark {
 				solver: Solver::Z3,
-				parameters: vec![],
+				arguments: vec![],
 				hash_function: SHA256,
-				compression_rounds: 19,
-				start_vector: IV,
-				time: Duration::from_millis(50000),
+				rounds: 19,
+				collision_type: CollisionType::Standard,
+				execution_time: Duration::from_millis(50000),
 				memory_bytes: 825503,
-				result: BenchmarkResult::Pass,
+				result: BenchmarkResult::Sat,
+				console_output: String::new(),
 			},
 			Benchark {
 				solver: Solver::Z3,
-				parameters: vec![],
+				arguments: vec![],
 				hash_function: SHA224,
-				compression_rounds: 19,
-				start_vector: IV,
-				time: Duration::from_millis(50000),
+				rounds: 19,
+				collision_type: CollisionType::Standard,
+				execution_time: Duration::from_millis(50000),
 				memory_bytes: 825503,
-				result: BenchmarkResult::Pass,
+				result: BenchmarkResult::Sat,
+				console_output: String::new(),
 			},
 			Benchark {
 				solver: Solver::Z3,
-				parameters: vec![],
+				arguments: vec![],
 				hash_function: SHA224,
-				compression_rounds: 20,
-				start_vector: IV,
-				time: Duration::from_millis(800000),
+				rounds: 20,
+				collision_type: CollisionType::Standard,
+				execution_time: Duration::from_millis(800000),
 				memory_bytes: 82550300,
 				result: BenchmarkResult::MemOut,
+				console_output: String::new(),
 			},
 		];
 
@@ -236,43 +242,47 @@ mod tests {
 		let benchmarks = vec![
 			Benchark {
 				solver: Solver::Z3,
-				parameters: vec![],
+				arguments: vec![],
 				hash_function: SHA256,
-				compression_rounds: 16,
-				start_vector: IV,
-				time: Duration::from_millis(1000),
+				rounds: 16,
+				collision_type: CollisionType::Standard,
+				execution_time: Duration::from_millis(1000),
 				memory_bytes: 1000,
-				result: BenchmarkResult::Pass,
+				result: BenchmarkResult::Sat,
+				console_output: String::new(),
 			},
 			Benchark {
 				solver: Solver::Z3,
-				parameters: vec![],
+				arguments: vec![],
 				hash_function: SHA256,
-				compression_rounds: 17,
-				start_vector: IV,
-				time: Duration::from_millis(1400),
+				rounds: 17,
+				collision_type: CollisionType::Standard,
+				execution_time: Duration::from_millis(1400),
 				memory_bytes: 12503,
-				result: BenchmarkResult::Pass,
+				result: BenchmarkResult::Sat,
+				console_output: String::new(),
 			},
 			Benchark {
 				solver: Solver::Z3,
-				parameters: vec![],
+				arguments: vec![],
 				hash_function: SHA256,
-				compression_rounds: 18,
-				start_vector: IV,
-				time: Duration::from_millis(5000),
+				rounds: 18,
+				collision_type: CollisionType::Standard,
+				execution_time: Duration::from_millis(5000),
 				memory_bytes: 525503,
-				result: BenchmarkResult::Pass,
+				result: BenchmarkResult::Sat,
+				console_output: String::new(),
 			},
 			Benchark {
 				solver: Solver::Z3,
-				parameters: vec![],
+				arguments: vec![],
 				hash_function: SHA256,
-				compression_rounds: 19,
-				start_vector: IV,
-				time: Duration::from_millis(50000),
+				rounds: 19,
+				collision_type: CollisionType::Standard,
+				execution_time: Duration::from_millis(50000),
 				memory_bytes: 825503,
-				result: BenchmarkResult::Pass,
+				result: BenchmarkResult::Sat,
+				console_output: String::new(),
 			},
 		];
 

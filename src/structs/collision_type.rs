@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "benchmarking", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum CollisionType {
 	/// Use the fixed iv for both m0 and m1, where m0 != m1
 	Standard,

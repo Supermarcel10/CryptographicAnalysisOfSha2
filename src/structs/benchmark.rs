@@ -1,6 +1,7 @@
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use crate::sha::StartVector;
+use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -29,20 +30,24 @@ pub type SolverArg = String;
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum BenchmarkResult {
-	Pass,
-	Fail,
+	Sat,
+	Unsat,
 	MemOut,
 	CPUOut,
+	Aborted,
+	SMTError,
+	Unknown,
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Benchark {
 	pub solver: Solver,
-	pub parameters: Vec<SolverArg>,
+	pub arguments: Vec<SolverArg>,
 	pub hash_function: HashFunction,
-	pub compression_rounds: u8,
-	pub start_vector: StartVector,
-	pub time: Duration,
+	pub rounds: u8,
+	pub collision_type: CollisionType,
+	pub execution_time: Duration,
 	pub memory_bytes: u64,
 	pub result: BenchmarkResult,
+	pub console_output: String,
 }
