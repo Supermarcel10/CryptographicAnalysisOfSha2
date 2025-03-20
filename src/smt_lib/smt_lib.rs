@@ -1,12 +1,9 @@
-use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use crate::sha::{HashError, StartVector, Word};
 use crate::structs::collision_type::CollisionType;
-use crate::structs::collision_type::CollisionType::*;
 use crate::structs::hash_function::HashFunction;
-use crate::structs::hash_function::HashFunction::*;
 
 pub struct SmtBuilder {
 	/// Sha defined in SMTLIB2 format
@@ -342,7 +339,10 @@ fn msg_prefix(
 	}
 }
 
-pub fn generate_all_smt_files() -> Result<(), Box<dyn Error>> {
+pub fn generate_smtlib_files() -> Result<(), Box<dyn std::error::Error>> {
+	use HashFunction::*;
+	use CollisionType::*;
+
 	for sha_function in [SHA256, SHA512] {
 		for collision_type in [Standard, SemiFreeStart, FreeStart] {
 			for rounds in 0..sha_function.max_rounds() {
