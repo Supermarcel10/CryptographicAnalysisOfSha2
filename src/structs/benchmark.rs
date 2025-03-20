@@ -12,6 +12,19 @@ pub enum Solver {
 	Boolector,
 }
 
+impl Solver {
+	pub fn command(&self) -> String {
+		// TODO: Figure out how to make this reproducible on all systems.
+		match self {
+			Solver::Z3 => "z3",
+			Solver::CVC5 => "cvc5",
+			Solver::Yices2 => "yices",
+			Solver::Bitwuzla => "bitwuzla",
+			Solver::Boolector => "boolector",
+		}.into()
+	}
+}
+
 pub type SolverArg = String;
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
