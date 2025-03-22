@@ -74,12 +74,6 @@ impl<T: BitDifferential + Copy> BitDifferential for &[T] {
 	}
 }
 
-impl<T: BitDifferential + Copy> BitDifferential for Vec<T> {
-	fn bit_diff(self, other: Self) -> String {
-		(&self[..]).bit_diff(&other[..])
-	}
-}
-
 #[cfg(test)]
 mod test {
 	use super::BitDifferential;
@@ -112,12 +106,5 @@ mod test {
 		let a = Box::<[u8]>::from([2; 2]);
 		let b = Box::<[u8]>::from([1, 3]);
 		assert_eq!(a.bit_diff(&b), "======un=======n");
-	}
-
-	#[test]
-	fn test_differential_vec() {
-		let a = Vec::from([2u8; 2]);
-		let b = Vec::from([1, 3]);
-		assert_eq!(a.bit_diff(b), "======un=======n");
 	}
 }

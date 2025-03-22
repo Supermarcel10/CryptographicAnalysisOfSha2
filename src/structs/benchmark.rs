@@ -1,10 +1,9 @@
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
-use crate::sha::StartVector;
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Solver {
 	Z3,
 	CVC5,

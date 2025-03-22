@@ -1,4 +1,6 @@
-use std::fmt::{Formatter, LowerHex};
+use std::fmt::{Display, Formatter, LowerHex};
+use std::num::ParseIntError;
+use crate::structs::hash_function::HashFunction;
 use crate::verification::bit_differential::BitDifferential;
 
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
@@ -21,6 +23,15 @@ pub enum HashError {
 pub enum Word {
 	W32(u32),
 	W64(u64)
+}
+
+impl Display for Word {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Word::W32(w) => f.write_str(&format!("{w:08x}")),
+			Word::W64(w) => f.write_str(&format!("{w:016x}"))
+		}
+	}
 }
 
 impl From<u32> for Word {
@@ -140,6 +151,18 @@ impl Word {
 
 	pub fn from_u64_vec(slice: Vec<u64>) -> Vec<Self> {
 		slice.into_iter().map(|x| Word::W64(x)).collect()
+	}
+
+	pub fn from_str_radix(
+		src: &str,
+		radix: u32,
+		hash_function: HashFunction,
+	) -> Result<Word, ParseIntError> {
+		use HashFunction::*;
+		match hash_function {
+			SHA224 | SHA256 => Ok(Word::W32(u32::from_str_radix(src, radix)?)),
+			SHA512 => Ok(Word::W64(u64::from_str_radix(src, radix)?)),
+		}
 	}
 
 	pub(super) fn wrapping_add(self, rhs: Word) -> Result<Self, HashError> {

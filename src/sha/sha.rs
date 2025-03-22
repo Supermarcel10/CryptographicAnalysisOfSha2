@@ -1,5 +1,5 @@
 use std::cmp::PartialEq;
-use std::fmt::{Debug};
+use std::fmt::{Debug, Display, Formatter};
 use crate::sha::structs::{HashError, Word};
 use crate::structs::hash_function::HashFunction;
 use crate::structs::hash_result::HashResult;
@@ -12,6 +12,24 @@ pub enum StartVector {
 	IV,
 	/// Chaining Vector
 	CV([Word; 8])
+}
+
+impl Display for StartVector {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			StartVector::IV => write!(f, "IV Start Vector")?,
+			StartVector::CV(vec) => {
+				for (i, word) in vec.iter().enumerate() {
+					if i > 0 {
+						write!(f, " ")?;
+					}
+					write!(f, "{word}")?;
+				}
+			}
+		}
+
+		Ok(())
+	}
 }
 
 impl StartVector {
@@ -37,8 +55,22 @@ impl StartVector {
 	}
 }
 
-#[derive(Debug)]
-pub struct MessageBlock([Word; 16]);
+#[derive(Copy, Clone, Debug)]
+pub struct MessageBlock(pub [Word; 16]);
+
+impl Display for MessageBlock {
+	// TODO: Consider a macro here, since this code repeats 3 times
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		for (i, word) in self.0.iter().enumerate() {
+			if i > 0 {
+				write!(f, " ")?;
+			}
+			write!(f, "{word}")?;
+		}
+
+		Ok(())
+	}
+}
 
 // TODO: Maybe use a macro here
 impl From<[u32; 8]> for StartVector {
@@ -67,6 +99,19 @@ impl From<[u64; 16]> for MessageBlock {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OutputHash(pub Box<[Word]>);
+
+impl Display for OutputHash {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		for (i, word) in self.0.iter().enumerate() {
+			if i > 0 {
+				write!(f, " ")?;
+			}
+			write!(f, "{word}")?;
+		}
+
+		Ok(())
+	}
+}
 
 #[derive(Debug)]
 pub struct Sha {
