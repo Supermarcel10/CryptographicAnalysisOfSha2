@@ -65,6 +65,9 @@ impl From<[u64; 16]> for MessageBlock {
 	}
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OutputHash(pub Box<[Word]>);
+
 #[derive(Debug)]
 pub struct Sha {
 	/// Message blocks
@@ -230,7 +233,7 @@ impl Sha {
 			.or(Some(self.state.len()))
 			.unwrap();
 
-		let hash = Box::from(&self.state[..truncate_to_length]);
+		let hash = OutputHash(Box::from(&self.state[..truncate_to_length]));
 
 		Ok(HashResult {
 			hash,
