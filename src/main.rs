@@ -187,11 +187,6 @@ fn run_solver_with_benchmark(
 	let pid = child.id();
 	let child_arc = Arc::new(Mutex::new(child));
 
-	// TODO: Investigate why this is throwing an error after the 1st iteration
-	if interrupt_kill_child(Arc::clone(&child_arc)).is_err() {
-		// println!("Failed to set interrupt to kill child. Continuing...")
-	}
-
 	println!("{rounds} rounds; {hash_function} {collision_type} collision\nSMT solver PID: {pid}");
 
 	// TODO: Memory profiling!
@@ -236,17 +231,5 @@ fn run_solver_with_benchmark(
 	Err(Box::from("Generic benchmark failure!"))
 }
 
-fn interrupt_kill_child(child_arc: Arc<Mutex<Child>>) -> Result<(), ctrlc::Error> {
-	ctrlc::set_handler(move || {
-		println!("\nReceived interrupt, killing child process...");
-		kill_process(&child_arc);
-		std::process::exit(0);
-	})
-}
 
-fn kill_process(child_arc: &Arc<Mutex<Child>>) {
-	match child_arc.lock().unwrap().kill() {
-		Ok(_) => println!("Child process killed successfully"),
-		Err(e) => eprintln!("Failed to kill child process: {}", e),
-	}
 }
