@@ -101,7 +101,7 @@
 (define-fun m0_b1 () Word a0)
 (define-fun m0_c1 () Word b0)
 (define-fun m0_d1 () Word c0)
-(define-fun m0_e1 () Word (bvadd m0_d0 m0_t1_1))
+(define-fun m0_e1 () Word (bvadd d0 m0_t1_1))
 (define-fun m0_f1 () Word e0)
 (define-fun m0_g1 () Word f0)
 (define-fun m0_h1 () Word g0)
@@ -113,7 +113,7 @@
 (define-fun m1_b1 () Word a0)
 (define-fun m1_c1 () Word b0)
 (define-fun m1_d1 () Word c0)
-(define-fun m1_e1 () Word (bvadd m1_d0 m1_t1_1))
+(define-fun m1_e1 () Word (bvadd d0 m1_t1_1))
 (define-fun m1_f1 () Word e0)
 (define-fun m1_g1 () Word f0)
 (define-fun m1_h1 () Word g0)
@@ -183,4 +183,4 @@
 (get-value (m0_hash0 m0_hash1 m0_hash2 m0_hash3 m0_hash4 m0_hash5 m0_hash6 m0_hash7))
 
 ; Output round A/E/W state changes
-(get-value (m0_a0 m1_a0 m0_e0 m1_e0 m0_w0 m1_w0 m0_a1 m1_a1 m0_e1 m1_e1 m0_w1 m1_w1))
+(get-value (a0 e0 m0_w0 m1_w0 m0_a1 m1_a1 m0_e1 m1_e1 m0_w1 m1_w1))

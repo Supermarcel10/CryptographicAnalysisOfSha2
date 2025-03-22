@@ -196,7 +196,7 @@
 (define-fun m0_b1 () Word a0)
 (define-fun m0_c1 () Word b0)
 (define-fun m0_d1 () Word c0)
-(define-fun m0_e1 () Word (bvadd m0_d0 m0_t1_1))
+(define-fun m0_e1 () Word (bvadd d0 m0_t1_1))
 (define-fun m0_f1 () Word e0)
 (define-fun m0_g1 () Word f0)
 (define-fun m0_h1 () Word g0)
@@ -618,7 +618,7 @@
 (define-fun m1_b1 () Word a0)
 (define-fun m1_c1 () Word b0)
 (define-fun m1_d1 () Word c0)
-(define-fun m1_e1 () Word (bvadd m1_d0 m1_t1_1))
+(define-fun m1_e1 () Word (bvadd d0 m1_t1_1))
 (define-fun m1_f1 () Word e0)
 (define-fun m1_g1 () Word f0)
 (define-fun m1_h1 () Word g0)
@@ -1098,4 +1098,4 @@
 (get-value (m0_hash0 m0_hash1 m0_hash2 m0_hash3 m0_hash4 m0_hash5 m0_hash6 m0_hash7))
 
 ; Output round A/E/W state changes
-(get-value (m0_a0 m1_a0 m0_e0 m1_e0 m0_w0 m1_w0 m0_a1 m1_a1 m0_e1 m1_e1 m0_w1 m1_w1 m0_a2 m1_a2 m0_e2 m1_e2 m0_w2 m1_w2 m0_a3 m1_a3 m0_e3 m1_e3 m0_w3 m1_w3 m0_a4 m1_a4 m0_e4 m1_e4 m0_w4 m1_w4 m0_a5 m1_a5 m0_e5 m1_e5 m0_w5 m1_w5 m0_a6 m1_a6 m0_e6 m1_e6 m0_w6 m1_w6 m0_a7 m1_a7 m0_e7 m1_e7 m0_w7 m1_w7 m0_a8 m1_a8 m0_e8 m1_e8 m0_w8 m1_w8 m0_a9 m1_a9 m0_e9 m1_e9 m0_w9 m1_w9 m0_a10 m1_a10 m0_e10 m1_e10 m0_w10 m1_w10 m0_a11 m1_a11 m0_e11 m1_e11 m0_w11 m1_w11 m0_a12 m1_a12 m0_e12 m1_e12 m0_w12 m1_w12 m0_a13 m1_a13 m0_e13 m1_e13 m0_w13 m1_w13 m0_a14 m1_a14 m0_e14 m1_e14 m0_w14 m1_w14 m0_a15 m1_a15 m0_e15 m1_e15 m0_w15 m1_w15 m0_a16 m1_a16 m0_e16 m1_e16 m0_w16 m1_w16 m0_a17 m1_a17 m0_e17 m1_e17 m0_w17 m1_w17 m0_a18 m1_a18 m0_e18 m1_e18 m0_w18 m1_w18 m0_a19 m1_a19 m0_e19 m1_e19 m0_w19 m1_w19 m0_a20 m1_a20 m0_e20 m1_e20 m0_w20 m1_w20 m0_a21 m1_a21 m0_e21 m1_e21 m0_w21 m1_w21 m0_a22 m1_a22 m0_e22 m1_e22 m0_w22 m1_w22 m0_a23 m1_a23 m0_e23 m1_e23 m0_w23 m1_w23 m0_a24 m1_a24 m0_e24 m1_e24 m0_w24 m1_w24 m0_a25 m1_a25 m0_e25 m1_e25 m0_w25 m1_w25 m0_a26 m1_a26 m0_e26 m1_e26 m0_w26 m1_w26 m0_a27 m1_a27 m0_e27 m1_e27 m0_w27 m1_w27 m0_a28 m1_a28 m0_e28 m1_e28 m0_w28 m1_w28 m0_a29 m1_a29 m0_e29 m1_e29 m0_w29 m1_w29 m0_a30 m1_a30 m0_e30 m1_e30 m0_w30 m1_w30 m0_a31 m1_a31 m0_e31 m1_e31 m0_w31 m1_w31 m0_a32 m1_a32 m0_e32 m1_e32 m0_w32 m1_w32 m0_a33 m1_a33 m0_e33 m1_e33 m0_w33 m1_w33 m0_a34 m1_a34 m0_e34 m1_e34 m0_w34 m1_w34 m0_a35 m1_a35 m0_e35 m1_e35 m0_w35 m1_w35 m0_a36 m1_a36 m0_e36 m1_e36 m0_w36 m1_w36 m0_a37 m1_a37 m0_e37 m1_e37 m0_w37 m1_w37 m0_a38 m1_a38 m0_e38 m1_e38 m0_w38 m1_w38 m0_a39 m1_a39 m0_e39 m1_e39 m0_w39 m1_w39 m0_a40 m1_a40 m0_e40 m1_e40 m0_w40 m1_w40 m0_a41 m1_a41 m0_e41 m1_e41 m0_w41 m1_w41 m0_a42 m1_a42 m0_e42 m1_e42 m0_w42 m1_w42))
+(get-value (a0 e0 m0_w0 m1_w0 m0_a1 m1_a1 m0_e1 m1_e1 m0_w1 m1_w1 m0_a2 m1_a2 m0_e2 m1_e2 m0_w2 m1_w2 m0_a3 m1_a3 m0_e3 m1_e3 m0_w3 m1_w3 m0_a4 m1_a4 m0_e4 m1_e4 m0_w4 m1_w4 m0_a5 m1_a5 m0_e5 m1_e5 m0_w5 m1_w5 m0_a6 m1_a6 m0_e6 m1_e6 m0_w6 m1_w6 m0_a7 m1_a7 m0_e7 m1_e7 m0_w7 m1_w7 m0_a8 m1_a8 m0_e8 m1_e8 m0_w8 m1_w8 m0_a9 m1_a9 m0_e9 m1_e9 m0_w9 m1_w9 m0_a10 m1_a10 m0_e10 m1_e10 m0_w10 m1_w10 m0_a11 m1_a11 m0_e11 m1_e11 m0_w11 m1_w11 m0_a12 m1_a12 m0_e12 m1_e12 m0_w12 m1_w12 m0_a13 m1_a13 m0_e13 m1_e13 m0_w13 m1_w13 m0_a14 m1_a14 m0_e14 m1_e14 m0_w14 m1_w14 m0_a15 m1_a15 m0_e15 m1_e15 m0_w15 m1_w15 m0_a16 m1_a16 m0_e16 m1_e16 m0_w16 m1_w16 m0_a17 m1_a17 m0_e17 m1_e17 m0_w17 m1_w17 m0_a18 m1_a18 m0_e18 m1_e18 m0_w18 m1_w18 m0_a19 m1_a19 m0_e19 m1_e19 m0_w19 m1_w19 m0_a20 m1_a20 m0_e20 m1_e20 m0_w20 m1_w20 m0_a21 m1_a21 m0_e21 m1_e21 m0_w21 m1_w21 m0_a22 m1_a22 m0_e22 m1_e22 m0_w22 m1_w22 m0_a23 m1_a23 m0_e23 m1_e23 m0_w23 m1_w23 m0_a24 m1_a24 m0_e24 m1_e24 m0_w24 m1_w24 m0_a25 m1_a25 m0_e25 m1_e25 m0_w25 m1_w25 m0_a26 m1_a26 m0_e26 m1_e26 m0_w26 m1_w26 m0_a27 m1_a27 m0_e27 m1_e27 m0_w27 m1_w27 m0_a28 m1_a28 m0_e28 m1_e28 m0_w28 m1_w28 m0_a29 m1_a29 m0_e29 m1_e29 m0_w29 m1_w29 m0_a30 m1_a30 m0_e30 m1_e30 m0_w30 m1_w30 m0_a31 m1_a31 m0_e31 m1_e31 m0_w31 m1_w31 m0_a32 m1_a32 m0_e32 m1_e32 m0_w32 m1_w32 m0_a33 m1_a33 m0_e33 m1_e33 m0_w33 m1_w33 m0_a34 m1_a34 m0_e34 m1_e34 m0_w34 m1_w34 m0_a35 m1_a35 m0_e35 m1_e35 m0_w35 m1_w35 m0_a36 m1_a36 m0_e36 m1_e36 m0_w36 m1_w36 m0_a37 m1_a37 m0_e37 m1_e37 m0_w37 m1_w37 m0_a38 m1_a38 m0_e38 m1_e38 m0_w38 m1_w38 m0_a39 m1_a39 m0_e39 m1_e39 m0_w39 m1_w39 m0_a40 m1_a40 m0_e40 m1_e40 m0_w40 m1_w40 m0_a41 m1_a41 m0_e41 m1_e41 m0_w41 m1_w41 m0_a42 m1_a42 m0_e42 m1_e42 m0_w42 m1_w42))
