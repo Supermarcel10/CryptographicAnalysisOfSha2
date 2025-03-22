@@ -154,7 +154,7 @@ impl SmtBuilder {
 				if var == 'a' {
 					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word (bvadd m{message}_t1_{i} m{message}_t2_{i}))\n"))
 				} else if var == 'e' {
-					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word (bvadd m{message}_d{prev} m{message}_t1_{i}))\n"))
+					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word (bvadd {msg}d{prev} m{message}_t1_{i}))\n"))
 				} else {
 					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word {msg}{prev_var}{prev})\n"))
 				}
