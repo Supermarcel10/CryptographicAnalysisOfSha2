@@ -262,8 +262,12 @@ impl SmtBuilder {
 		let mut s = String::new();
 		for i in 0..=self.rounds {
 			for var in ['a', 'e', 'w'] {
-				for m in 0..2 {
-					s += &format!("m{m}_{var}{i} ");
+				if i == 0 && self.collision_type != CollisionType::FreeStart && var != 'w' {
+					s += &format!("{var}{i} ");
+				} else {
+					for m in 0..2 {
+						s += &format!("m{m}_{var}{i} ");
+					}
 				}
 			}
 		}
