@@ -144,6 +144,7 @@ fn create_time_and_memory_chart(
 	Ok(path)
 }
 
+#[cfg(test)]
 mod tests {
 	use std::error::Error;
 	use std::path::PathBuf;
