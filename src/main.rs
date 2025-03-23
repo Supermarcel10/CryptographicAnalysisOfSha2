@@ -1,8 +1,7 @@
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::io::{BufReader, Read};
-use std::process::{Child, Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::process::{Command, Stdio};
 use std::time::Instant;
 use regex::Regex;
 use crate::sha::{MessageBlock, OutputHash, StartVector, Word};
@@ -24,7 +23,7 @@ fn main() {
 	generate_smtlib_files().expect("Failed to generate files!");
 
 	let hash_function = HashFunction::SHA256;
-	let collision_type = CollisionType::Standard;
+	let collision_type = CollisionType::FreeStart;
 
 	let solver = Solver::CVC5;
 	let parameters: Vec<SolverArg> = vec![];
@@ -102,7 +101,6 @@ fn parse_output(smt_output: &str, hash_function: HashFunction) -> Result<Collidi
 	let mut hash = Box::new([default_word; 8]);
 	let mut start_blocks = [[default_word; 16]; 2];
 	let mut start_vectors = [[default_word; 8]; 2];
-	// let mut states: [HashMap<usize, MutableShaState>; 2] = [HashMap::new(), HashMap::new()];
 	let mut states = [BTreeMap::new(), BTreeMap::new()];
 
 	for capture in re.captures_iter(smt_output) {
@@ -125,11 +123,6 @@ fn parse_output(smt_output: &str, hash_function: HashFunction) -> Result<Collidi
 			// Parse start blocks
 			if var_char == 'w' {
 				start_blocks[msg][round] = val;
-			}
-
-			// Parse states
-			if !['a', 'e', 'w'].contains(&var_char) {
-				continue;
 			}
 
 			// Upsert updated state
@@ -177,7 +170,7 @@ fn run_solver_with_benchmark(
 	let mut args_with_file = arguments.clone();
 	args_with_file.push(format!("data/{hash_function}_{collision_type}_{rounds}.smt2"));
 
-	let child = Command::new(solver.command())
+	let mut child = Command::new(solver.command())
 		.args(args_with_file)
 		.stdout(Stdio::piped())
 		.stderr(Stdio::piped())
@@ -185,18 +178,17 @@ fn run_solver_with_benchmark(
 
 	let start_time = Instant::now();
 	let pid = child.id();
-	let child_arc = Arc::new(Mutex::new(child));
 
 	println!("{rounds} rounds; {hash_function} {collision_type} collision\nSMT solver PID: {pid}");
 
 	// TODO: Memory profiling!
 
-	let mut child_guard = child_arc.lock().unwrap();
-	let status = child_guard.wait()?; // Await process exit
+	// Await process exit
+	let status = child.wait()?;
 	let execution_time = start_time.elapsed();
 
 	// Read output
-	if let Some(stdout) = child_guard.stdout.take() {
+	if let Some(stdout) = child.stdout.take() {
 		let mut console_output = String::new();
 		BufReader::new(stdout).read_to_string(&mut console_output)?;
 
@@ -229,7 +221,4 @@ fn run_solver_with_benchmark(
 	}
 
 	Err(Box::from("Generic benchmark failure!"))
-}
-
-
 }
