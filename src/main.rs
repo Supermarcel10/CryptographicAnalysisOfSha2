@@ -3,6 +3,7 @@ use std::error::Error;
 use std::io::{BufReader, Read};
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
+use chrono::Local;
 use nix::sys::signal::{Signal, SIGABRT, SIGALRM, SIGHUP, SIGILL, SIGKILL, SIGSEGV, SIGSYS, SIGTERM, SIGXCPU};
 use regex::Regex;
 use wait_timeout::ChildExt;
@@ -37,6 +38,7 @@ fn main() {
 	let mut sequential_fails: u8 = 0;
 	for rounds in 0..6 {
 		if sequential_fails == STOP_TOLERANCE_DEFAULT {
+			println!("Failed {sequential_fails} in a row! Stopping...");
 			break;
 		}
 
@@ -51,25 +53,29 @@ fn main() {
 		if let Ok(benchmark) = result {
 			match benchmark.result {
 				BenchmarkResult::SMTError => {
-					panic!("Received SMT Error: {}", benchmark.console_output)
+					panic!("Received SMT Error: {:?}", benchmark.console_output)
 				}
 				BenchmarkResult::Aborted => {
 					println!("Test aborted!");
 					break;
 				}
-				BenchmarkResult::Sat => {
-					let mut colliding_pair = parse_output(&benchmark.console_output, hash_function).unwrap();
+				BenchmarkResult::Sat | BenchmarkResult::Unsat => {
+					let mut colliding_pair = parse_output(benchmark).unwrap();
 
-					// TODO: Simplify this!
-					if VERIFY_HASH_DEFAULT && colliding_pair.verify(hash_function, rounds).expect("Failed to verify hash output!") {
-						colliding_pair.verified_hash = Some(colliding_pair.m0.expected_hash.clone());
+					match colliding_pair {
+						None => {
+							println!("UNSAT");
+						}
+						Some(mut colliding_pair) => {
+							// TODO: Simplify this!
+							if VERIFY_HASH_DEFAULT && colliding_pair.verify(hash_function, rounds).expect("Failed to verify hash output!") {
+								colliding_pair.verified_hash = Some(colliding_pair.m0.expected_hash.clone());
+							}
+
+							println!("{}", colliding_pair);
+						}
 					}
 
-					println!("{}", colliding_pair);
-					sequential_fails = 0;
-				}
-				BenchmarkResult::Unsat => {
-					println!("UNSAT");
 					sequential_fails = 0;
 				}
 				_ => {
@@ -124,7 +130,13 @@ fn update_state_variable(state: &mut MutableShaState, variable: char, value: Wor
 	}
 }
 
-fn parse_output(smt_output: &str, hash_function: HashFunction) -> Result<CollidingPair, Box<dyn Error>> {
+fn parse_output(benchmark: Benchark) -> Result<Option<CollidingPair>, Box<dyn Error>> {
+	if benchmark.result != BenchmarkResult::Sat {
+		return Ok(None);
+	}
+
+	let (smt_output, _) = benchmark.console_output;
+	let hash_function = benchmark.hash_function;
 	let re = Regex::new(r"\(m([01])_([a-hw]|hash)([0-9]+) #b([01]*)\)")?;
 	let default_word = hash_function.default_word();
 
@@ -133,7 +145,7 @@ fn parse_output(smt_output: &str, hash_function: HashFunction) -> Result<Collidi
 	let mut start_vectors = [[default_word; 8]; 2];
 	let mut states = [BTreeMap::new(), BTreeMap::new()];
 
-	for capture in re.captures_iter(smt_output) {
+	for capture in re.captures_iter(&smt_output) {
 		let msg: usize = capture[1].parse()?;
 		let var = &capture[2];
 		let round: usize = capture[3].parse()?;
@@ -187,11 +199,11 @@ fn parse_output(smt_output: &str, hash_function: HashFunction) -> Result<Collidi
 	}
 
 	let [m0, m1] = messages.try_into().unwrap();
-	Ok(CollidingPair {
+	Ok(Some(CollidingPair {
 		m0,
 		m1,
 		verified_hash: None,
-	})
+	}))
 }
 
 fn run_solver_with_benchmark(
@@ -201,12 +213,17 @@ fn run_solver_with_benchmark(
 	solver: Solver,
 	arguments: Vec<SolverArg>,
 ) -> Result<Benchark, Box<dyn Error>> {
-	let mut full_args = Vec::<SolverArg>::new();
-	full_args.push(format!("data/{hash_function}_{collision_type}_{rounds}.smt2"));
-	full_args.append(&mut arguments.clone());
+	let mut full_args: Vec<SolverArg> = Vec::from([
+		"-v".into(),
+		solver.command(),
+		format!("data/{hash_function}_{collision_type}_{rounds}.smt2"),
+	]);
 
+	full_args.extend(arguments.clone());
+
+	let date_time = Local::now().to_utc();
 	let start_time = Instant::now();
-	let mut child = Command::new(solver.command())
+	let mut child = Command::new("time")
 		.args(full_args)
 		.stdout(Stdio::piped())
 		.stderr(Stdio::piped())
@@ -216,37 +233,56 @@ fn run_solver_with_benchmark(
 
 	println!("{rounds} rounds; {hash_function} {collision_type} collision\nSMT solver PID: {pid}");
 
-	// TODO: Memory profiling!
+	println!("{rounds} rounds; {hash_function} {collision_type} collision; SMT solver PID: {pid}");
 
 	// Await process exit
 	let status = child.wait_timeout(TIMEOUT_DEFAULT)?;
-	println!("Finished awaiting!");
 	let execution_time = start_time.elapsed();
 
 	// Read output
-	let cout = match status {
-		None => String::new(),
+	let (cout, cerr) = match status {
+		None => (String::new(), String::new()),
 		Some(_) => {
-			if let Some(stdout) = child.stdout.take() {
+			let cout = if let Some(stdout) = child.stdout.take() {
 				let mut cout = String::new();
 				BufReader::new(stdout).read_to_string(&mut cout)?;
 				cout
-			} else {
-				String::new()
-			}
+			} else { String::new() };
+
+			let cerr = if let Some(stderr) = child.stderr.take() {
+				let mut cerr = String::new();
+				BufReader::new(stderr).read_to_string(&mut cerr)?;
+				cerr
+			} else { String::new() };
+
+			(cout, cerr)
 		}
 	};
 
+	// Extract memory information
+	let mut bytes_rss = 0;
+	if let Some(line) = cerr
+		.lines()
+		.find(|line| line.contains("Maximum resident set size")) {
+		if let Some(val_str) = line.split(':').nth(1) {
+			if let Ok(value) = val_str.trim().parse::<u64>() {
+				// Convert kB to bytes
+				bytes_rss = value * 1024;
+			}
+		}
+	}
+
 	Ok(Benchark {
+		date_time,
 		solver,
 		arguments,
 		hash_function,
 		rounds,
 		collision_type,
 		execution_time,
-		memory_bytes: 0,
+		memory_bytes: bytes_rss,
 		result: categorize_status(status, &cout)?,
-		console_output: cout,
+		console_output: (cout, cerr),
 	})
 }
 

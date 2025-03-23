@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
@@ -55,6 +56,7 @@ impl Display for BenchmarkResult {
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Benchark {
+	pub date_time: DateTime<Utc>,
 	pub solver: Solver,
 	pub arguments: Vec<SolverArg>,
 	pub hash_function: HashFunction,
@@ -63,5 +65,5 @@ pub struct Benchark {
 	pub execution_time: Duration,
 	pub memory_bytes: u64,
 	pub result: BenchmarkResult,
-	pub console_output: String,
+	pub console_output: (String, String),
 }
