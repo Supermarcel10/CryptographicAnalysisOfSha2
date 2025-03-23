@@ -1,8 +1,9 @@
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::io::{BufReader, Read};
-use std::process::{Command, Stdio};
-use std::time::Instant;
+use std::process::{Command, ExitStatus, Stdio};
+use std::time::{Duration, Instant};
+use nix::sys::signal::Signal;
 use regex::Regex;
 use crate::sha::{MessageBlock, OutputHash, StartVector, Word};
 use crate::smt_lib::smt_lib::generate_smtlib_files;
@@ -19,16 +20,25 @@ mod sha;
 mod verification;
 mod structs;
 
+// TODO: Add overrides for these as parameters
+const STOP_TOLERANCE_DEFAULT: u8 = 3;
+const TIMEOUT_DEFAULT: Duration = Duration::from_secs(5);
+const VERIFY_HASH_DEFAULT: bool = true;
+
 fn main() {
 	generate_smtlib_files().expect("Failed to generate files!");
 
 	let hash_function = HashFunction::SHA256;
 	let collision_type = CollisionType::FreeStart;
-
 	let solver = Solver::CVC5;
 	let parameters: Vec<SolverArg> = vec![];
 
+	let mut sequential_fails: u8 = 0;
 	for rounds in 0..6 {
+		if sequential_fails == STOP_TOLERANCE_DEFAULT {
+			break;
+		}
+
 		let result = run_solver_with_benchmark(
 			hash_function,
 			rounds,
@@ -37,25 +47,39 @@ fn main() {
 			parameters.clone()
 		);
 
-		match result {
-			Ok(benchmark) => {
-				if benchmark.result == BenchmarkResult::SMTError {
+		if let Ok(benchmark) = result {
+			match benchmark.result {
+				BenchmarkResult::SMTError => {
 					panic!("Received SMT Error: {}", benchmark.console_output)
-				} else if benchmark.result == BenchmarkResult::Sat {
-					println!("SAT");
+				}
+				BenchmarkResult::Aborted => {
+					println!("Test aborted!");
+					break;
+				}
+				BenchmarkResult::Sat => {
 					let mut colliding_pair = parse_output(&benchmark.console_output, hash_function).unwrap();
 
 					// TODO: Simplify this!
-					if colliding_pair.verify(hash_function, rounds).expect("TODO: panic message") {
+					if VERIFY_HASH_DEFAULT && colliding_pair.verify(hash_function, rounds).expect("Failed to verify hash output!") {
 						colliding_pair.verified_hash = Some(colliding_pair.m0.expected_hash.clone());
 					}
+
 					println!("{}", colliding_pair);
-				} else {
-					println!("UNSAT");
-					println!("{:?}\n", benchmark);
+					sequential_fails = 0;
 				}
-			},
-			Err(err) => println!("Error occurred: {}", err),
+				BenchmarkResult::Unsat => {
+					println!("UNSAT");
+					sequential_fails = 0;
+				}
+				_ => {
+					println!("{}", benchmark.result);
+					sequential_fails += 1;
+				}
+			}
+			print!("\n\n\n");
+		} else {
+			println!("An error occurred during benchmark runtime: {}", result.unwrap_err());
+			break;
 		}
 	}
 }
@@ -176,16 +200,17 @@ fn run_solver_with_benchmark(
 	solver: Solver,
 	arguments: Vec<SolverArg>,
 ) -> Result<Benchark, Box<dyn Error>> {
-	let mut args_with_file = arguments.clone();
-	args_with_file.push(format!("data/{hash_function}_{collision_type}_{rounds}.smt2"));
+	let mut full_args = Vec::<SolverArg>::new();
+	full_args.push(format!("data/{hash_function}_{collision_type}_{rounds}.smt2"));
+	full_args.append(&mut arguments.clone());
 
+	let start_time = Instant::now();
 	let mut child = Command::new(solver.command())
-		.args(args_with_file)
+		.args(full_args)
 		.stdout(Stdio::piped())
 		.stderr(Stdio::piped())
 		.spawn()?;
 
-	let start_time = Instant::now();
 	let pid = child.id();
 
 	println!("{rounds} rounds; {hash_function} {collision_type} collision\nSMT solver PID: {pid}");
@@ -198,23 +223,8 @@ fn run_solver_with_benchmark(
 
 	// Read output
 	if let Some(stdout) = child.stdout.take() {
-		let mut console_output = String::new();
-		BufReader::new(stdout).read_to_string(&mut console_output)?;
-
-		let status_code = status.code().unwrap_or(-1);
-		let solver_status = console_output
-			.lines()
-			.next()
-			.unwrap_or("unknown");
-
-		let result = match (status_code, solver_status) {
-			(0, "sat") => BenchmarkResult::Sat,
-			(0, "unsat") => BenchmarkResult::Unsat,
-			(1, _) => BenchmarkResult::SMTError,
-			(2, _) => BenchmarkResult::Aborted,
-			_ => BenchmarkResult::Unknown,
-			// TODO: Handle MEMOUT and CPUOUT states
-		};
+		let mut cout = String::new();
+		BufReader::new(stdout).read_to_string(&mut cout)?;
 
 		return Ok(Benchark {
 			solver,
@@ -224,10 +234,41 @@ fn run_solver_with_benchmark(
 			collision_type,
 			execution_time,
 			memory_bytes: 0,
-			result,
-			console_output,
+			result: categorize_status(status, &cout)?,
+			console_output: cout,
 		})
 	}
 
-	Err(Box::from("Generic benchmark failure!"))
+	Err(Box::from("Unknown benchmark failure!"))
+}
+
+fn categorize_status(exit_status: ExitStatus, cout: &String) -> Result<BenchmarkResult, Box<dyn Error>> {
+	use Signal::*;
+	use BenchmarkResult::*;
+
+	let code = exit_status.code().ok_or("Failed to retrieve status code!")?;
+	Ok(if code == 0 {
+		let outcome = cout
+			.lines()
+			.next()
+			.unwrap_or("unknown")
+			.to_lowercase();
+
+		if outcome.contains("unsat") {
+			Unsat
+		} else if outcome.contains("sat") {
+			Sat
+		} else {
+			Unknown
+		}
+	} else {
+		let signal = Signal::try_from(code)?;
+
+		match signal {
+			SIGABRT | SIGKILL | SIGSEGV => MemOut,
+			SIGALRM | SIGTERM | SIGXCPU => CPUOut,
+			SIGHUP | SIGILL | SIGSYS => SMTError,
+			_ => Unknown,
+		}
+	})
 }
