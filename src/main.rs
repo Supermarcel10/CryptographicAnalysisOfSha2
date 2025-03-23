@@ -161,7 +161,7 @@ fn parse_output(smt_output: &str, hash_function: HashFunction) -> Result<Collidi
 		});
 	}
 
-	let [m0, m1] = messages.try_into().expect("Failed to retrieve both messages")?;
+	let [m0, m1] = messages.try_into().unwrap();
 	Ok(CollidingPair {
 		m0,
 		m1,

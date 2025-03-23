@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use crate::structs::collision_type::CollisionType;
@@ -36,6 +37,20 @@ pub enum BenchmarkResult {
 	Aborted,
 	SMTError,
 	Unknown,
+}
+
+impl Display for BenchmarkResult {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{}", match self {
+			BenchmarkResult::Sat => "SAT",
+			BenchmarkResult::Unsat => "UNSAT",
+			BenchmarkResult::MemOut => "OUT OF MEMORY",
+			BenchmarkResult::CPUOut => "OUT OF CPU TIME",
+			BenchmarkResult::Aborted => "ABORTED",
+			BenchmarkResult::SMTError => "SMT ERROR",
+			BenchmarkResult::Unknown => "UNKNOWN",
+		})
+	}
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
