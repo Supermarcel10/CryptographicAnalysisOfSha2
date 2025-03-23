@@ -12,6 +12,7 @@ serde = { version = "1.0.218", features = ["derive"], optional = true }
 serde_json = { version = "1.0.139", optional = true }
 regex = "1.11.1"
 nix = { version = "0.29.0", features = ["signal"] }
+wait-timeout = "0.2.1"
 
 [features]
 default = ["benchmarking", "graphing", "smt-gen"]

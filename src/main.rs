@@ -3,8 +3,9 @@ use std::error::Error;
 use std::io::{BufReader, Read};
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
-use nix::sys::signal::Signal;
+use nix::sys::signal::{Signal, SIGABRT, SIGALRM, SIGHUP, SIGILL, SIGKILL, SIGSEGV, SIGSYS, SIGTERM, SIGXCPU};
 use regex::Regex;
+use wait_timeout::ChildExt;
 use crate::sha::{MessageBlock, OutputHash, StartVector, Word};
 use crate::smt_lib::smt_lib::generate_smtlib_files;
 use crate::structs::benchmark::{Benchark, BenchmarkResult, Solver, SolverArg};
@@ -218,57 +219,69 @@ fn run_solver_with_benchmark(
 	// TODO: Memory profiling!
 
 	// Await process exit
-	let status = child.wait()?;
+	let status = child.wait_timeout(TIMEOUT_DEFAULT)?;
+	println!("Finished awaiting!");
 	let execution_time = start_time.elapsed();
 
 	// Read output
-	if let Some(stdout) = child.stdout.take() {
-		let mut cout = String::new();
-		BufReader::new(stdout).read_to_string(&mut cout)?;
+	let cout = match status {
+		None => String::new(),
+		Some(_) => {
+			if let Some(stdout) = child.stdout.take() {
+				let mut cout = String::new();
+				BufReader::new(stdout).read_to_string(&mut cout)?;
+				cout
+			} else {
+				String::new()
+			}
+		}
+	};
 
-		return Ok(Benchark {
-			solver,
-			arguments,
-			hash_function,
-			rounds,
-			collision_type,
-			execution_time,
-			memory_bytes: 0,
-			result: categorize_status(status, &cout)?,
-			console_output: cout,
-		})
-	}
-
-	Err(Box::from("Unknown benchmark failure!"))
+	Ok(Benchark {
+		solver,
+		arguments,
+		hash_function,
+		rounds,
+		collision_type,
+		execution_time,
+		memory_bytes: 0,
+		result: categorize_status(status, &cout)?,
+		console_output: cout,
+	})
 }
 
-fn categorize_status(exit_status: ExitStatus, cout: &String) -> Result<BenchmarkResult, Box<dyn Error>> {
+fn categorize_status(exit_status: Option<ExitStatus>, cout: &String) -> Result<BenchmarkResult, Box<dyn Error>> {
 	use Signal::*;
 	use BenchmarkResult::*;
 
-	let code = exit_status.code().ok_or("Failed to retrieve status code!")?;
-	Ok(if code == 0 {
-		let outcome = cout
-			.lines()
-			.next()
-			.unwrap_or("unknown")
-			.to_lowercase();
+	Ok(match exit_status {
+		None => CPUOut,
+		Some(status) => {
+			let code = status.code().ok_or("Failed to retrieve status code!")?;
+			if code == 0 {
+				let outcome = cout
+					.lines()
+					.next()
+					.unwrap_or("unknown")
+					.to_lowercase();
 
-		if outcome.contains("unsat") {
-			Unsat
-		} else if outcome.contains("sat") {
-			Sat
-		} else {
-			Unknown
-		}
-	} else {
-		let signal = Signal::try_from(code)?;
+				if outcome.contains("unsat") {
+					Unsat
+				} else if outcome.contains("sat") {
+					Sat
+				} else {
+					Unknown
+				}
+			} else {
+				let signal = Signal::try_from(code)?;
 
-		match signal {
-			SIGABRT | SIGKILL | SIGSEGV => MemOut,
-			SIGALRM | SIGTERM | SIGXCPU => CPUOut,
-			SIGHUP | SIGILL | SIGSYS => SMTError,
-			_ => Unknown,
+				match signal {
+					SIGABRT | SIGKILL | SIGSEGV => MemOut,
+					SIGALRM | SIGTERM | SIGXCPU => CPUOut,
+					SIGHUP | SIGILL | SIGSYS => SMTError,
+					_ => Unknown,
+				}
+			}
 		}
 	})
 }
