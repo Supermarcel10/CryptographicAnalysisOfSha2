@@ -29,7 +29,13 @@ fn main() {
 	let parameters: Vec<SolverArg> = vec![];
 
 	for rounds in 0..6 {
-		let result = run_solver_with_benchmark(hash_function, rounds, collision_type, solver, parameters.clone());
+		let result = run_solver_with_benchmark(
+			hash_function,
+			rounds,
+			collision_type,
+			solver,
+			parameters.clone()
+		);
 
 		match result {
 			Ok(benchmark) => {
@@ -93,7 +99,6 @@ fn update_state_variable(state: &mut MutableShaState, variable: char, value: Wor
 	}
 }
 
-// TODO: Make this work for non FreeStart too
 fn parse_output(smt_output: &str, hash_function: HashFunction) -> Result<CollidingPair, Box<dyn Error>> {
 	let re = Regex::new(r"\(m([01])_([a-hw]|hash)([0-9]+) #b([01]*)\)")?;
 	let default_word = hash_function.default_word();
@@ -137,12 +142,16 @@ fn parse_output(smt_output: &str, hash_function: HashFunction) -> Result<Collidi
 		}
 	}
 
-	let mut messages: Vec<MessageData> = vec![];
-	for (i, message_state) in states.into_iter().enumerate() {
-		let states: Vec<ShaState> = message_state
-			.into_iter()
-			.map(|(_, v)| v.to_immutable().unwrap())
-			.collect();
+	let mut messages = vec![];
+	for (i, message_states) in states.into_iter().enumerate() {
+		let mut states = vec![];
+		for (_, state) in message_states {
+			states.push(
+				state
+					.to_immutable()
+					.ok_or("Failed to retrieve all message states")?
+			);
+		}
 
 		messages.push(MessageData {
 			m: MessageBlock(start_blocks[i]),
@@ -152,7 +161,7 @@ fn parse_output(smt_output: &str, hash_function: HashFunction) -> Result<Collidi
 		});
 	}
 
-	let [m0, m1] = messages.try_into().unwrap();
+	let [m0, m1] = messages.try_into().expect("Failed to retrieve both messages")?;
 	Ok(CollidingPair {
 		m0,
 		m1,
