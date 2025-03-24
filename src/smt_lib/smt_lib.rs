@@ -91,7 +91,7 @@ impl SmtBuilder {
 
 		let mut s = String::new();
 		for (i, val) in k.iter().take(self.rounds as usize).enumerate() {
-			s += &format!("(define-const k{i} Word {})\n", smt_hex(*val, &self.hash_function))
+			s += &format!("(define-fun k{i} () Word {})\n", smt_hex(*val, &self.hash_function))
 		};
 
 		self.smt += &s;
@@ -108,10 +108,10 @@ impl SmtBuilder {
 		let mut s = String::new();
 		for i in 0..16 {
 			if i < self.rounds.min(16) {
-				s += &format!("(declare-const {msg}{i} Word)\n");
+				s += &format!("(declare-fun {msg}{i} () Word)\n");
 			} else {
 				s += &format!(
-					"(define-const {msg}{i} Word {}) ; Irrelevant for {} rounds\n",
+					"(define-fun {msg}{i} () Word {}) ; Irrelevant for {} rounds\n",
 					smt_hex(self.hash_function.default_word(), &self.hash_function),
 					self.rounds,
 				);
@@ -172,9 +172,9 @@ impl SmtBuilder {
 		let mut s = String::new();
 		for (i, var) in ('a'..='h').enumerate() {
 			s += &match self.collision_type {
-				Standard => format!("(define-const {var}0 Word {})\n", smt_hex(iv_vec[i], &self.hash_function)),
-				SemiFreeStart => format!("(declare-const {var}0 Word)\n"),
-				FreeStart => format!("(declare-const m0_{var}0 Word)\n(declare-const m1_{var}0 Word)\n"),
+				Standard => format!("(define-fun {var}0 () Word {})\n", smt_hex(iv_vec[i], &self.hash_function)),
+				SemiFreeStart => format!("(declare-fun {var}0 () Word)\n"),
+				FreeStart => format!("(declare-fun m0_{var}0 () Word)\n(declare-fun m1_{var}0 () Word)\n"),
 			}
 		}
 
