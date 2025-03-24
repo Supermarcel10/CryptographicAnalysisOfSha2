@@ -38,73 +38,73 @@
 
 ;; CONSTANTS
 ; Define K constants
-(define-const k0 Word #x428a2f98d728ae22)
-(define-const k1 Word #x7137449123ef65cd)
-(define-const k2 Word #xb5c0fbcfec4d3b2f)
-(define-const k3 Word #xe9b5dba58189dbbc)
-(define-const k4 Word #x3956c25bf348b538)
-(define-const k5 Word #x59f111f1b605d019)
-(define-const k6 Word #x923f82a4af194f9b)
-(define-const k7 Word #xab1c5ed5da6d8118)
+(define-fun k0 () Word #x428a2f98d728ae22)
+(define-fun k1 () Word #x7137449123ef65cd)
+(define-fun k2 () Word #xb5c0fbcfec4d3b2f)
+(define-fun k3 () Word #xe9b5dba58189dbbc)
+(define-fun k4 () Word #x3956c25bf348b538)
+(define-fun k5 () Word #x59f111f1b605d019)
+(define-fun k6 () Word #x923f82a4af194f9b)
+(define-fun k7 () Word #xab1c5ed5da6d8118)
 
 ; Define H constants (IV/CV)
-(declare-const m0_a0 Word)
-(declare-const m1_a0 Word)
-(declare-const m0_b0 Word)
-(declare-const m1_b0 Word)
-(declare-const m0_c0 Word)
-(declare-const m1_c0 Word)
-(declare-const m0_d0 Word)
-(declare-const m1_d0 Word)
-(declare-const m0_e0 Word)
-(declare-const m1_e0 Word)
-(declare-const m0_f0 Word)
-(declare-const m1_f0 Word)
-(declare-const m0_g0 Word)
-(declare-const m1_g0 Word)
-(declare-const m0_h0 Word)
-(declare-const m1_h0 Word)
+(declare-fun m0_a0 () Word)
+(declare-fun m1_a0 () Word)
+(declare-fun m0_b0 () Word)
+(declare-fun m1_b0 () Word)
+(declare-fun m0_c0 () Word)
+(declare-fun m1_c0 () Word)
+(declare-fun m0_d0 () Word)
+(declare-fun m1_d0 () Word)
+(declare-fun m0_e0 () Word)
+(declare-fun m1_e0 () Word)
+(declare-fun m0_f0 () Word)
+(declare-fun m1_f0 () Word)
+(declare-fun m0_g0 () Word)
+(declare-fun m1_g0 () Word)
+(declare-fun m0_h0 () Word)
+(declare-fun m1_h0 () Word)
 
 
 ;; MESSAGE EXPANSION
 ; MESSAGE 0
 ; Initial state
-(declare-const m0_w0 Word)
-(declare-const m0_w1 Word)
-(declare-const m0_w2 Word)
-(declare-const m0_w3 Word)
-(declare-const m0_w4 Word)
-(declare-const m0_w5 Word)
-(declare-const m0_w6 Word)
-(declare-const m0_w7 Word)
-(define-const m0_w8 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m0_w9 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m0_w10 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m0_w11 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m0_w12 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m0_w13 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m0_w14 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m0_w15 Word #x0000000000000000) ; Irrelevant for 8 rounds
+(declare-fun m0_w0 () Word)
+(declare-fun m0_w1 () Word)
+(declare-fun m0_w2 () Word)
+(declare-fun m0_w3 () Word)
+(declare-fun m0_w4 () Word)
+(declare-fun m0_w5 () Word)
+(declare-fun m0_w6 () Word)
+(declare-fun m0_w7 () Word)
+(define-fun m0_w8 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m0_w9 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m0_w10 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m0_w11 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m0_w12 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m0_w13 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m0_w14 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m0_w15 () Word #x0000000000000000) ; Irrelevant for 8 rounds
 ; Message expansion irrelevant for 8 rounds
 
 ; MESSAGE 1
 ; Initial state
-(declare-const m1_w0 Word)
-(declare-const m1_w1 Word)
-(declare-const m1_w2 Word)
-(declare-const m1_w3 Word)
-(declare-const m1_w4 Word)
-(declare-const m1_w5 Word)
-(declare-const m1_w6 Word)
-(declare-const m1_w7 Word)
-(define-const m1_w8 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m1_w9 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m1_w10 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m1_w11 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m1_w12 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m1_w13 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m1_w14 Word #x0000000000000000) ; Irrelevant for 8 rounds
-(define-const m1_w15 Word #x0000000000000000) ; Irrelevant for 8 rounds
+(declare-fun m1_w0 () Word)
+(declare-fun m1_w1 () Word)
+(declare-fun m1_w2 () Word)
+(declare-fun m1_w3 () Word)
+(declare-fun m1_w4 () Word)
+(declare-fun m1_w5 () Word)
+(declare-fun m1_w6 () Word)
+(declare-fun m1_w7 () Word)
+(define-fun m1_w8 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m1_w9 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m1_w10 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m1_w11 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m1_w12 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m1_w13 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m1_w14 () Word #x0000000000000000) ; Irrelevant for 8 rounds
+(define-fun m1_w15 () Word #x0000000000000000) ; Irrelevant for 8 rounds
 ; Message expansion irrelevant for 8 rounds
 
 
