@@ -150,7 +150,7 @@ mod tests {
 	use std::path::PathBuf;
 	use std::time::Duration;
 	use plotters::style::RGBColor;
-	use crate::structs::benchmark::{Benchark, BenchmarkResult, Solver};
+	use crate::structs::benchmark::{Benchark, BenchmarkResult, SmtSolver};
 	use crate::structs::collision_type::CollisionType;
 	use crate::structs::hash_function::HashFunction::*;
 	use super::{create_time_and_memory_chart, filter_data};
@@ -166,7 +166,7 @@ mod tests {
 		// Mock Data
 		let benchmarks = vec![
 			Benchark {
-				solver: Solver::Z3,
+				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
 				rounds: 16,
@@ -177,7 +177,7 @@ mod tests {
 				console_output: String::new(),
 			},
 			Benchark {
-				solver: Solver::Z3,
+				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
 				rounds: 17,
@@ -188,7 +188,7 @@ mod tests {
 				console_output: String::new(),
 			},
 			Benchark {
-				solver: Solver::Z3,
+				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
 				rounds: 18,
@@ -199,7 +199,7 @@ mod tests {
 				console_output: String::new(),
 			},
 			Benchark {
-				solver: Solver::Z3,
+				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
 				rounds: 19,
@@ -210,7 +210,7 @@ mod tests {
 				console_output: String::new(),
 			},
 			Benchark {
-				solver: Solver::Z3,
+				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA224,
 				rounds: 19,
@@ -221,7 +221,7 @@ mod tests {
 				console_output: String::new(),
 			},
 			Benchark {
-				solver: Solver::Z3,
+				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA224,
 				rounds: 20,
@@ -242,7 +242,7 @@ mod tests {
 		// Mock Data
 		let benchmarks = vec![
 			Benchark {
-				solver: Solver::Z3,
+				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
 				rounds: 16,
@@ -253,7 +253,7 @@ mod tests {
 				console_output: String::new(),
 			},
 			Benchark {
-				solver: Solver::Z3,
+				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
 				rounds: 17,
@@ -264,7 +264,7 @@ mod tests {
 				console_output: String::new(),
 			},
 			Benchark {
-				solver: Solver::Z3,
+				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
 				rounds: 18,
@@ -275,7 +275,7 @@ mod tests {
 				console_output: String::new(),
 			},
 			Benchark {
-				solver: Solver::Z3,
+				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
 				rounds: 19,
