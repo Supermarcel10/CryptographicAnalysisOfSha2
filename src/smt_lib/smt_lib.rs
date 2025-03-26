@@ -121,20 +121,25 @@ impl SmtBuilder {
 
 		if self.rounds <= 16 {
 			self.comment(&format!("Message expansion irrelevant for {} rounds", self.rounds));
-			return;
+		} else {
+			self.break_line();
+			self.comment("Message expansion");
+			let mut s = String::new();
+			for i in 16..self.rounds {
+				s += &format!(
+					"(define-fun {msg}{i} () Word (expandMessage {msg}{} {msg}{} {msg}{} {msg}{}))\n",
+					i - 16, i - 15, i - 7, i - 2
+				)
+			}
+
+			self.smt += &s;
 		}
 
-		self.break_line();
-		self.comment("Message expansion");
-		let mut s = String::new();
-		for i in 16..self.rounds {
-			s += &format!(
-				"(define-fun {msg}{i} () Word (expandMessage {msg}{} {msg}{} {msg}{} {msg}{}))\n",
-				i - 16, i - 15, i - 7, i - 2
-			)
+		if self.rounds >= 16 {
+			let bv_size = self.hash_function.word_size().bits();
+			self.smt += &format!("(define-fun {msg}{rounds} () Word (_ bv0 {bv_size})) ; Unused for {rounds}, but kept for output format",
+								 rounds = self.rounds);
 		}
-
-		self.smt += &s;
 	}
 
 	fn define_compression_for_message(&mut self, message: u8) {
