@@ -1,9 +1,11 @@
 use std::error::Error;
 use std::io::{BufReader, Read};
+use std::os::unix::prelude::CommandExt;
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 use chrono::Local;
-use nix::sys::signal::Signal;
+use nix::sys::signal::{killpg, Signal};
+use nix::unistd::Pid;
 use wait_timeout::ChildExt;
 use crate::sha::Word;
 use crate::smt_lib::smt_lib::generate_smtlib_files;
@@ -168,6 +170,7 @@ impl BenchmarkRunner {
 		let start_time = Instant::now();
 		let mut child = Command::new("time")
 			.args(full_args)
+			.process_group(0)
 			.stdout(Stdio::piped())
 			.stderr(Stdio::piped())
 			.spawn()?;
@@ -183,7 +186,8 @@ impl BenchmarkRunner {
 		// Read output
 		let (cout, cerr) = match status {
 			None => {
-				// TODO: There seems to be some form of issue if the timeout threshold is hit, where the child is not killed and another instance starts running
+				killpg(Pid::from_raw(pid as i32), Signal::SIGKILL)?;
+				child.wait()?;
 				(String::new(), String::new())
 			},
 			Some(_) => {
