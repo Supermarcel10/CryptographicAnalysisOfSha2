@@ -153,7 +153,7 @@
 (define-fun m0_w46 () Word (expandMessage m0_w30 m0_w31 m0_w39 m0_w44))
 (define-fun m0_w47 () Word (expandMessage m0_w31 m0_w32 m0_w40 m0_w45))
 (define-fun m0_w48 () Word (expandMessage m0_w32 m0_w33 m0_w41 m0_w46))
-
+(define-fun m0_w49 () Word (_ bv0 32)) ; Unused for 49, but kept for output format
 ; MESSAGE 1
 ; Initial state
 (declare-fun m1_w0 () Word)
@@ -207,7 +207,7 @@
 (define-fun m1_w46 () Word (expandMessage m1_w30 m1_w31 m1_w39 m1_w44))
 (define-fun m1_w47 () Word (expandMessage m1_w31 m1_w32 m1_w40 m1_w45))
 (define-fun m1_w48 () Word (expandMessage m1_w32 m1_w33 m1_w41 m1_w46))
-
+(define-fun m1_w49 () Word (_ bv0 32)) ; Unused for 49, but kept for output format
 
 ;; MESSAGE COMPRESSION
 ; MESSAGE 0
