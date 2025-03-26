@@ -225,36 +225,46 @@ impl Benchark {
 		let mut states = [BTreeMap::new(), BTreeMap::new()];
 
 		for capture in re.captures_iter(&smt_output) {
-			let msg: usize = capture[1].parse()?; // TODO: Handle if this is null, then in that case
+			let msg= capture.get(1);
 			let var = &capture[2];
 			let round: usize = capture[3].parse()?;
 			let val = Word::from_str_radix(&capture[4], 2, self.hash_function)?;
 
-			if var == "hash" {
-				hash[round] = val;
-			} else {
-				let var_char: char = var.parse()?;
-
-				// Parse H constants (CV/IV)
-				if round == 0 && var_char != 'w' {
-					let i = (var_char as u8) - ('a' as u8);
-					start_vectors[msg][i as usize] = val;
+			match msg {
+				Some(msg) => {
+					Self::parse_update_for_msg(
+						msg.as_str().parse()?,
+						var,
+						round,
+						val,
+						&mut hash,
+						&mut start_blocks,
+						&mut start_vectors,
+						&mut states,
+					)?;
 				}
-
-				// Parse start blocks
-				if var_char == 'w' {
-					start_blocks[msg][round] = val;
+				None => {
+					Self::parse_update_for_msg(
+						0,
+						var,
+						round,
+						val,
+						&mut hash,
+						&mut start_blocks,
+						&mut start_vectors,
+						&mut states,
+					)?;
+					Self::parse_update_for_msg(
+						1,
+						var,
+						round,
+						val,
+						&mut hash,
+						&mut start_blocks,
+						&mut start_vectors,
+						&mut states,
+					)?;
 				}
-
-				// Upsert updated state
-				states[msg].entry(round).and_modify(|state| {
-					update_state_variable(state, var_char, val);
-				}).or_insert_with(|| {
-					let mut state = MutableShaState::default();
-					state.i = round as u8;
-					update_state_variable(&mut state, var_char, val);
-					state
-				});
 			}
 		}
 
@@ -283,5 +293,44 @@ impl Benchark {
 			m1,
 			verified_hash: None,
 		}))
+	}
+
+	fn parse_update_for_msg(
+		msg: usize,
+		var: &str,
+		round: usize,
+		val: Word,
+		mut hash: &mut Box<[Word; 8]>,
+		mut start_blocks: &mut [[Word; 16]; 2],
+		mut start_vectors: &mut [[Word; 8]; 2],
+		mut states: &mut [BTreeMap<usize, MutableShaState>; 2],
+	) -> Result<(), Box<dyn Error>> {
+		if var == "hash" {
+			hash[round] = val;
+		} else {
+			let var_char: char = var.parse()?;
+
+			// Parse H constants (CV/IV)
+			if round == 0 && var_char != 'w' {
+				let i = (var_char as u8) - ('a' as u8);
+				start_vectors[msg][i as usize] = val;
+			}
+
+			// Parse start blocks
+			if var_char == 'w' {
+				start_blocks[msg][round] = val;
+			}
+
+			// Upsert updated state
+			states[msg].entry(round).and_modify(|state| {
+				update_state_variable(state, var_char, val);
+			}).or_insert_with(|| {
+				let mut state = MutableShaState::default();
+				state.i = round as u8;
+				update_state_variable(&mut state, var_char, val);
+				state
+			});
+		}
+		Ok(())
 	}
 }
