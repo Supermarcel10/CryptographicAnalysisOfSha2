@@ -184,8 +184,6 @@ impl BenchmarkRunner {
 		let (cout, cerr) = match status {
 			None => {
 				// TODO: There seems to be some form of issue if the timeout threshold is hit, where the child is not killed and another instance starts running
-				// TODO: Check if the below command is consistent and works!
-				child.kill()?;
 				(String::new(), String::new())
 			},
 			Some(_) => {
