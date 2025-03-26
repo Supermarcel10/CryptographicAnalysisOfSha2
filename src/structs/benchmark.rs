@@ -317,7 +317,7 @@ impl Benchark {
 			}
 
 			// Parse start blocks
-			if var_char == 'w' {
+			if var_char == 'w' && round < 16 {
 				start_blocks[msg][round] = val;
 			}
 
