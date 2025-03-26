@@ -13,6 +13,13 @@ use crate::structs::hash_function::HashFunction;
 use crate::structs::sha_state::ShaState;
 use crate::verification::verify_hash::VerifyHash;
 
+// TODO: Look into benchmarking:
+// - Different arguments for each solver
+// - Different kernels
+//   https://askubuntu.com/a/126671
+// - Different memory timings
+// - CPU Core Clock difference
+
 #[cfg(feature = "graphing")] mod graphing;
 #[cfg(feature = "smt-gen")] mod smt_lib;
 mod sha;
