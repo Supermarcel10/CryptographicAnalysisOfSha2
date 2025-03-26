@@ -15,8 +15,7 @@ use crate::verification::verify_hash::VerifyHash;
 
 // TODO: Look into benchmarking:
 // - Different arguments for each solver
-// - Different kernels
-//   https://askubuntu.com/a/126671
+// - Different kernels (https://askubuntu.com/a/126671)
 // - Different memory timings
 // - CPU Core Clock difference
 
@@ -156,6 +155,7 @@ impl BenchmarkRunner {
 		solver: SmtSolver,
 		arguments: Vec<SolverArg>,
 	) -> Result<Benchark, Box<dyn Error>> {
+		// TODO: Ensure that the command exists before attempting to run it, else status code 32512 is returned and this causes an ERRINVAL
 		let mut full_args: Vec<SolverArg> = Vec::from([
 			"-v".into(),
 			solver.command(),
