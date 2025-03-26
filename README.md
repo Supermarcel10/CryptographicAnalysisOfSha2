@@ -39,12 +39,12 @@ None
 
 ## Runners
 ### Runner Specifications
-|            |                    **R1**                    |            **R2**            |
-|-----------:|:--------------------------------------------:|:----------------------------:|
-|    **CPU** |              AMD Ryzen 5 5600X               |      AMD Ryzen 9 5900X       |
-|    **MEM** |         4 x 8GiB DDR4 3600MHz CL 36          | 4 x 32GiB DDR4 3600MHz CL 36 |
-|     **OS** | NixOS 24.11.20250103.d29ab98 (Vicuna) x86_64 |             TBD              |
-| **KERNEL** |                 Linux 6.12.8                 |             TBD              |
+|            |                    **R1**                    |                     **R2**                      |
+|-----------:|:--------------------------------------------:|:-----------------------------------------------:|
+|    **CPU** |              AMD Ryzen 5 5600X               |                AMD Ryzen 9 5900X                |
+|    **MEM** |         4 x 8GiB DDR4 3600MHz CL 36          |          4 x 32GiB DDR4 3600MHz CL 36           |
+|     **OS** | NixOS 24.11.20250103.d29ab98 (Vicuna) x86_64 | NixOS 24.11.716027.f0946fa5f1fb (Vicuna) x86_64 |
+| **KERNEL** |                 Linux 6.12.8                 |           Linux Realtime 6.6.77-rt50            |
 
 ### Solver Versions
 
@@ -55,3 +55,4 @@ None
 |      Yices | 2.6.5  |  None  |
 |   Bitwuzla | 0.6.0  |  None  |
 |  Boolector | 3.2.3  |  None  |
+|        STP | 2.3.3  |  None  |
