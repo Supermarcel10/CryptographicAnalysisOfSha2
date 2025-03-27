@@ -1,6 +1,8 @@
 use std::error::Error;
+use std::fs;
 use std::io::{BufReader, Read};
 use std::os::unix::prelude::CommandExt;
+use std::path::PathBuf;
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 use chrono::Local;
@@ -34,6 +36,21 @@ const VERIFY_HASH_DEFAULT: bool = true;
 
 fn main() {
 	generate_smtlib_files().expect("Failed to generate files!");
+	let benchmarks = retrieve_benchmarks("results".into()).unwrap();
+}
+
+fn retrieve_benchmarks(dir_location: PathBuf) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+	let mut benchmarks = vec![];
+	for file in fs::read_dir(dir_location)? {
+		let contents = fs::read(file?.path())?;
+		let benchmark: Benchmark = serde_json::from_slice(&contents)?;
+		benchmarks.push(benchmark);
+	}
+
+	Ok(benchmarks)
+}
+
+fn solve_by_brute_force() {
 	let solvers = [SmtSolver::Bitwuzla, SmtSolver::Yices2, SmtSolver::Boolector, SmtSolver::CVC5, SmtSolver::Z3, SmtSolver::STP];
 	let parameters: Vec<SolverArg> = vec![];
 	let hash_functions = [HashFunction::SHA256];
