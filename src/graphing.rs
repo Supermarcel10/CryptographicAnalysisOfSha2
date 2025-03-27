@@ -166,6 +166,7 @@ mod tests {
 		// Mock Data
 		let benchmarks = vec![
             Benchmark {
+				date_time: Default::default(),
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -174,9 +175,10 @@ mod tests {
 				execution_time: Duration::from_millis(1000),
 				memory_bytes: 1000,
 				result: BenchmarkResult::Sat,
-				console_output: String::new(),
+				console_output: (String::new(), String::new()),
 			},
             Benchmark {
+				date_time: Default::default(),
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -185,9 +187,10 @@ mod tests {
 				execution_time: Duration::from_millis(1400),
 				memory_bytes: 12503,
 				result: BenchmarkResult::Sat,
-				console_output: String::new(),
+				console_output: (String::new(), String::new()),
 			},
             Benchmark {
+				date_time: Default::default(),
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -196,9 +199,10 @@ mod tests {
 				execution_time: Duration::from_millis(5000),
 				memory_bytes: 525503,
 				result: BenchmarkResult::Sat,
-				console_output: String::new(),
+				console_output: (String::new(), String::new()),
 			},
             Benchmark {
+				date_time: Default::default(),
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -207,9 +211,10 @@ mod tests {
 				execution_time: Duration::from_millis(50000),
 				memory_bytes: 825503,
 				result: BenchmarkResult::Sat,
-				console_output: String::new(),
+				console_output: (String::new(), String::new()),
 			},
             Benchmark {
+				date_time: Default::default(),
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA224,
@@ -218,9 +223,10 @@ mod tests {
 				execution_time: Duration::from_millis(50000),
 				memory_bytes: 825503,
 				result: BenchmarkResult::Sat,
-				console_output: String::new(),
+				console_output: (String::new(), String::new()),
 			},
             Benchmark {
+				date_time: Default::default(),
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA224,
@@ -229,7 +235,7 @@ mod tests {
 				execution_time: Duration::from_millis(800000),
 				memory_bytes: 82550300,
 				result: BenchmarkResult::MemOut,
-				console_output: String::new(),
+				console_output: (String::new(), String::new()),
 			},
 		];
 
@@ -242,6 +248,7 @@ mod tests {
 		// Mock Data
 		let benchmarks = vec![
             Benchmark {
+				date_time: Default::default(),
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -250,9 +257,10 @@ mod tests {
 				execution_time: Duration::from_millis(1000),
 				memory_bytes: 1000,
 				result: BenchmarkResult::Sat,
-				console_output: String::new(),
+				console_output: (String::new(), String::new()),
 			},
             Benchmark {
+				date_time: Default::default(),
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -261,9 +269,10 @@ mod tests {
 				execution_time: Duration::from_millis(1400),
 				memory_bytes: 12503,
 				result: BenchmarkResult::Sat,
-				console_output: String::new(),
+				console_output: (String::new(), String::new()),
 			},
             Benchmark {
+				date_time: Default::default(),
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -272,9 +281,10 @@ mod tests {
 				execution_time: Duration::from_millis(5000),
 				memory_bytes: 525503,
 				result: BenchmarkResult::Sat,
-				console_output: String::new(),
+				console_output: (String::new(), String::new()),
 			},
             Benchmark {
+				date_time: Default::default(),
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -283,7 +293,7 @@ mod tests {
 				execution_time: Duration::from_millis(50000),
 				memory_bytes: 825503,
 				result: BenchmarkResult::Sat,
-				console_output: String::new(),
+				console_output: (String::new(), String::new()),
 			},
 		];
 
@@ -301,6 +311,7 @@ mod tests {
 			"test_create_time_and_memory_chart"
 		);
 
+		println!("{chart:?}");
 		assert!(matches!(chart, Ok(..)));
 
 		cleanup_test(chart);
