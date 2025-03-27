@@ -28,7 +28,7 @@ mod verification;
 mod structs;
 
 // TODO: Add overrides for these as parameters
-const STOP_TOLERANCE_DEFAULT: u8 = 4;
+const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
 
