@@ -395,7 +395,7 @@ mod tests {
 			0x2aadbce4, 0xbda0b3f7, 0xe36c9da7,
 		];
 
-		assert_eq!(*result.hash, expected);
+		assert_eq!(*result.hash.0, expected);
 	}
 
 	#[test]
@@ -411,7 +411,7 @@ mod tests {
 			0xb00361a3, 0x96177a9c, 0xb410ff61, 0xf20015ad,
 		];
 
-		assert_eq!(*result.hash, expected);
+		assert_eq!(*result.hash.0, expected);
 	}
 
 	#[test]
@@ -427,7 +427,7 @@ mod tests {
 			0x2192992a274fc1a8, 0x36ba3c23a3feebbd, 0x454d4423643ce80e, 0x2a9ac94fa54ca49f,
 		];
 
-		assert_eq!(*result.hash, expected);
+		assert_eq!(*result.hash.0, expected);
 	}
 
 	#[test]
@@ -497,8 +497,8 @@ mod tests {
 			.execute()
 			.unwrap();
 
-		assert_eq!(*result_m.hash, expected);
-		assert_eq!(*result_m.hash, *result_m_prime.hash);
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
 	}
 
 	#[test]
@@ -533,8 +533,8 @@ mod tests {
 			.execute()
 			.unwrap();
 
-		assert_eq!(*result_m.hash, expected);
-		assert_eq!(*result_m.hash, *result_m_prime.hash);
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
 	}
 
 	#[test]
@@ -579,8 +579,8 @@ mod tests {
 			.execute()
 			.unwrap();
 
-		assert_eq!(*result_m.hash, expected);
-		assert_eq!(*result_m.hash, *result_m_prime.hash);
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
 	}
 
 	#[test]
