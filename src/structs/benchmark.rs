@@ -179,7 +179,7 @@ impl Display for BenchmarkResult {
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
-pub struct Benchark {
+pub struct Benchmark {
 	pub date_time: DateTime<Utc>,
 	pub solver: SmtSolver,
 	pub arguments: Vec<SolverArg>,
@@ -192,7 +192,7 @@ pub struct Benchark {
 	pub console_output: (String, String),
 }
 
-impl Benchark {
+impl Benchmark {
 	pub fn save(&self) -> Result<PathBuf, Box<dyn Error>> {
 		let path = PathBuf::from(
 			format!("results/{}_{}_{}_{}_{}.json",

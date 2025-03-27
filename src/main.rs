@@ -9,7 +9,7 @@ use nix::unistd::Pid;
 use wait_timeout::ChildExt;
 use crate::sha::Word;
 use crate::smt_lib::smt_lib::generate_smtlib_files;
-use crate::structs::benchmark::{Benchark, BenchmarkResult, SmtSolver, SolverArg};
+use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
 use crate::structs::sha_state::ShaState;
@@ -154,7 +154,7 @@ impl BenchmarkRunner {
 		collision_type: CollisionType,
 		solver: SmtSolver,
 		arguments: Vec<SolverArg>,
-	) -> Result<Benchark, Box<dyn Error>> {
+	) -> Result<Benchmark, Box<dyn Error>> {
 		// TODO: Ensure that the command exists before attempting to run it, else status code 32512 is returned and this causes an ERRINVAL
 		let mut full_args: Vec<SolverArg> = Vec::from([
 			"-v".into(),
@@ -218,7 +218,7 @@ impl BenchmarkRunner {
 			}
 		}
 
-		Ok(Benchark {
+		Ok(Benchmark {
 			date_time,
 			solver,
 			arguments,

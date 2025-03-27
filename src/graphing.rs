@@ -2,10 +2,10 @@ use std::error::Error;
 use std::ops::Range;
 use std::path::PathBuf;
 use plotters::prelude::*;
-use crate::structs::benchmark::{Benchark, BenchmarkResult};
+use crate::structs::benchmark::{Benchmark, BenchmarkResult};
 use crate::structs::hash_function::HashFunction;
 
-type Data = Vec<Benchark>;
+type Data = Vec<Benchmark>;
 
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
 pub enum ChartingError<'a> {
@@ -22,8 +22,8 @@ fn filter_data(data: Data, hash_function: HashFunction) -> Data {
 }
 
 fn get_range<T: Copy + Ord>(
-	data: &Data,
-	retr: fn(&Benchark) -> T,
+    data: &Data,
+    retr: fn(&Benchmark) -> T,
 ) -> Option<Range<T>> {
 	let mut it = data.into_iter();
 	let first = retr(it.next()?);
@@ -150,7 +150,7 @@ mod tests {
 	use std::path::PathBuf;
 	use std::time::Duration;
 	use plotters::style::RGBColor;
-	use crate::structs::benchmark::{Benchark, BenchmarkResult, SmtSolver};
+	use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
 	use crate::structs::collision_type::CollisionType;
 	use crate::structs::hash_function::HashFunction::*;
 	use super::{create_time_and_memory_chart, filter_data};
@@ -165,7 +165,7 @@ mod tests {
 	fn test_filter_data() {
 		// Mock Data
 		let benchmarks = vec![
-			Benchark {
+            Benchmark {
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -176,7 +176,7 @@ mod tests {
 				result: BenchmarkResult::Sat,
 				console_output: String::new(),
 			},
-			Benchark {
+            Benchmark {
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -187,7 +187,7 @@ mod tests {
 				result: BenchmarkResult::Sat,
 				console_output: String::new(),
 			},
-			Benchark {
+            Benchmark {
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -198,7 +198,7 @@ mod tests {
 				result: BenchmarkResult::Sat,
 				console_output: String::new(),
 			},
-			Benchark {
+            Benchmark {
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -209,7 +209,7 @@ mod tests {
 				result: BenchmarkResult::Sat,
 				console_output: String::new(),
 			},
-			Benchark {
+            Benchmark {
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA224,
@@ -220,7 +220,7 @@ mod tests {
 				result: BenchmarkResult::Sat,
 				console_output: String::new(),
 			},
-			Benchark {
+            Benchmark {
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA224,
@@ -241,7 +241,7 @@ mod tests {
 	fn test_create_time_and_memory_chart() {
 		// Mock Data
 		let benchmarks = vec![
-			Benchark {
+            Benchmark {
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -252,7 +252,7 @@ mod tests {
 				result: BenchmarkResult::Sat,
 				console_output: String::new(),
 			},
-			Benchark {
+            Benchmark {
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -263,7 +263,7 @@ mod tests {
 				result: BenchmarkResult::Sat,
 				console_output: String::new(),
 			},
-			Benchark {
+            Benchmark {
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
@@ -274,7 +274,7 @@ mod tests {
 				result: BenchmarkResult::Sat,
 				console_output: String::new(),
 			},
-			Benchark {
+            Benchmark {
 				solver: SmtSolver::Z3,
 				arguments: vec![],
 				hash_function: SHA256,
