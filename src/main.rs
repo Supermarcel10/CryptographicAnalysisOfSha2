@@ -28,15 +28,13 @@ mod verification;
 mod structs;
 
 // TODO: Add overrides for these as parameters
-const STOP_TOLERANCE_DEFAULT: u8 = 1;
-const TIMEOUT_DEFAULT: Duration = Duration::from_secs(5 * 60);
+const STOP_TOLERANCE_DEFAULT: u8 = 4;
+const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
 
 fn main() {
 	generate_smtlib_files().expect("Failed to generate files!");
-
-	// Solver::CVC5, Solver::Z3, Solver::Boolector, Solver::Bitwuzla,
-	let solvers = [SmtSolver::Bitwuzla];
+	let solvers = [SmtSolver::Bitwuzla, SmtSolver::Yices2, SmtSolver::Boolector, SmtSolver::CVC5, SmtSolver::Z3, SmtSolver::STP];
 	let parameters: Vec<SolverArg> = vec![];
 	let hash_functions = [HashFunction::SHA256];
 	// CollisionType::FreeStart, CollisionType::SemiFreeStart,
@@ -46,7 +44,7 @@ fn main() {
 		for hash_function in hash_functions {
 			'seq_fail: for collision_type in collision_types {
 				let mut sequential_fails: u8 = 0;
-				for rounds in 19..hash_function.max_rounds() {
+				for rounds in 0..hash_function.max_rounds() {
 					if sequential_fails == STOP_TOLERANCE_DEFAULT {
 						println!("Failed {sequential_fails} in a row!\n");
 						break 'seq_fail
