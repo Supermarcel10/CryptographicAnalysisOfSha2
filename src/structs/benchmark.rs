@@ -300,10 +300,10 @@ impl Benchmark {
 		var: &str,
 		round: usize,
 		val: Word,
-		mut hash: &mut Box<[Word; 8]>,
-		mut start_blocks: &mut [[Word; 16]; 2],
-		mut start_vectors: &mut [[Word; 8]; 2],
-		mut states: &mut [BTreeMap<usize, MutableShaState>; 2],
+		hash: &mut Box<[Word; 8]>,
+		start_blocks: &mut [[Word; 16]; 2],
+		start_vectors: &mut [[Word; 8]; 2],
+		states: &mut [BTreeMap<usize, MutableShaState>; 2],
 	) -> Result<(), Box<dyn Error>> {
 		if var == "hash" {
 			hash[round] = val;
