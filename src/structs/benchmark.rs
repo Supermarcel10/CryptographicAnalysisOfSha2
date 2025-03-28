@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -192,6 +193,14 @@ pub struct Benchmark {
 
 impl Benchmark {
 	pub fn save(&self, path: &Path) -> Result<PathBuf, Box<dyn Error>> {
+		if !path.exists() {
+			fs::create_dir(path)?;
+		}
+
+		if !path.is_dir() {
+			return Err(Box::from("Path must be a directory"));
+		}
+
 		let path = path.join(
 			format!("{}_{}_{}_{}_{}.json",
 					self.solver,
