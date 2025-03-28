@@ -207,7 +207,7 @@ impl Benchmark {
 					self.collision_type,
 					self.hash_function,
 					self.rounds,
-					self.date_time.format("%Y%m%d_%H:%M"),
+					self.date_time,
 			)
 		);
 
