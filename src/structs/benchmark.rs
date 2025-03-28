@@ -210,6 +210,7 @@ impl Benchmark {
 		Ok(path)
 	}
 
+	// TODO: Fix issue in parsing output, where the output variables are in hex (#x) instead of binary (#b) - for example in Z3
 	pub fn parse_output(self) -> Result<Option<CollidingPair>, Box<dyn Error>> {
 		if self.result != BenchmarkResult::Sat {
 			return Ok(None);
