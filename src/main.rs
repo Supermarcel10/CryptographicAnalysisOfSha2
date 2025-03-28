@@ -34,11 +34,12 @@ mod structs;
 const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
-const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results"));
+const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/bitwuzla"));
 
 fn main() {
 	generate_smtlib_files().expect("Failed to generate files!");
-	let benchmarks = retrieve_benchmarks("results".into()).unwrap();
+	solve_by_brute_force();
+	// let benchmarks = retrieve_benchmarks("results".into()).unwrap();
 }
 
 fn retrieve_benchmarks(dir_location: &Path) -> Result<Vec<Benchmark>, Box<dyn Error>> {
@@ -55,23 +56,27 @@ fn retrieve_benchmarks(dir_location: &Path) -> Result<Vec<Benchmark>, Box<dyn Er
 fn solve_by_brute_force() {
 	// , SmtSolver::Yices2, SmtSolver::Boolector, SmtSolver::CVC5, SmtSolver::Z3
 	let solvers = [SmtSolver::Bitwuzla];
-	let parameters: Vec<SolverArg> = vec![
-		"".into(),
-		"--bv-solver preprop".into(), // Different bv solver engine
-		"--bv-solver prop".into(), // Different bv solver engine
+	let arguments: Vec<SolverArg> = vec![
+		// "".into(),
+		// "--bv-solver preprop".into(), // Different bv solver engine
+		// "--bv-solver prop".into(), // Different bv solver engine
 		"--sat-solver kissat".into(), // Kissat solver
 		"--sat-solver cms".into(), // CMS solver
 		"--sat-solver cms --nthreads 4".into(), // CMS solver (4 threads)
-		"rwl 2".into(), // Higher rewrite level
-		"rwl 4".into(), // Higher rewrite level
-		"--prop-opt-lt-concat-sext true".into(),
-		"--prop-path-sel random".into(),
-		"--prop-normalize true".into(),
-		"--abstraction true --abstraction-eq true".into(),
-		"--abstraction true --abstraction-inc-bitblast true".into(),
-		"--pp-elim-extracts true".into(),
-		"--pp-variable-subst-norm-diseq true".into(),
-		"--pp-variable-subst-norm-bv-ineq true".into(),
+		"--sat-solver cms --nthreads 8".into(), // CMS solver (8 threads)
+		"--sat-solver cms --nthreads 12".into(), // CMS solver (12 threads)
+		"--sat-solver cms --nthreads 16".into(), // CMS solver (16 threads)
+		"--sat-solver cms --nthreads 20".into(), // CMS solver (20 threads)
+		// "rwl 2".into(), // Higher rewrite level
+		// "rwl 4".into(), // Higher rewrite level
+		// "--prop-opt-lt-concat-sext true".into(),
+		// "--prop-path-sel random".into(),
+		// "--prop-normalize true".into(),
+		// "--abstraction true --abstraction-eq true".into(),
+		// "--abstraction true --abstraction-inc-bitblast true".into(),
+		// "--pp-elim-extracts true".into(),
+		// "--pp-variable-subst-norm-diseq true".into(),
+		// "--pp-variable-subst-norm-bv-ineq true".into(),
 	];
 
 	let hash_functions = [HashFunction::SHA256];
@@ -82,61 +87,63 @@ fn solve_by_brute_force() {
 		for hash_function in hash_functions {
 			for collision_type in collision_types {
 				let mut sequential_fails: u8 = 0;
-				for rounds in 0..hash_function.max_rounds() {
-					if sequential_fails == STOP_TOLERANCE_DEFAULT {
-						println!("Failed {sequential_fails} in a row!\n");
-						break;
-					}
-
-					let result = BenchmarkRunner::run_solver_with_benchmark(
-						hash_function,
-						rounds,
-						collision_type,
-						solver,
-						parameters.clone()
-					);
-
-					if let Ok(benchmark) = result {
-						benchmark.save(*BENCHMARK_SAVE_PATH_DEFAULT).expect("Failed to save benchmark!");
-
-						match benchmark.result {
-							BenchmarkResult::SMTError => {
-								println!("Received SMT Error: {:?}", benchmark.console_output);
-								sequential_fails += 1;
-								continue;
-							}
-							BenchmarkResult::Aborted => {
-								println!("Test aborted!");
-								break;
-							}
-							BenchmarkResult::Sat | BenchmarkResult::Unsat => {
-								let colliding_pair = benchmark.parse_output().unwrap();
-
-								match colliding_pair {
-									None => {
-										println!("UNSAT");
-									}
-									Some(mut colliding_pair) => {
-										// TODO: Simplify this!
-										if VERIFY_HASH_DEFAULT && colliding_pair.verify(hash_function, rounds).expect("Failed to verify hash output!") {
-											colliding_pair.verified_hash = Some(colliding_pair.m0.expected_hash.clone());
-										}
-
-										println!("{}", colliding_pair);
-									}
-								}
-
-								sequential_fails = 0;
-							}
-							_ => {
-								println!("{}", benchmark.result);
-								sequential_fails += 1;
-							}
+				'seq_fail: for rounds in 0..hash_function.max_rounds() {
+					for arg in arguments.iter() {
+						if sequential_fails == STOP_TOLERANCE_DEFAULT {
+							println!("Failed {sequential_fails} in a row!\n");
+							break 'seq_fail;
 						}
-						println!();
-					} else {
-						println!("An error occurred during benchmark runtime: {}", result.unwrap_err());
-						break;
+
+						let result = BenchmarkRunner::run_solver_with_benchmark(
+							hash_function,
+							rounds,
+							collision_type,
+							solver,
+							vec![arg.clone()],
+						);
+
+						if let Ok(benchmark) = result {
+							benchmark.save(*BENCHMARK_SAVE_PATH_DEFAULT).expect("Failed to save benchmark!");
+
+							match benchmark.result {
+								BenchmarkResult::SMTError => {
+									println!("Received SMT Error: {:?}", benchmark.console_output);
+									sequential_fails += 1;
+									continue;
+								}
+								BenchmarkResult::Aborted => {
+									println!("Test aborted!");
+									break;
+								}
+								BenchmarkResult::Sat | BenchmarkResult::Unsat => {
+									let colliding_pair = benchmark.parse_output().unwrap();
+
+									match colliding_pair {
+										None => {
+											println!("UNSAT");
+										}
+										Some(mut colliding_pair) => {
+											// TODO: Simplify this!
+											if VERIFY_HASH_DEFAULT && colliding_pair.verify(hash_function, rounds).expect("Failed to verify hash output!") {
+												colliding_pair.verified_hash = Some(colliding_pair.m0.expected_hash.clone());
+											}
+
+											println!("{}", colliding_pair);
+										}
+									}
+
+									sequential_fails = 0;
+								}
+								_ => {
+									println!("{}", benchmark.result);
+									sequential_fails += 1;
+								}
+							}
+							println!();
+						} else {
+							println!("An error occurred during benchmark runtime: {}", result.unwrap_err());
+							break;
+						}
 					}
 				}
 			}
@@ -194,13 +201,20 @@ impl BenchmarkRunner {
 		arguments: Vec<SolverArg>,
 	) -> Result<Benchmark, Box<dyn Error>> {
 		// TODO: Ensure that the command exists before attempting to run it, else status code 32512 is returned and this causes an ERRINVAL
-		let mut full_args: Vec<SolverArg> = Vec::from([
+
+		let smt_file = format!("data/{hash_function}_{collision_type}_{rounds}.smt2"); // TODO: Make a neater way of retrieving files!
+		let mut full_args: Vec<SolverArg> = vec![
 			"-v".into(),
 			solver.command(),
-			format!("data/{hash_function}_{collision_type}_{rounds}.smt2"),
-		]);
+		];
 
-		full_args.extend(arguments.clone());
+		let mut split_args: Vec<String> = vec![];
+		for arg in arguments.iter() {
+			split_args.extend(arg.split(" ").map(String::from));
+		}
+
+		full_args.extend(split_args);
+		full_args.push(smt_file);
 
 		let date_time = Local::now().to_utc();
 		let start_time = Instant::now();
@@ -212,8 +226,9 @@ impl BenchmarkRunner {
 			.spawn()?;
 
 		let pid = child.id();
-
-		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}; SMT solver PID: {pid}");
+		let spc = if arguments.len() > 0 { " " } else { "" };
+		let arg_string = arguments.join(" ");
+		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}{spc}{arg_string}; SMT solver PID: {pid}");
 
 		// Await process exit
 		let status = child.wait_timeout(TIMEOUT_DEFAULT)?;
