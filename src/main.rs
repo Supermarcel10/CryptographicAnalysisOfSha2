@@ -86,12 +86,12 @@ fn solve_by_brute_force() {
 	for solver in solvers {
 		for hash_function in hash_functions {
 			for collision_type in collision_types {
-				let mut sequential_fails: u8 = 0;
-				'seq_fail: for rounds in 0..hash_function.max_rounds() {
-					for arg in arguments.iter() {
+				for arg in arguments.iter() {
+					let mut sequential_fails: u8 = 0;
+					for rounds in 0..hash_function.max_rounds() {
 						if sequential_fails == STOP_TOLERANCE_DEFAULT {
 							println!("Failed {sequential_fails} in a row!\n");
-							break 'seq_fail;
+							break;
 						}
 
 						let result = BenchmarkRunner::run_solver_with_benchmark(
