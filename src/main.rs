@@ -51,8 +51,9 @@ fn retrieve_benchmarks(dir_location: PathBuf) -> Result<Vec<Benchmark>, Box<dyn 
 }
 
 fn solve_by_brute_force() {
-	let solvers = [SmtSolver::Bitwuzla, SmtSolver::Yices2, SmtSolver::Boolector, SmtSolver::CVC5, SmtSolver::Z3, SmtSolver::STP];
 	let parameters: Vec<SolverArg> = vec![];
+	// , SmtSolver::Yices2, SmtSolver::Boolector, SmtSolver::CVC5, SmtSolver::Z3
+	let solvers = [SmtSolver::Bitwuzla];
 	let hash_functions = [HashFunction::SHA256];
 	// CollisionType::FreeStart, CollisionType::SemiFreeStart,
 	let collision_types = [CollisionType::Standard];

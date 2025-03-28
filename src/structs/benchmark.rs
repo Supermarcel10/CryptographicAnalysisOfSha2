@@ -21,7 +21,7 @@ pub enum SmtSolver {
 	Yices2,
 	Bitwuzla,
 	Boolector,
-	STP,
+	// STP, // TODO: Figure out what to do with STP, since the
 	// Colibri, // TODO: Figure out how to install this thing
 }
 
@@ -111,8 +111,6 @@ pub enum SmtSolver {
 
 // TODO: Boolector
 
-// TODO: STP
-
 impl Display for SmtSolver {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		use SmtSolver::*;
@@ -123,7 +121,7 @@ impl Display for SmtSolver {
 			Yices2 => "yices",
 			Bitwuzla => "bitwuzla",
 			Boolector => "boolector",
-			STP => "stp",
+			// STP => "stp",
 		})
 	}
 }
@@ -138,7 +136,7 @@ impl SmtSolver {
 			Yices2 => "yices-smt2",
 			Bitwuzla => "bitwuzla",
 			Boolector => "boolector",
-			STP => "stp",
+			// STP => "stp",
 		}.into()
 	}
 }
