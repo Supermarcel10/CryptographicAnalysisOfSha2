@@ -2,13 +2,14 @@ use std::error::Error;
 use std::fs;
 use std::io::{BufReader, Read};
 use std::os::unix::prelude::CommandExt;
-use std::path::PathBuf;
+use std::path::Path;
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 use chrono::Local;
 use nix::sys::signal::{killpg, Signal};
 use nix::unistd::Pid;
 use wait_timeout::ChildExt;
+use once_cell::unsync::Lazy;
 use crate::sha::Word;
 use crate::smt_lib::smt_lib::generate_smtlib_files;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
@@ -33,13 +34,14 @@ mod structs;
 const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
+const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results"));
 
 fn main() {
 	generate_smtlib_files().expect("Failed to generate files!");
 	let benchmarks = retrieve_benchmarks("results".into()).unwrap();
 }
 
-fn retrieve_benchmarks(dir_location: PathBuf) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+fn retrieve_benchmarks(dir_location: &Path) -> Result<Vec<Benchmark>, Box<dyn Error>> {
 	let mut benchmarks = vec![];
 	for file in fs::read_dir(dir_location)? {
 		let contents = fs::read(file?.path())?;
@@ -77,7 +79,7 @@ fn solve_by_brute_force() {
 					);
 
 					if let Ok(benchmark) = result {
-						benchmark.save().expect("Failed to save benchmark!");
+						benchmark.save(*BENCHMARK_SAVE_PATH_DEFAULT).expect("Failed to save benchmark!");
 
 						match benchmark.result {
 							BenchmarkResult::SMTError => {

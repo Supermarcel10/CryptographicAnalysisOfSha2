@@ -3,7 +3,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 use chrono::{DateTime, Utc};
 use regex::Regex;
@@ -191,15 +191,16 @@ pub struct Benchmark {
 }
 
 impl Benchmark {
-	pub fn save(&self) -> Result<PathBuf, Box<dyn Error>> {
-		let path = PathBuf::from(
-			format!("results/{}_{}_{}_{}_{}.json",
+	pub fn save(&self, path: &Path) -> Result<PathBuf, Box<dyn Error>> {
+		let path = path.join(
+			format!("{}_{}_{}_{}_{}.json",
 					self.solver,
 					self.collision_type,
 					self.hash_function,
 					self.rounds,
 					self.date_time.format("%Y%m%d_%H:%M"),
-			));
+			)
+		);
 
 		let mut file = File::create(path.clone())?;
 		let json = serde_json::to_string(&self)?;
