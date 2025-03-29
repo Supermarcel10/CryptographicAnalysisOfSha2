@@ -225,10 +225,6 @@ impl Benchmark {
 			fs::create_dir(path)?;
 		}
 
-		if !path.is_dir() {
-			return Err(Box::from("Path must be a directory"));
-		}
-
 		let path = path.join(
 			format!("{}_{}_{}_{}_{}.json",
 					self.solver,
@@ -239,7 +235,11 @@ impl Benchmark {
 			)
 		);
 
-		let mut file = File::create(path.clone())?;
+		let mut file = File::options()
+			.create_new(true)
+			.write(true)
+			.open(path.clone())?;
+
 		let json = serde_json::to_string(&self)?;
 		file.write_all(json.as_bytes())?;
 

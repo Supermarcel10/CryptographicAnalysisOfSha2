@@ -37,6 +37,7 @@ const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results
 
 fn main() {
 	generate_smtlib_files().expect("Failed to generate files!");
+	solve_by_brute_force();
 }
 
 fn solve_by_brute_force() {
