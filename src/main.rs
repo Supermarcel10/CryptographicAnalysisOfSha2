@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::fs;
 use std::io::{BufReader, Read};
 use std::os::unix::prelude::CommandExt;
 use std::path::Path;
@@ -38,19 +37,6 @@ const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results
 
 fn main() {
 	generate_smtlib_files().expect("Failed to generate files!");
-	solve_by_brute_force();
-	// let benchmarks = retrieve_benchmarks("results".into()).unwrap();
-}
-
-fn retrieve_benchmarks(dir_location: &Path) -> Result<Vec<Benchmark>, Box<dyn Error>> {
-	let mut benchmarks = vec![];
-	for file in fs::read_dir(dir_location)? {
-		let contents = fs::read(file?.path())?;
-		let benchmark: Benchmark = serde_json::from_slice(&contents)?;
-		benchmarks.push(benchmark);
-	}
-
-	Ok(benchmarks)
 }
 
 fn solve_by_brute_force() {

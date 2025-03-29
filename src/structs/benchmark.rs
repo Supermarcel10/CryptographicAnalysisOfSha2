@@ -177,6 +177,34 @@ impl Display for BenchmarkResult {
 	}
 }
 
+#[derive(Clone, Copy)]
+enum SmtOutputFormat {
+	Boolean,
+	Hex,
+}
+
+impl SmtOutputFormat {
+	fn output_string(self) -> String {
+		match self {
+			SmtOutputFormat::Boolean => "#b([01]*)",
+			SmtOutputFormat::Hex => "#x([0-9a-fA-F]*)",
+		}.to_string()
+	}
+
+	fn get_value(
+		self,
+		capture: &str,
+		hash_function: HashFunction
+	) -> Result<Word, Box<dyn Error>> {
+		let radix_size = match self {
+			SmtOutputFormat::Boolean => 2,
+			SmtOutputFormat::Hex => 16,
+		};
+
+		Ok(Word::from_str_radix(capture, radix_size, hash_function)?)
+	}
+}
+
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Benchmark {
 	pub date_time: DateTime<Utc>,
@@ -218,14 +246,42 @@ impl Benchmark {
 		Ok(path)
 	}
 
-	// TODO: Fix issue in parsing output, where the output variables are in hex (#x) instead of binary (#b) - for example in Z3
+	pub fn load(file: &Path) -> Result<Benchmark, Box<dyn Error>> {
+		let contents = fs::read(file)?;
+		let benchmark: Benchmark = serde_json::from_slice(&contents)?;
+		Ok(benchmark)
+	}
+
+	pub fn load_all(dir_location: &Path, recursively: bool) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+		let mut benchmarks = vec![];
+		for dir_entry in fs::read_dir(dir_location)? {
+			if let Ok(entry) = dir_entry {
+				let metadata = entry.metadata()?;
+				if recursively && metadata.is_dir() {
+					benchmarks.extend(Self::load_all(&entry.path(), recursively)?)
+				} else if metadata.is_file() {
+					benchmarks.push(Self::load(&entry.path())?);
+				}
+			}
+		}
+
+		Ok(benchmarks)
+	}
+
 	pub fn parse_output(self) -> Result<Option<CollidingPair>, Box<dyn Error>> {
 		if self.result != BenchmarkResult::Sat {
 			return Ok(None);
 		}
 
+		let output_format = self.get_output_format()?;
+		let re = Regex::new(
+			&format!(
+				r"\((?:m([01])_|)([a-hw]|hash)([0-9]+) {}\)",
+				output_format.output_string()
+			)
+		)?;
+
 		let (smt_output, _) = self.console_output;
-		let re = Regex::new(r"\((?:m([01])_|)([a-hw]|hash)([0-9]+) #b([01]*)\)")?;
 		let default_word = self.hash_function.default_word();
 
 		let mut hash = Box::new([default_word; 8]);
@@ -237,7 +293,7 @@ impl Benchmark {
 			let msg= capture.get(1);
 			let var = &capture[2];
 			let round: usize = capture[3].parse()?;
-			let val = Word::from_str_radix(&capture[4], 2, self.hash_function)?;
+			let val = output_format.get_value(&capture[4], self.hash_function)?;
 
 			match msg {
 				Some(msg) => {
@@ -341,5 +397,16 @@ impl Benchmark {
 			});
 		}
 		Ok(())
+	}
+
+	fn get_output_format(&self) -> Result<SmtOutputFormat, Box<dyn Error>> {
+		let (smt_output, _) = self.console_output.clone();
+		if smt_output.contains("#b") {
+			Ok(SmtOutputFormat::Boolean)
+		} else if smt_output.contains("#x") {
+			Ok(SmtOutputFormat::Hex)
+		} else {
+			Err("Invalid output format: Expected boolean (#b) or hex (#x)".into())
+		}
 	}
 }
