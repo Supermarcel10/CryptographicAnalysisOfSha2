@@ -33,7 +33,7 @@ mod structs;
 const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
-const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/bitwuzla"));
+const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/bitwuzla/solver_engine"));
 
 fn main() {
 	generate_smtlib_files().expect("Failed to generate files!");
@@ -44,15 +44,15 @@ fn solve_by_brute_force() {
 	let solvers = [SmtSolver::Bitwuzla];
 	let arguments: Vec<SolverArg> = vec![
 		// "".into(),
-		// "--bv-solver preprop".into(), // Different bv solver engine
-		// "--bv-solver prop".into(), // Different bv solver engine
-		"--sat-solver kissat".into(), // Kissat solver
-		"--sat-solver cms".into(), // CMS solver
-		"--sat-solver cms --nthreads 4".into(), // CMS solver (4 threads)
-		"--sat-solver cms --nthreads 8".into(), // CMS solver (8 threads)
-		"--sat-solver cms --nthreads 12".into(), // CMS solver (12 threads)
-		"--sat-solver cms --nthreads 16".into(), // CMS solver (16 threads)
-		"--sat-solver cms --nthreads 20".into(), // CMS solver (20 threads)
+		"--bv-solver preprop".into(), // Different bv solver engine
+		"--bv-solver prop".into(), // Different bv solver engine
+		// "--sat-solver kissat".into(), // Kissat solver
+		// "--sat-solver cms".into(), // CMS solver
+		// "--sat-solver cms --nthreads 4".into(), // CMS solver (4 threads)
+		// "--sat-solver cms --nthreads 8".into(), // CMS solver (8 threads)
+		// "--sat-solver cms --nthreads 12".into(), // CMS solver (12 threads)
+		// "--sat-solver cms --nthreads 16".into(), // CMS solver (16 threads)
+		// "--sat-solver cms --nthreads 20".into(), // CMS solver (20 threads)
 		// "rwl 2".into(), // Higher rewrite level
 		// "rwl 4".into(), // Higher rewrite level
 		// "--prop-opt-lt-concat-sext true".into(),
