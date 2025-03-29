@@ -44,9 +44,6 @@ fn solve_by_brute_force() {
 	// , SmtSolver::Yices2, SmtSolver::Boolector, SmtSolver::CVC5, SmtSolver::Z3
 	let solvers = [SmtSolver::Bitwuzla];
 	let arguments: Vec<SolverArg> = vec![
-		// "".into(),
-		"--bv-solver preprop".into(), // Different bv solver engine
-		"--bv-solver prop".into(), // Different bv solver engine
 		// "--sat-solver kissat".into(), // Kissat solver
 		// "--sat-solver cms".into(), // CMS solver
 		// "--sat-solver cms --nthreads 4".into(), // CMS solver (4 threads)
@@ -54,16 +51,17 @@ fn solve_by_brute_force() {
 		// "--sat-solver cms --nthreads 12".into(), // CMS solver (12 threads)
 		// "--sat-solver cms --nthreads 16".into(), // CMS solver (16 threads)
 		// "--sat-solver cms --nthreads 20".into(), // CMS solver (20 threads)
-		// "rwl 2".into(), // Higher rewrite level
-		// "rwl 4".into(), // Higher rewrite level
-		// "--prop-opt-lt-concat-sext true".into(),
+		"-rwl 1".into(),
+		"-rwl 0".into(),
+		// "--prop-opt-lt-concat-sext".into(),
 		// "--prop-path-sel random".into(),
-		// "--prop-normalize true".into(),
-		// "--abstraction true --abstraction-eq true".into(),
-		// "--abstraction true --abstraction-inc-bitblast true".into(),
-		// "--pp-elim-extracts true".into(),
-		// "--pp-variable-subst-norm-diseq true".into(),
-		// "--pp-variable-subst-norm-bv-ineq true".into(),
+		// "--prop-normalize".into(),
+		// "--abstraction --abstraction-eq".into(),
+		// "--abstraction --abstraction-inc-bitblast".into(),
+		// "--pp-elim-extracts".into(),
+		// "--pp-contr-ands".into(),
+		// "--pp-variable-subst-norm-diseq".into(),
+		// "--pp-variable-subst-norm-bv-ineq".into(),
 	];
 
 	let hash_functions = [HashFunction::SHA256];
@@ -75,7 +73,7 @@ fn solve_by_brute_force() {
 			for collision_type in collision_types {
 				for arg in arguments.iter() {
 					let mut sequential_fails: u8 = 0;
-					for rounds in 0..hash_function.max_rounds() {
+					for rounds in 9..hash_function.max_rounds() {
 						if sequential_fails == STOP_TOLERANCE_DEFAULT {
 							println!("Failed {sequential_fails} in a row!\n");
 							break;
