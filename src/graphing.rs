@@ -5,6 +5,12 @@ use plotters::prelude::*;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult};
 use crate::structs::hash_function::HashFunction;
 
+const OUTPUT_SIZE: (u32, u32) = (1024, 768);
+
+const FONT: &str = "noto sans";
+const TITLE_STYLE: (&str, u32) = (FONT, 36);
+const TEXT_STYLE: (&str, u32) = (FONT, 14);
+
 type Data = Vec<Benchmark>;
 
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
@@ -15,11 +21,16 @@ pub enum ChartingError<'a> {
 	},
 }
 
+// TODO: Move utilities to another file dealing with preparing data
 fn filter_data(data: Data, hash_function: HashFunction) -> Data {
 	data.into_iter()
 		.filter(|b| b.hash_function == hash_function && b.result == BenchmarkResult::Sat)
 		.collect()
 }
+
+// TODO: Look into why Range<u8> does not work?
+//? Potential issue in plotters.rs?
+//? Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
 
 fn get_range<T: Copy + Ord>(
     data: &Data,
@@ -35,19 +46,16 @@ fn get_range<T: Copy + Ord>(
 	Some(min..max)
 }
 
+fn order_data_by_rounds(data: &mut Data) {
+	data.sort_by_key(|b| b.rounds);
+}
+
 fn create_time_and_memory_chart(
 	data: Data,
 	color_palette: Vec<RGBColor>,
 	file_name: &str,
 ) -> Result<PathBuf, Box<dyn Error>> {
 	let path = PathBuf::from(format!("graphs/{file_name}.svg"));
-	let output_size = (1024, 768);
-
-	let font = "noto sans";
-
-	// TODO: Look into why Range<u8> does not work?
-	//? Potential issue in plotters.rs?
-	//? Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
 
 	// Define ranges
 	let x_range: Range<u32> = get_range(&data, |b| b.rounds as u32)
@@ -67,7 +75,7 @@ fn create_time_and_memory_chart(
 		.map(|b| (b.rounds as u32, b.execution_time.as_secs()));
 
 	let path_clone_bind = path.clone();
-	let root = SVGBackend::new(&path_clone_bind, output_size)
+	let root = SVGBackend::new(&path_clone_bind, OUTPUT_SIZE)
 		.into_drawing_area();
 	root.fill(&WHITE)?;
 
@@ -76,7 +84,7 @@ fn create_time_and_memory_chart(
 		.y_label_area_size(60)
 		.right_y_label_area_size(60)
 		.margin(5)
-		.caption("Memory & Time vs Rounds", (font, 36))
+		.caption("Memory & Time vs Rounds", TITLE_STYLE)
 		.build_cartesian_2d(x_range.clone(), y_range_mem)? // Memory
 		.set_secondary_coord(x_range, y_range_time.log_scale().base(2.0)); // Time
 
@@ -86,7 +94,7 @@ fn create_time_and_memory_chart(
 		.disable_mesh()
 		.disable_y_axis()
 		.x_desc("Compression Rounds")
-		.label_style((font, 14).with_color(&BLACK))
+		.label_style(TEXT_STYLE.with_color(&BLACK))
 		.draw()?;
 
 	// Draw primary Y axis
@@ -95,7 +103,7 @@ fn create_time_and_memory_chart(
 		.disable_mesh()
 		.disable_x_axis()
 		.y_desc("Memory (MB)")
-		.label_style((font, 14).with_color(&color_palette[0]))
+		.label_style(TEXT_STYLE.with_color(&color_palette[0]))
 		.draw()?;
 
 	// Draw secondary Y axis
@@ -103,7 +111,7 @@ fn create_time_and_memory_chart(
 		.configure_secondary_axes()
 		.y_desc("Time (s)")
 		.y_label_formatter(&|&x| format!("2^{}", x.ilog2()))
-		.label_style((font, 14).with_color(&color_palette[1]))
+		.label_style(TEXT_STYLE.with_color(&color_palette[1]))
 		.draw()?;
 
 	// Draw primary data
@@ -129,6 +137,84 @@ fn create_time_and_memory_chart(
 		time_data,
 		3,
 		color_palette[1],
+		&|c, s, st| Circle::new(c, s, st.filled()),
+	))?;
+
+	// Draw legend
+	chart
+		.configure_series_labels()
+		.background_style(RGBColor(220, 220, 220))
+		.position(SeriesLabelPosition::LowerRight)
+		.draw()?;
+
+	// Write to PathBuf
+	root.present()?;
+	Ok(path)
+}
+
+pub fn create_baseline_graph(
+	baseline: Data,
+	data: Data,
+	color_palette: Vec<RGBColor>,
+	file_name: &str,
+) -> Result<PathBuf, Box<dyn Error>> {
+	let path = PathBuf::from(format!("graphs/{file_name}.svg"));
+
+	let mut baseline = baseline.clone();
+	order_data_by_rounds(&mut baseline);
+
+	// Define ranges
+	let x_range: Range<u32> = get_range(&baseline, |b| b.rounds as u32)
+		.ok_or(ChartingError::GetRangeFailed { variable: "x_range"})?;
+	let y_range = -100.0..100.0; // -100% to +100% // TODO: Derive this some other way?
+
+	// Define Cartesian mapped data
+	let time_data = data
+		.iter()
+		.map(|b| (b.rounds as u32, 0.0)); // TODO: Make deviation calculation
+
+	let path_clone_bind = path.clone();
+	let root = SVGBackend::new(&path_clone_bind, OUTPUT_SIZE)
+		.into_drawing_area();
+	root.fill(&WHITE)?;
+
+	let mut chart = ChartBuilder::on(&root)
+		.x_label_area_size(45)
+		.y_label_area_size(60)
+		.margin(5)
+		.caption("(Deviation from Baseline) %dev", TITLE_STYLE)
+		.build_cartesian_2d(x_range, y_range)?;
+
+	// Draw X axis
+	chart
+		.configure_mesh()
+		.disable_mesh()
+		.disable_y_axis()
+		.x_desc("Compression Rounds")
+		.x_label_formatter(&|v| format!("{:.0}", v))
+		.label_style(TEXT_STYLE.with_color(&BLACK))
+		.draw()?;
+
+	// Draw primary Y axis
+	chart
+		.configure_mesh()
+		.disable_mesh()
+		.disable_x_axis()
+		.y_desc("Time (% deviation)")
+		.y_label_formatter(&|v| format!("{:+}%", v)) // y-axis +/-%
+		.label_style(TEXT_STYLE.with_color(&color_palette[0]))
+		.draw()?;
+
+	// Draw data
+	chart
+		.draw_series(LineSeries::new(time_data.clone(), color_palette[0]))?
+		.label("Time")
+		.legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color_palette[0]));
+
+	chart.draw_series(PointSeries::of_element(
+		time_data,
+		3,
+		color_palette[0],
 		&|c, s, st| Circle::new(c, s, st.filled()),
 	))?;
 

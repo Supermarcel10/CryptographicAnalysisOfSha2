@@ -1,14 +1,16 @@
 use std::error::Error;
-use std::fs;
 use std::io::{BufReader, Read};
 use std::os::unix::prelude::CommandExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 use chrono::Local;
 use nix::sys::signal::{killpg, Signal};
 use nix::unistd::Pid;
 use wait_timeout::ChildExt;
+use once_cell::unsync::Lazy;
+use plotters::prelude::RGBColor;
+use crate::graphing::create_baseline_graph;
 use crate::sha::Word;
 use crate::smt_lib::smt_lib::generate_smtlib_files;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
@@ -33,89 +35,107 @@ mod structs;
 const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
+const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/bitwuzla/solver_engine"));
+fn main() -> Result<(), Box<dyn Error>> {
+	generate_smtlib_files()?;
+	// solve_by_brute_force();
 
-fn main() {
-	generate_smtlib_files().expect("Failed to generate files!");
-	let benchmarks = retrieve_benchmarks("results".into()).unwrap();
-}
+	let mut baseline_benchmarks = Benchmark::load_all(&PathBuf::from("results/brute-force"), false)?;
+	baseline_benchmarks = baseline_benchmarks
+		.into_iter()
+		.filter(|b| b.hash_function == HashFunction::SHA256 && b.solver == SmtSolver::Bitwuzla && b.collision_type == CollisionType::Standard)
+		.collect();
 
-fn retrieve_benchmarks(dir_location: PathBuf) -> Result<Vec<Benchmark>, Box<dyn Error>> {
-	let mut benchmarks = vec![];
-	for file in fs::read_dir(dir_location)? {
-		let contents = fs::read(file?.path())?;
-		let benchmark: Benchmark = serde_json::from_slice(&contents)?;
-		benchmarks.push(benchmark);
-	}
+	let mut deviation_benchmarks = Benchmark::load_all(&PathBuf::from("results/bitwuzla/solver_engine"), false)?;
+	deviation_benchmarks = deviation_benchmarks
+		.into_iter()
+		.filter(|b| b.arguments.contains((&"--bv-solver prop".to_string()).into()))
+		.collect();
 
-	Ok(benchmarks)
+	let color_palette = vec![
+		RGBColor(37, 95, 133),
+		RGBColor(140, 33, 85),
+		RGBColor(221, 164, 72),
+		RGBColor(50, 150, 93),
+		RGBColor(0, 0, 0),
+	];
+
+	create_baseline_graph(baseline_benchmarks, deviation_benchmarks, color_palette, "test")?;
+
+
+	Ok(())
 }
 
 fn solve_by_brute_force() {
-	let solvers = [SmtSolver::Bitwuzla, SmtSolver::Yices2, SmtSolver::Boolector, SmtSolver::CVC5, SmtSolver::Z3, SmtSolver::STP];
-	let parameters: Vec<SolverArg> = vec![];
+	// , SmtSolver::Yices2, SmtSolver::Boolector, SmtSolver::CVC5, SmtSolver::Z3
+	let solvers = [SmtSolver::Bitwuzla];
+	let arguments: Vec<SolverArg> = vec![];
+
 	let hash_functions = [HashFunction::SHA256];
 	// CollisionType::FreeStart, CollisionType::SemiFreeStart,
 	let collision_types = [CollisionType::Standard];
 
 	for solver in solvers {
 		for hash_function in hash_functions {
-			'seq_fail: for collision_type in collision_types {
-				let mut sequential_fails: u8 = 0;
-				for rounds in 0..hash_function.max_rounds() {
-					if sequential_fails == STOP_TOLERANCE_DEFAULT {
-						println!("Failed {sequential_fails} in a row!\n");
-						break 'seq_fail
-					}
-
-					let result = BenchmarkRunner::run_solver_with_benchmark(
-						hash_function,
-						rounds,
-						collision_type,
-						solver,
-						parameters.clone()
-					);
-
-					if let Ok(benchmark) = result {
-						benchmark.save().expect("Failed to save benchmark!");
-
-						match benchmark.result {
-							BenchmarkResult::SMTError => {
-								println!("Received SMT Error: {:?}", benchmark.console_output);
-								sequential_fails += 1;
-								continue;
-							}
-							BenchmarkResult::Aborted => {
-								println!("Test aborted!");
-								break;
-							}
-							BenchmarkResult::Sat | BenchmarkResult::Unsat => {
-								let colliding_pair = benchmark.parse_output().unwrap();
-
-								match colliding_pair {
-									None => {
-										println!("UNSAT");
-									}
-									Some(mut colliding_pair) => {
-										// TODO: Simplify this!
-										if VERIFY_HASH_DEFAULT && colliding_pair.verify(hash_function, rounds).expect("Failed to verify hash output!") {
-											colliding_pair.verified_hash = Some(colliding_pair.m0.expected_hash.clone());
-										}
-
-										println!("{}", colliding_pair);
-									}
-								}
-
-								sequential_fails = 0;
-							}
-							_ => {
-								println!("{}", benchmark.result);
-								sequential_fails += 1;
-							}
+			for collision_type in collision_types {
+				for arg in arguments.iter() {
+					let mut sequential_fails: u8 = 0;
+					for rounds in 9..hash_function.max_rounds() {
+						if sequential_fails == STOP_TOLERANCE_DEFAULT {
+							println!("Failed {sequential_fails} in a row!\n");
+							break;
 						}
-						println!();
-					} else {
-						println!("An error occurred during benchmark runtime: {}", result.unwrap_err());
-						break;
+
+						let result = BenchmarkRunner::run_solver_with_benchmark(
+							hash_function,
+							rounds,
+							collision_type,
+							solver,
+							vec![arg.clone()],
+						);
+
+						if let Ok(benchmark) = result {
+							benchmark.save(*BENCHMARK_SAVE_PATH_DEFAULT).expect("Failed to save benchmark!");
+
+							match benchmark.result {
+								BenchmarkResult::SMTError => {
+									println!("Received SMT Error: {:?}", benchmark.console_output);
+									sequential_fails += 1;
+									continue;
+								}
+								BenchmarkResult::Aborted => {
+									println!("Test aborted!");
+									break;
+								}
+								BenchmarkResult::Sat | BenchmarkResult::Unsat => {
+									let colliding_pair = benchmark.parse_output().unwrap();
+
+									match colliding_pair {
+										None => {
+											println!("UNSAT");
+										}
+										Some(mut colliding_pair) => {
+											// TODO: Simplify this!
+											if VERIFY_HASH_DEFAULT && colliding_pair.verify(hash_function, rounds).expect("Failed to verify hash output!") {
+												colliding_pair.verified_hash = Some(colliding_pair.m0.expected_hash.clone());
+											}
+
+											println!("{}", colliding_pair);
+										}
+									}
+
+									sequential_fails = 0;
+								}
+								_ => {
+									println!("{}", benchmark.result);
+									sequential_fails += 1;
+								}
+							}
+							println!();
+						} else {
+							println!("An error occurred during benchmark runtime: {}", result.unwrap_err());
+							break;
+						}
 					}
 				}
 			}
@@ -173,13 +193,20 @@ impl BenchmarkRunner {
 		arguments: Vec<SolverArg>,
 	) -> Result<Benchmark, Box<dyn Error>> {
 		// TODO: Ensure that the command exists before attempting to run it, else status code 32512 is returned and this causes an ERRINVAL
-		let mut full_args: Vec<SolverArg> = Vec::from([
+
+		let smt_file = format!("data/{hash_function}_{collision_type}_{rounds}.smt2"); // TODO: Make a neater way of retrieving files!
+		let mut full_args: Vec<SolverArg> = vec![
 			"-v".into(),
 			solver.command(),
-			format!("data/{hash_function}_{collision_type}_{rounds}.smt2"),
-		]);
+		];
 
-		full_args.extend(arguments.clone());
+		let mut split_args: Vec<String> = vec![];
+		for arg in arguments.iter() {
+			split_args.extend(arg.split(" ").map(String::from));
+		}
+
+		full_args.extend(split_args);
+		full_args.push(smt_file);
 
 		let date_time = Local::now().to_utc();
 		let start_time = Instant::now();
@@ -191,8 +218,9 @@ impl BenchmarkRunner {
 			.spawn()?;
 
 		let pid = child.id();
-
-		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}; SMT solver PID: {pid}");
+		let spc = if arguments.len() > 0 { " " } else { "" };
+		let arg_string = arguments.join(" ");
+		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}{spc}{arg_string}; SMT solver PID: {pid}");
 
 		// Await process exit
 		let status = child.wait_timeout(TIMEOUT_DEFAULT)?;

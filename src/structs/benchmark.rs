@@ -1,9 +1,10 @@
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::fs;
 use std::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 use chrono::{DateTime, Utc};
 use regex::Regex;
@@ -21,7 +22,7 @@ pub enum SmtSolver {
 	Yices2,
 	Bitwuzla,
 	Boolector,
-	STP,
+	// STP, // TODO: Figure out what to do with STP, since the
 	// Colibri, // TODO: Figure out how to install this thing
 }
 
@@ -111,8 +112,6 @@ pub enum SmtSolver {
 
 // TODO: Boolector
 
-// TODO: STP
-
 impl Display for SmtSolver {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		use SmtSolver::*;
@@ -123,7 +122,7 @@ impl Display for SmtSolver {
 			Yices2 => "yices",
 			Bitwuzla => "bitwuzla",
 			Boolector => "boolector",
-			STP => "stp",
+			// STP => "stp",
 		})
 	}
 }
@@ -138,7 +137,7 @@ impl SmtSolver {
 			Yices2 => "yices-smt2",
 			Bitwuzla => "bitwuzla",
 			Boolector => "boolector",
-			STP => "stp",
+			// STP => "stp",
 		}.into()
 	}
 }
@@ -153,7 +152,7 @@ pub enum SatSolver {
 
 pub type SolverArg = String;
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub enum BenchmarkResult {
 	Sat,
 	Unsat,
@@ -178,7 +177,35 @@ impl Display for BenchmarkResult {
 	}
 }
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy)]
+enum SmtOutputFormat {
+	Boolean,
+	Hex,
+}
+
+impl SmtOutputFormat {
+	fn output_string(self) -> String {
+		match self {
+			SmtOutputFormat::Boolean => "#b([01]*)",
+			SmtOutputFormat::Hex => "#x([0-9a-fA-F]*)",
+		}.to_string()
+	}
+
+	fn get_value(
+		self,
+		capture: &str,
+		hash_function: HashFunction
+	) -> Result<Word, Box<dyn Error>> {
+		let radix_size = match self {
+			SmtOutputFormat::Boolean => 2,
+			SmtOutputFormat::Hex => 16,
+		};
+
+		Ok(Word::from_str_radix(capture, radix_size, hash_function)?)
+	}
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Benchmark {
 	pub date_time: DateTime<Utc>,
 	pub solver: SmtSolver,
@@ -193,21 +220,52 @@ pub struct Benchmark {
 }
 
 impl Benchmark {
-	pub fn save(&self) -> Result<PathBuf, Box<dyn Error>> {
-		let path = PathBuf::from(
-			format!("results/{}_{}_{}_{}_{}.json",
+	pub fn save(&self, path: &Path) -> Result<PathBuf, Box<dyn Error>> {
+		if !path.exists() {
+			fs::create_dir(path)?;
+		}
+
+		let path = path.join(
+			format!("{}_{}_{}_{}_{}.json",
 					self.solver,
 					self.collision_type,
 					self.hash_function,
 					self.rounds,
-					self.date_time.format("%Y%m%d_%H:%M"),
-			));
+					self.date_time,
+			)
+		);
 
-		let mut file = File::create(path.clone())?;
+		let mut file = File::options()
+			.create_new(true)
+			.write(true)
+			.open(path.clone())?;
+
 		let json = serde_json::to_string(&self)?;
 		file.write_all(json.as_bytes())?;
 
 		Ok(path)
+	}
+
+	pub fn load(file: &Path) -> Result<Benchmark, Box<dyn Error>> {
+		let contents = fs::read(file)?;
+		let benchmark: Benchmark = serde_json::from_slice(&contents)?;
+		Ok(benchmark)
+	}
+
+	pub fn load_all(dir_location: &Path, recursively: bool) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+		let mut benchmarks = vec![];
+		for dir_entry in fs::read_dir(dir_location)? {
+			if let Ok(entry) = dir_entry {
+				let metadata = entry.metadata()?;
+				if recursively && metadata.is_dir() {
+					benchmarks.extend(Self::load_all(&entry.path(), recursively)?)
+				} else if metadata.is_file() {
+					benchmarks.push(Self::load(&entry.path())?);
+				}
+			}
+		}
+
+		Ok(benchmarks)
 	}
 
 	pub fn parse_output(self) -> Result<Option<CollidingPair>, Box<dyn Error>> {
@@ -215,8 +273,15 @@ impl Benchmark {
 			return Ok(None);
 		}
 
+		let output_format = self.get_output_format()?;
+		let re = Regex::new(
+			&format!(
+				r"\((?:m([01])_|)([a-hw]|hash)([0-9]+) {}\)",
+				output_format.output_string()
+			)
+		)?;
+
 		let (smt_output, _) = self.console_output;
-		let re = Regex::new(r"\((?:m([01])_|)([a-hw]|hash)([0-9]+) #b([01]*)\)")?;
 		let default_word = self.hash_function.default_word();
 
 		let mut hash = Box::new([default_word; 8]);
@@ -228,7 +293,7 @@ impl Benchmark {
 			let msg= capture.get(1);
 			let var = &capture[2];
 			let round: usize = capture[3].parse()?;
-			let val = Word::from_str_radix(&capture[4], 2, self.hash_function)?;
+			let val = output_format.get_value(&capture[4], self.hash_function)?;
 
 			match msg {
 				Some(msg) => {
@@ -332,5 +397,16 @@ impl Benchmark {
 			});
 		}
 		Ok(())
+	}
+
+	fn get_output_format(&self) -> Result<SmtOutputFormat, Box<dyn Error>> {
+		let (smt_output, _) = self.console_output.clone();
+		if smt_output.contains("#b") {
+			Ok(SmtOutputFormat::Boolean)
+		} else if smt_output.contains("#x") {
+			Ok(SmtOutputFormat::Hex)
+		} else {
+			Err("Invalid output format: Expected boolean (#b) or hex (#x)".into())
+		}
 	}
 }
