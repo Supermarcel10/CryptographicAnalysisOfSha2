@@ -21,6 +21,7 @@ pub enum ChartingError<'a> {
 	},
 }
 
+// TODO: Move utilities to another file dealing with preparing data
 fn filter_data(data: Data, hash_function: HashFunction) -> Data {
 	data.into_iter()
 		.filter(|b| b.hash_function == hash_function && b.result == BenchmarkResult::Sat)
@@ -43,6 +44,10 @@ fn get_range<T: Copy + Ord>(
 	});
 
 	Some(min..max)
+}
+
+fn order_data_by_rounds(data: &mut Data) {
+	data.sort_by_key(|b| b.rounds);
 }
 
 fn create_time_and_memory_chart(
@@ -132,6 +137,84 @@ fn create_time_and_memory_chart(
 		time_data,
 		3,
 		color_palette[1],
+		&|c, s, st| Circle::new(c, s, st.filled()),
+	))?;
+
+	// Draw legend
+	chart
+		.configure_series_labels()
+		.background_style(RGBColor(220, 220, 220))
+		.position(SeriesLabelPosition::LowerRight)
+		.draw()?;
+
+	// Write to PathBuf
+	root.present()?;
+	Ok(path)
+}
+
+pub fn create_baseline_graph(
+	baseline: Data,
+	data: Data,
+	color_palette: Vec<RGBColor>,
+	file_name: &str,
+) -> Result<PathBuf, Box<dyn Error>> {
+	let path = PathBuf::from(format!("graphs/{file_name}.svg"));
+
+	let mut baseline = baseline.clone();
+	order_data_by_rounds(&mut baseline);
+
+	// Define ranges
+	let x_range: Range<u32> = get_range(&baseline, |b| b.rounds as u32)
+		.ok_or(ChartingError::GetRangeFailed { variable: "x_range"})?;
+	let y_range = -100.0..100.0; // -100% to +100% // TODO: Derive this some other way?
+
+	// Define Cartesian mapped data
+	let time_data = data
+		.iter()
+		.map(|b| (b.rounds as u32, 0.0)); // TODO: Make deviation calculation
+
+	let path_clone_bind = path.clone();
+	let root = SVGBackend::new(&path_clone_bind, OUTPUT_SIZE)
+		.into_drawing_area();
+	root.fill(&WHITE)?;
+
+	let mut chart = ChartBuilder::on(&root)
+		.x_label_area_size(45)
+		.y_label_area_size(60)
+		.margin(5)
+		.caption("(Deviation from Baseline) %dev", TITLE_STYLE)
+		.build_cartesian_2d(x_range, y_range)?;
+
+	// Draw X axis
+	chart
+		.configure_mesh()
+		.disable_mesh()
+		.disable_y_axis()
+		.x_desc("Compression Rounds")
+		.x_label_formatter(&|v| format!("{:.0}", v))
+		.label_style(TEXT_STYLE.with_color(&BLACK))
+		.draw()?;
+
+	// Draw primary Y axis
+	chart
+		.configure_mesh()
+		.disable_mesh()
+		.disable_x_axis()
+		.y_desc("Time (% deviation)")
+		.y_label_formatter(&|v| format!("{:+}%", v)) // y-axis +/-%
+		.label_style(TEXT_STYLE.with_color(&color_palette[0]))
+		.draw()?;
+
+	// Draw data
+	chart
+		.draw_series(LineSeries::new(time_data.clone(), color_palette[0]))?
+		.label("Time")
+		.legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color_palette[0]));
+
+	chart.draw_series(PointSeries::of_element(
+		time_data,
+		3,
+		color_palette[0],
 		&|c, s, st| Circle::new(c, s, st.filled()),
 	))?;
 

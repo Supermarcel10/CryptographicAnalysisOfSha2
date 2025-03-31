@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::io::{BufReader, Read};
 use std::os::unix::prelude::CommandExt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 use chrono::Local;
@@ -9,6 +9,8 @@ use nix::sys::signal::{killpg, Signal};
 use nix::unistd::Pid;
 use wait_timeout::ChildExt;
 use once_cell::unsync::Lazy;
+use plotters::prelude::RGBColor;
+use crate::graphing::create_baseline_graph;
 use crate::sha::Word;
 use crate::smt_lib::smt_lib::generate_smtlib_files;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
@@ -34,10 +36,34 @@ const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
 const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/bitwuzla/solver_engine"));
+fn main() -> Result<(), Box<dyn Error>> {
+	generate_smtlib_files()?;
+	// solve_by_brute_force();
 
-fn main() {
-	generate_smtlib_files().expect("Failed to generate files!");
-	solve_by_brute_force();
+	let mut baseline_benchmarks = Benchmark::load_all(&PathBuf::from("results/brute-force"), false)?;
+	baseline_benchmarks = baseline_benchmarks
+		.into_iter()
+		.filter(|b| b.hash_function == HashFunction::SHA256 && b.solver == SmtSolver::Bitwuzla && b.collision_type == CollisionType::Standard)
+		.collect();
+
+	let mut deviation_benchmarks = Benchmark::load_all(&PathBuf::from("results/bitwuzla/solver_engine"), false)?;
+	deviation_benchmarks = deviation_benchmarks
+		.into_iter()
+		.filter(|b| b.arguments.contains((&"--bv-solver prop".to_string()).into()))
+		.collect();
+
+	let color_palette = vec![
+		RGBColor(37, 95, 133),
+		RGBColor(140, 33, 85),
+		RGBColor(221, 164, 72),
+		RGBColor(50, 150, 93),
+		RGBColor(0, 0, 0),
+	];
+
+	create_baseline_graph(baseline_benchmarks, deviation_benchmarks, color_palette, "test")?;
+
+
+	Ok(())
 }
 
 fn solve_by_brute_force() {

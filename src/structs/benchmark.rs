@@ -152,7 +152,7 @@ pub enum SatSolver {
 
 pub type SolverArg = String;
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub enum BenchmarkResult {
 	Sat,
 	Unsat,
@@ -205,7 +205,7 @@ impl SmtOutputFormat {
 	}
 }
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Benchmark {
 	pub date_time: DateTime<Utc>,
 	pub solver: SmtSolver,
