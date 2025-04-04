@@ -50,6 +50,18 @@ fn get_range<T: Copy + PartialOrd>(
 	Some(min..max)
 }
 
+fn map_benchmark_to_color(benchmark_result: &BenchmarkResult) -> RGBAColor {
+	use BenchmarkResult::*;
+
+	match benchmark_result {
+		Sat => RGBAColor(0, 168, 14, 1.0),
+		Unsat => RGBAColor(153, 11, 37, 1.0),
+		MemOut | CPUOut => RGBAColor(56, 51, 52, 1.0),
+		Aborted | SMTError => RGBAColor(0, 128, 128, 1.0),
+		Unknown => RGBAColor(0, 0, 255, 1.0),
+	}
+}
+
 fn order_data_by_rounds(data: &mut Data) {
 	data.sort_by_key(|b| b.rounds);
 }
@@ -343,18 +355,6 @@ pub fn create_smt_comparison(
 	// Write to PathBuf
 	root.present()?;
 	Ok(path)
-}
-
-fn map_benchmark_to_color(benchmark_result: &BenchmarkResult) -> RGBAColor {
-	use BenchmarkResult::*;
-
-	match benchmark_result {
-		Sat => RGBAColor(0, 168, 14, 1.0),
-		Unsat => RGBAColor(153, 11, 37, 1.0),
-		MemOut | CPUOut => RGBAColor(56, 51, 52, 1.0),
-		Aborted | SMTError => RGBAColor(0, 128, 128, 1.0),
-		Unknown => RGBAColor(0, 0, 255, 1.0),
-	}
 }
 
 #[cfg(test)]
