@@ -326,7 +326,7 @@ pub fn create_smt_comparison(
 				Circle::new(
 					c.cartesian,
 					3,
-					c.color,
+					c.color.filled(),
 				)
 			})
 		)?;
