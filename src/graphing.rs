@@ -265,7 +265,7 @@ pub fn create_smt_comparison(
 		.disable_mesh()
 		.disable_y_axis()
 		.x_desc("Compression Rounds")
-		.label_style((FONT, 14).with_color(&BLACK))
+		.label_style(TEXT_STYLE.with_color(&BLACK))
 		.draw()?;
 
 	// Draw Y axis
@@ -275,7 +275,7 @@ pub fn create_smt_comparison(
 		.disable_x_axis()
 		.y_desc("Time (s)")
 		.y_label_formatter(&|&x| format!("2^{}", x.log2()))
-		.label_style((FONT, 14).with_color(&BLACK))
+		.label_style(TEXT_STYLE.with_color(&BLACK))
 		.draw()?;
 
 	let solvers: HashSet<SmtSolver> = data
