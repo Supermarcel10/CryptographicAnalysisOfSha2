@@ -10,7 +10,7 @@ use nix::unistd::Pid;
 use wait_timeout::ChildExt;
 use once_cell::unsync::Lazy;
 use plotters::prelude::RGBColor;
-use crate::graphing::create_baseline_graph;
+use crate::graphing::{create_baseline_graph, create_smt_comparison};
 use crate::sha::Word;
 use crate::smt_lib::smt_lib::generate_smtlib_files;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
@@ -60,8 +60,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 		RGBColor(0, 0, 0),
 	];
 
-	create_baseline_graph(baseline_benchmarks, deviation_benchmarks, color_palette, "test")?;
+	let mut all_baseline_benchmarks = Benchmark::load_all(&PathBuf::from("results/brute-force"), false)?;
+	all_baseline_benchmarks = all_baseline_benchmarks
+		.into_iter()
+		.filter(|b| b.hash_function == HashFunction::SHA256 && b.collision_type == CollisionType::Standard)
+		.collect();
 
+	create_smt_comparison(all_baseline_benchmarks, color_palette.clone(), "smt_comparison_brute_force")?;
+	create_baseline_graph(baseline_benchmarks, deviation_benchmarks, color_palette, "test")?;
 
 	Ok(())
 }

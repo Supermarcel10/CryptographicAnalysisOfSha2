@@ -1,8 +1,9 @@
+use std::collections::HashSet;
 use std::error::Error;
 use std::ops::Range;
 use std::path::PathBuf;
 use plotters::prelude::*;
-use crate::structs::benchmark::{Benchmark, BenchmarkResult};
+use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
 use crate::structs::hash_function::HashFunction;
 
 const OUTPUT_SIZE: (u32, u32) = (1024, 768);
@@ -32,16 +33,19 @@ fn filter_data(data: Data, hash_function: HashFunction) -> Data {
 //? Potential issue in plotters.rs?
 //? Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
 
-fn get_range<T: Copy + Ord>(
+fn get_range<T: Copy + PartialOrd>(
     data: &Data,
     retr: fn(&Benchmark) -> T,
 ) -> Option<Range<T>> {
-	let mut it = data.into_iter();
-	let first = retr(it.next()?);
-	let (min, max) = it.fold((first, first), |(min_agg, max_agg), b| {
-		let v = retr(b);
-		(v.min(min_agg), v.max(max_agg))
-	});
+    let mut it = data.into_iter();
+    let first = retr(it.next()?);
+    let (min, max) = it.fold((first, first), |(min_agg, max_agg), b| {
+        let v = retr(b);
+        (
+            if v < min_agg { v } else { min_agg },
+            if v > max_agg { v } else { max_agg }
+        )
+    });
 
 	Some(min..max)
 }
@@ -228,6 +232,129 @@ pub fn create_baseline_graph(
 	// Write to PathBuf
 	root.present()?;
 	Ok(path)
+}
+
+pub fn create_smt_comparison(
+	data: Data,
+	color_palette: Vec<RGBColor>,
+	file_name: &str,
+) -> Result<PathBuf, Box<dyn Error>> {
+	let path = PathBuf::from(format!("graphs/{file_name}.svg"));
+
+	// Define ranges
+	let x_range: Range<u32> = get_range(&data, |b| b.rounds as u32)
+		.ok_or(ChartingError::GetRangeFailed { variable: "x_range"})?;
+	let y_range = get_range(&data, |b| b.execution_time.as_secs_f64())
+		.ok_or(ChartingError::GetRangeFailed { variable: "y_range"})?;
+
+	let path_clone_bind = path.clone();
+	let root = SVGBackend::new(&path_clone_bind, OUTPUT_SIZE)
+		.into_drawing_area();
+	root.fill(&WHITE)?;
+
+	let mut chart = ChartBuilder::on(&root)
+		.x_label_area_size(45)
+		.y_label_area_size(60)
+		.margin(5)
+		.caption("SHA256 STD: SMT Solver Benchmark", (FONT, 36))
+		.build_cartesian_2d(x_range, y_range.log_scale().base(2.0))?;
+
+	// Draw X axis
+	chart
+		.configure_mesh()
+		.disable_mesh()
+		.disable_y_axis()
+		.x_desc("Compression Rounds")
+		.label_style((FONT, 14).with_color(&BLACK))
+		.draw()?;
+
+	// Draw Y axis
+	chart
+		.configure_mesh()
+		.disable_mesh()
+		.disable_x_axis()
+		.y_desc("Time (s)")
+		.y_label_formatter(&|&x| format!("2^{}", x.log2()))
+		.label_style((FONT, 14).with_color(&BLACK))
+		.draw()?;
+
+	let solvers: HashSet<SmtSolver> = data
+		.iter()
+		.map(|b| b.solver)
+		.collect();
+
+	#[derive(Debug, Copy, Clone)]
+	struct CartesianWithShape<X, Y> {
+		cartesian: (X, Y),
+		color: RGBAColor,
+	}
+
+	for (i, solver) in solvers.into_iter().enumerate() {
+		// Define Cartesian mapped data
+		let mut time_data: Vec<_> = data
+			.iter()
+			.filter(|b| b.solver == solver)
+			// .filter(|b| b.result != CPUOut)
+			.map(|b| CartesianWithShape {
+				cartesian: (b.rounds as u32, b.execution_time.as_secs_f64()),
+				color: map_benchmark_to_color(&b.result),
+			})
+			.collect();
+
+		// Sort by x-axis
+		time_data.sort_by_key(|b| b.cartesian.0);
+
+		let color = color_palette[i];
+		// TODO: Fix color for legend
+
+		// Draw primary data
+		chart
+			.draw_series(
+				LineSeries::new(
+					time_data.clone().iter().map(|c| c.cartesian),
+					ShapeStyle {
+						color: color.into(),
+						filled: false,
+						stroke_width: 2,
+					}
+				).point_size(4))?
+			.label(solver.to_string())
+			.legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color_palette[0]));
+
+		chart.draw_series(
+			time_data.iter().map(|c| {
+				Circle::new(
+					c.cartesian,
+					3,
+					c.color,
+				)
+			})
+		)?;
+	}
+
+	// TODO: Do secondary legend with the result
+	// Draw legend
+	chart
+		.configure_series_labels()
+		.background_style(RGBColor(220, 220, 220))
+		.position(SeriesLabelPosition::LowerRight)
+		.draw()?;
+
+	// Write to PathBuf
+	root.present()?;
+	Ok(path)
+}
+
+fn map_benchmark_to_color(benchmark_result: &BenchmarkResult) -> RGBAColor {
+	use BenchmarkResult::*;
+
+	match benchmark_result {
+		Sat => RGBAColor(0, 168, 14, 1.0),
+		Unsat => RGBAColor(153, 11, 37, 1.0),
+		MemOut | CPUOut => RGBAColor(56, 51, 52, 1.0),
+		Aborted | SMTError => RGBAColor(0, 128, 128, 1.0),
+		Unknown => RGBAColor(0, 0, 255, 1.0),
+	}
 }
 
 #[cfg(test)]

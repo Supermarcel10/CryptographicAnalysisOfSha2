@@ -15,7 +15,7 @@ use crate::structs::hash_function::HashFunction;
 use crate::{update_state_variable, MutableShaState};
 use crate::verification::colliding_pair::{CollidingPair, MessageData};
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub enum SmtSolver {
 	Z3,
 	CVC5,
