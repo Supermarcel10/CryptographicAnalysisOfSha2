@@ -63,12 +63,14 @@ impl SmtBuilder {
 	}
 
 	fn define_functions(&mut self) {
+		let word_size = self.hash_function.word_size().bits();
+
 		let ch = "(define-fun ch ((e Word) (f Word) (g Word)) Word\n\t(bvxor (bvand e f) (bvand (bvnot e) g))\n)";
 		let maj = "(define-fun maj ((a Word) (b Word) (c Word)) Word\n\t(bvxor (bvand a b) (bvand a c) (bvand b c))\n)";
 		let sigma0 = "(define-fun sigma0 ((a Word)) Word\n\t(bvxor ((_ rotate_right 2) a) ((_ rotate_right 13) a) ((_ rotate_right 22) a))\n)";
 		let sigma1 = "(define-fun sigma1 ((e Word)) Word\n\t(bvxor ((_ rotate_right 6) e) ((_ rotate_right 11) e) ((_ rotate_right 25) e))\n)";
-		let gamma0 = "(define-fun gamma0 ((x Word)) Word\n\t(bvxor ((_ rotate_right 7) x) ((_ rotate_right 18) x) (bvlshr x (_ bv3 32)))\n)";
-		let gamma1 = "(define-fun gamma1 ((x Word)) Word\n\t(bvxor ((_ rotate_right 17) x) ((_ rotate_right 19) x) (bvlshr x (_ bv10 32)))\n)";
+		let gamma0 = format!("(define-fun gamma0 ((x Word)) Word\n\t(bvxor ((_ rotate_right 7) x) ((_ rotate_right 18) x) (bvlshr x (_ bv3 {word_size})))\n)");
+		let gamma1 = format!("(define-fun gamma1 ((x Word)) Word\n\t(bvxor ((_ rotate_right 17) x) ((_ rotate_right 19) x) (bvlshr x (_ bv10 {word_size})))\n)");
 		let t1 = "(define-fun t1 ((h Word) (e Word) (f Word) (g Word) (k Word) (w Word)) Word\n\t(bvadd h (sigma1 e) (ch e f g) k w)\n)";
 		let t2 = "(define-fun t2 ((a Word) (b Word) (c Word)) Word\n\t(bvadd (sigma0 a) (maj a b c))\n)";
 		let expand_message = "(define-fun expandMessage ((a Word) (b Word) (c Word) (d Word)) Word\n\t(bvadd a (gamma0 b) c (gamma1 d))\n)";

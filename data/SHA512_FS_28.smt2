@@ -21,10 +21,10 @@
 	(bvxor ((_ rotate_right 6) e) ((_ rotate_right 11) e) ((_ rotate_right 25) e))
 )
 (define-fun gamma0 ((x Word)) Word
-	(bvxor ((_ rotate_right 7) x) ((_ rotate_right 18) x) (bvlshr x (_ bv3 32)))
+	(bvxor ((_ rotate_right 7) x) ((_ rotate_right 18) x) (bvlshr x (_ bv3 64)))
 )
 (define-fun gamma1 ((x Word)) Word
-	(bvxor ((_ rotate_right 17) x) ((_ rotate_right 19) x) (bvlshr x (_ bv10 32)))
+	(bvxor ((_ rotate_right 17) x) ((_ rotate_right 19) x) (bvlshr x (_ bv10 64)))
 )
 (define-fun t1 ((h Word) (e Word) (f Word) (g Word) (k Word) (w Word)) Word
 	(bvadd h (sigma1 e) (ch e f g) k w)
