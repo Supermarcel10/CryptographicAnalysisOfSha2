@@ -25,7 +25,6 @@ use crate::verification::verify_hash::VerifyHash;
 // - CPU Core Clock difference
 // - Run to run variance
 
-#[cfg(feature = "graphing")] mod graphing;
 #[cfg(feature = "smt-gen")] mod smt_lib;
 mod sha;
 mod verification;
@@ -36,7 +35,8 @@ mod graphing;
 const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
-const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/bitwuzla/solver_engine"));
+const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/"));
+
 fn main() -> Result<(), Box<dyn Error>> {
 	generate_smtlib_files()?;
 	// solve_by_brute_force();
