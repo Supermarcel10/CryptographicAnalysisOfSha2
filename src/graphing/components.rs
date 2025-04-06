@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::fmt::Debug;
 use plotters::chart::DualCoordChartContext;
 use plotters::coord::ranged1d::ValueFormatter;
 use plotters::prelude::*;

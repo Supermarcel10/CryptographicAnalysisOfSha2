@@ -19,17 +19,17 @@ impl GraphRenderer {
 		sorted_data.sort_by_key(|b| b.rounds);
 
 		// Define ranges
-		let x_range = get_range(&data, |b| b.rounds as u32)
+		let x_range = get_range(&data, &|b| b.rounds as u32)
 			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range"})?;
-		let y_range_mem = get_range(&data, |b| b.memory_bytes / 1024^2)
+		let y_range_mem = get_range(&data, &|b| b.memory_bytes as f64 / 1048576.0)
 			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range_mem"})?;
-		let y_range_time = get_range(&data, |b| b.execution_time.as_secs_f64())
+		let y_range_time = get_range(&data, &|b| b.execution_time.as_secs_f64())
 			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range_time"})?;
 
 		// Define Cartesian mapped data
 		let sorted_data = sorted_data
 			.into_iter()
-			.map(|b| (b.rounds as u32, b.memory_bytes / 1024^2, b.execution_time.as_secs_f64()));
+			.map(|b| (b.rounds as u32, b.memory_bytes as f64 / 1048576.0, b.execution_time.as_secs_f64()));
 
 		let path_clone_bind = path.clone();
 		let root = SVGBackend::new(&path_clone_bind, self.output_size)
@@ -43,7 +43,7 @@ impl GraphRenderer {
 			.margin(5)
 			.caption("Memory & Time vs Rounds", self.title_style)
 			.build_cartesian_2d(x_range.clone(), y_range_time.log_scale().base(2.0))? // Time
-			.set_secondary_coord(x_range, y_range_mem);  // Memory
+			.set_secondary_coord(x_range, y_range_mem); // Memory
 
 		// Draw axis
 		self.set_x_axis_as_rounds(&mut chart)?;
@@ -55,7 +55,7 @@ impl GraphRenderer {
 		)?;
 		self.set_secondary_y_axis(
 			&mut chart,
-			"Memory (MB)",
+			"Memory (MiB)",
 			Some(self.color_palette[1].to_rgba()),
 			None,
 		)?;
@@ -101,7 +101,7 @@ impl GraphRenderer {
 		baseline_data.sort_by_key(|b| b.rounds);
 
 		// Define ranges
-		let x_range = get_range(&baseline_data, |b| b.rounds as u32)
+		let x_range = get_range(&baseline_data, &|b| b.rounds as u32)
 			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range"})?;
 		let y_range = -25.0..25.0; // TODO: Derive this some other way?
 
@@ -187,9 +187,9 @@ impl GraphRenderer {
 		sorted_data.sort_by_key(|b| b.rounds);
 
 		// Define ranges
-		let x_range = get_range(&data, |b| b.rounds as u32)
+		let x_range = get_range(&data, &|b| b.rounds as u32)
 			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range"})?;
-		let y_range = get_range(&data, |b| b.execution_time.as_secs_f64())
+		let y_range = get_range(&data, &|b| b.execution_time.as_secs_f64())
 			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range"})?;
 
 		let path_clone_bind = path.clone();

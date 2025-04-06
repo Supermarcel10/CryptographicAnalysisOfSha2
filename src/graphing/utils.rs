@@ -7,7 +7,7 @@ use crate::structs::benchmark::Benchmark;
 //? Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
 pub(super) fn get_range<T: Copy + PartialOrd>(
 	data: &Vec<Benchmark>,
-	retr: fn(&Benchmark) -> T,
+	retr: &dyn Fn(&Benchmark) -> T,
 ) -> Option<Range<T>> {
 	let mut it = data.into_iter();
 	let first = retr(it.next()?);
