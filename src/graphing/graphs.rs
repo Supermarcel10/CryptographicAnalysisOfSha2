@@ -6,6 +6,7 @@ use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::utils::get_range;
 use crate::structs::benchmark::Benchmark;
 
+
 impl GraphRenderer {
 	pub fn create_time_and_memory_chart(
 		&self,
@@ -41,38 +42,43 @@ impl GraphRenderer {
 			.right_y_label_area_size(60)
 			.margin(5)
 			.caption("Memory & Time vs Rounds", self.title_style)
-			.build_cartesian_2d(x_range.clone(), y_range_mem)? // Memory
-			.set_secondary_coord(x_range, y_range_time.log_scale().base(2.0)); // Time
+			.build_cartesian_2d(x_range.clone(), y_range_time.log_scale().base(2.0))? // Time
+			.set_secondary_coord(x_range, y_range_mem);  // Memory
 
 		// Draw axis
 		self.set_x_axis_as_rounds(&mut chart)?;
-		self.set_y_axis(&mut chart, "Memory (MB)", Some(self.color_palette[0].to_rgba()), None)?;
-		self.set_secondary_y_axis(
+		self.set_y_axis(
 			&mut chart,
 			"Time (s)",
-			Some(self.color_palette[1].to_rgba()),
+			Some(self.color_palette[0].to_rgba()),
 			Some(&|y: &f64| format!("2^{}", y.log2())),
+		)?;
+		self.set_secondary_y_axis(
+			&mut chart,
+			"Memory (MB)",
+			Some(self.color_palette[1].to_rgba()),
+			None,
 		)?;
 
 		// Draw primary data
-		let memory_data: Vec<_> = sorted_data.clone().map(|(r, m, _)| (r, m)).collect();
+		let time_data: Vec<_> = sorted_data.clone().map(|(r, _, t)| (r, t)).collect();
 		self.draw_series(
 			&mut chart,
-			memory_data,
+			time_data,
 			true,
 			false,
-			"Memory",
+			"Time",
 			Some(self.color_palette[0].to_rgba())
 		)?;
 
 		// Draw secondary data
-		let time_data: Vec<_> = sorted_data.clone().map(|(r, _, t)| (r, t)).collect();
+		let memory_data: Vec<_> = sorted_data.clone().map(|(r, m, _)| (r, m)).collect();
 		self.draw_secondary_series(
 			&mut chart,
-			time_data,
+			memory_data,
 			true,
 			true,
-			"Time",
+			"Memory",
 			Some(self.color_palette[1].to_rgba())
 		)?;
 
