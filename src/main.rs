@@ -9,8 +9,7 @@ use nix::sys::signal::{killpg, Signal};
 use nix::unistd::Pid;
 use wait_timeout::ChildExt;
 use once_cell::unsync::Lazy;
-use plotters::prelude::RGBColor;
-use crate::graphing::{create_baseline_graph, create_smt_comparison};
+use crate::graphing::graph_renderer::GraphRenderer;
 use crate::sha::Word;
 use crate::smt_lib::smt_lib::generate_smtlib_files;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
@@ -24,12 +23,14 @@ use crate::verification::verify_hash::VerifyHash;
 // - Different kernels (https://askubuntu.com/a/126671)
 // - Different memory timings
 // - CPU Core Clock difference
+// - Run to run variance
 
 #[cfg(feature = "graphing")] mod graphing;
 #[cfg(feature = "smt-gen")] mod smt_lib;
 mod sha;
 mod verification;
 mod structs;
+mod graphing;
 
 // TODO: Add overrides for these as parameters
 const STOP_TOLERANCE_DEFAULT: u8 = 3;
@@ -46,19 +47,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 		.filter(|b| b.hash_function == HashFunction::SHA256 && b.solver == SmtSolver::Bitwuzla && b.collision_type == CollisionType::Standard)
 		.collect();
 
-	let mut deviation_benchmarks = Benchmark::load_all(&PathBuf::from("results/bitwuzla/solver_engine"), false)?;
+	let mut deviation_benchmarks = Benchmark::load_all(&PathBuf::from("results/bitwuzla/abstraction"), false)?;
 	deviation_benchmarks = deviation_benchmarks
 		.into_iter()
 		.filter(|b| b.arguments.contains((&"--bv-solver prop".to_string()).into()))
 		.collect();
-
-	let color_palette = vec![
-		RGBColor(37, 95, 133),
-		RGBColor(140, 33, 85),
-		RGBColor(221, 164, 72),
-		RGBColor(50, 150, 93),
-		RGBColor(0, 0, 0),
-	];
 
 	let mut all_baseline_benchmarks = Benchmark::load_all(&PathBuf::from("results/brute-force"), false)?;
 	all_baseline_benchmarks = all_baseline_benchmarks
@@ -66,8 +59,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 		.filter(|b| b.hash_function == HashFunction::SHA256 && b.collision_type == CollisionType::Standard)
 		.collect();
 
-	create_smt_comparison(all_baseline_benchmarks, color_palette.clone(), "smt_comparison_brute_force")?;
-	create_baseline_graph(baseline_benchmarks, deviation_benchmarks, color_palette, "test")?;
+	let graph_renderer = GraphRenderer::default();
+	graph_renderer.solver_comparison(all_baseline_benchmarks)?;
+	graph_renderer.create_time_and_memory_chart(baseline_benchmarks.clone())?;
+	graph_renderer.create_baseline_graph(baseline_benchmarks, vec![deviation_benchmarks])?;
 
 	Ok(())
 }
