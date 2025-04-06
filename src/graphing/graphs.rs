@@ -90,7 +90,7 @@ impl GraphRenderer {
 	}
 
 	pub fn create_baseline_graph(
-		self,
+		&self,
 		baseline_data: Vec<Benchmark>,
 		data: Vec<Vec<Benchmark>>,
 	) -> Result<PathBuf, Box<dyn Error>> {
