@@ -5,7 +5,16 @@ use plotters::prelude::*;
 use crate::graphing::graph_renderer::GraphRenderer;
 
 
+/// Generalized components for reuse in graphs.
 impl GraphRenderer {
+	/// Set the X-Axis to Compression Rounds
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to add axis to.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
 	pub(super) fn set_x_axis_as_rounds<'a, DB, X, Y, XT, YT>(
 		&self,
 		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
@@ -26,6 +35,18 @@ impl GraphRenderer {
 		Ok(())
 	}
 
+	/// Set the primary (left side) Y-Axis to the given label and color.
+	/// For secondary (right side) Y-Axis see [Self::set_secondary_y_axis].
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to add axis to.
+	/// * `label`: Axis label.
+	/// * `color`: Color of axis labels, or black by default.
+	/// * `formatter`: Formatter of Y-Axis, that takes Y-Axis type and returns String.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
 	pub(super) fn set_y_axis<'a, DB, X, Y, XT, YT>(
 		&self,
 		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
@@ -56,6 +77,18 @@ impl GraphRenderer {
 		Ok(())
 	}
 
+	/// Set the secondary (right side) Y-Axis to the given label and color.
+	/// For primary (left side) Y-Axis see [Self::set_y_axis].
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to add axis to.
+	/// * `label`: Axis label.
+	/// * `color`: Color of axis labels, or black by default.
+	/// * `formatter`: Formatter of Y-Axis, that takes Y-Axis type and returns String.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
 	pub(super) fn set_secondary_y_axis<'a, DB, X, Y1, Y2, XT, YT1, YT2>(
 		&self,
 		chart: &mut DualCoordChartContext<'a, DB, Cartesian2d<X, Y1>, Cartesian2d<X, Y2>>,
@@ -86,6 +119,22 @@ impl GraphRenderer {
 
 	// TODO: Implement discontinue_line for draw_series and draw_secondary_series
 
+
+
+	/// Draw a line series of provided data on the primary Y-Axis.
+	/// For drawing on the secondary Y-Axis see [Self::draw_secondary_series].
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to draw on.
+	/// * `data`: The data to draw.
+	/// * `with_points`: Should circle points be made for each data plot?
+	/// * `discontinue_line`: Should the line be continious/discontinue if part of the data is missing?
+	/// * `label`: Legend label for the charted data.
+	/// * `color`: Color of drawn line, or black by default.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
 	pub(super) fn draw_series<'a, DB, X, Y, XT, YT>(
 		&self,
 		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
@@ -129,6 +178,20 @@ impl GraphRenderer {
 		Ok(())
 	}
 
+	/// Draw a line series of provided data on the secondary Y-Axis.
+	/// For drawing on the primary Y-Axis see [Self::draw_series].
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to draw on.
+	/// * `data`: The data to draw.
+	/// * `with_points`: Should circle points be made for each data plot?
+	/// * `discontinue_line`: Should the line be continious/discontinue if part of the data is missing?
+	/// * `label`: Legend label for the charted data.
+	/// * `color`: Color of drawn line, or black by default.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
 	pub(super) fn draw_secondary_series<'a, DB, X, Y1, Y2, XT, YT1, YT2>(
 		&self,
 		chart: &mut DualCoordChartContext<'a, DB, Cartesian2d<X, Y1>, Cartesian2d<X, Y2>>,
@@ -174,6 +237,14 @@ impl GraphRenderer {
 		Ok(())
 	}
 
+	/// Draw a legend in the bottom right corner.
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to draw on.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
 	pub(super) fn draw_legend<'a, DB, CT>(
 		&self,
 		chart: &mut ChartContext<'a, DB, CT>,
