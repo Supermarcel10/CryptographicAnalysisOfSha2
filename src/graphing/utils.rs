@@ -2,6 +2,17 @@ use std::ops::Range;
 use crate::structs::benchmark::Benchmark;
 
 
+/// Utility method to retrieve the range of a given data set for any numerical data.
+///
+/// # Arguments
+///
+/// * `data`: Data to retrieve range for.
+/// * `retr`: Retriever lambda to define which field and how to map it.
+///
+/// # Returns
+/// `Option<Range<T>>`
+///
+/// Returns `None` if length 0 data provided, otherwise provides a range of the retrieved data type.
 // TODO: Look into why Range<u8> does not work?
 //? Potential issue in plotters.rs?
 //? Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?

@@ -7,7 +7,18 @@ use crate::graphing::utils::get_range;
 use crate::structs::benchmark::Benchmark;
 
 
+/// Implementation of graph types
 impl GraphRenderer {
+	/// Create graph describing the relation of time and memory for a given run.
+	///
+	/// # Arguments
+	///
+	/// * `data`: Single run benchmark data.
+	///
+	/// # Returns
+	/// `Result<PathBuf, Box<dyn Error>>`
+	///
+	/// Returns path of saved graph file, or error.
 	pub fn create_time_and_memory_chart(
 		&self,
 		data: Vec<Benchmark>,
@@ -89,6 +100,17 @@ impl GraphRenderer {
 		Ok(path)
 	}
 
+	/// Create graph where one solver run is a baseline, and the remaining data is compared against it.
+	///
+	/// # Arguments
+	///
+	/// * `baseline`: Single run benchmark data, used as a baseline.
+	/// * `data`: Vector of benchmark runs, used as deviation.
+	///
+	/// # Returns
+	/// `Result<PathBuf, Box<dyn Error>>`
+	///
+	/// Returns path of saved graph file, or error.
 	pub fn create_baseline_graph(
 		&self,
 		baseline_data: Vec<Benchmark>,
@@ -175,6 +197,16 @@ impl GraphRenderer {
 		Ok(path)
 	}
 
+	/// Create graph comparing solvers.
+	///
+	/// # Arguments
+	///
+	/// * `data`: All runs combined.
+	///
+	/// # Returns
+	/// `Result<PathBuf, Box<dyn Error>>`
+	///
+	/// Returns path of saved graph file, or error.
 	pub fn solver_comparison(
 		&self,
 		data: Vec<Benchmark>,
