@@ -1,0 +1,1 @@
+{"date_time":"2025-04-06T22:15:21.786680756Z","solver":"Boolector","arguments":[],"hash_function":"SHA512","rounds":6,"collision_type":"SemiFreeStart","execution_time":{"secs":900,"nanos":99707767},"memory_bytes":0,"result":"CPUOut","console_output":["",""]}
