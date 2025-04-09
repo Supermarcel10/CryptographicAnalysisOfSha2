@@ -1,0 +1,1 @@
+{"date_time":"2025-04-08T06:53:54.230661940Z","solver":"Yices2","arguments":[],"hash_function":"SHA512","rounds":8,"collision_type":"FreeStart","execution_time":{"secs":900,"nanos":99665155},"memory_bytes":0,"result":"CPUOut","console_output":["",""]}
