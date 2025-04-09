@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::io::{BufReader, Read};
 use std::os::unix::prelude::CommandExt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 use chrono::Local;
@@ -30,6 +30,7 @@ mod sha;
 mod verification;
 mod structs;
 mod graphing;
+mod data;
 
 // TODO: Add overrides for these as parameters
 const STOP_TOLERANCE_DEFAULT: u8 = 3;
@@ -41,28 +42,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 	generate_smtlib_files()?;
 	// solve_by_brute_force();
 
-	let mut baseline_benchmarks = Benchmark::load_all(&PathBuf::from("results/brute-force"), false)?;
-	baseline_benchmarks = baseline_benchmarks
-		.into_iter()
-		.filter(|b| b.hash_function == HashFunction::SHA256 && b.solver == SmtSolver::Bitwuzla && b.collision_type == CollisionType::Standard)
-		.collect();
-
-	let mut deviation_benchmarks = Benchmark::load_all(&PathBuf::from("results/bitwuzla/abstraction"), false)?;
-	deviation_benchmarks = deviation_benchmarks
-		.into_iter()
-		.filter(|b| b.arguments.contains((&"--bv-solver prop".to_string()).into()))
-		.collect();
-
-	let mut all_baseline_benchmarks = Benchmark::load_all(&PathBuf::from("results/brute-force"), false)?;
-	all_baseline_benchmarks = all_baseline_benchmarks
-		.into_iter()
-		.filter(|b| b.hash_function == HashFunction::SHA256 && b.collision_type == CollisionType::Standard)
-		.collect();
-
 	let graph_renderer = GraphRenderer::default();
-	graph_renderer.solver_comparison(all_baseline_benchmarks)?;
-	graph_renderer.create_time_and_memory_chart(baseline_benchmarks.clone())?;
-	graph_renderer.create_baseline_graph(baseline_benchmarks, vec![deviation_benchmarks])?;
+	graph_renderer.generate_all_graphs()?;
 
 	Ok(())
 }

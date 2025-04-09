@@ -3,8 +3,9 @@ use std::error::Error;
 use std::path::PathBuf;
 use plotters::prelude::*;
 use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
+use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
 use crate::graphing::utils::get_range;
-use crate::structs::benchmark::Benchmark;
+use crate::structs::benchmark::{Benchmark, SmtSolver, SolverArg};
 
 
 /// Implementation of graph types
@@ -19,11 +20,20 @@ impl GraphRenderer {
 	/// `Result<PathBuf, Box<dyn Error>>`
 	///
 	/// Returns path of saved graph file, or error.
-	pub fn create_time_and_memory_chart(
+	fn create_time_and_memory_chart(
 		&self,
 		data: Vec<Benchmark>,
 	) -> Result<PathBuf, Box<dyn Error>> {
-		let file_name = format!("{}.svg", "test2");
+		if data.len() == 0 {
+			println!("{}", MissingData { graph_name: "Time & Memory", dataset_name: "data" });
+		}
+
+		let file_name = format!(
+			"detailed_{}_{}_{}.svg",
+			data[0].solver.to_string().to_lowercase(),
+			data[0].hash_function,
+			data[0].collision_type,
+		);
 		let path = self.output_directory.join(file_name);
 
 		let mut sorted_data = data.clone();
@@ -111,12 +121,34 @@ impl GraphRenderer {
 	/// `Result<PathBuf, Box<dyn Error>>`
 	///
 	/// Returns path of saved graph file, or error.
-	pub fn create_baseline_graph(
+	fn create_baseline_graph(
 		&self,
 		baseline_data: Vec<Benchmark>,
-		data: Vec<Vec<Benchmark>>,
+		data: BTreeMap<Vec<SolverArg>, Vec<Benchmark>>,
+		argument_name: &str,
 	) -> Result<PathBuf, Box<dyn Error>> {
-		let file_name = format!("{}.svg", "test3");
+		if baseline_data.len() == 0 {
+			return Err(MissingData { graph_name: "baseline", dataset_name: "baseline" }.into());
+		}
+
+		if data.len() == 0 {
+			println!("{}", MissingData { graph_name: "baseline", dataset_name: "data" });
+		}
+
+		let title = format!(
+			"{} {} {}: {} Args",
+			baseline_data[0].solver,
+			baseline_data[0].hash_function,
+			baseline_data[0].collision_type,
+			argument_name,
+		);
+
+		let file_name = format!(
+			"{}_{}.svg",
+			baseline_data[0].solver.to_string().to_lowercase(),
+			argument_name.to_lowercase().replace(" ", "_"),
+		);
+
 		let path = self.output_directory.join(file_name);
 
 		let mut baseline_data = baseline_data.clone();
@@ -141,7 +173,7 @@ impl GraphRenderer {
 			.x_label_area_size(45)
 			.y_label_area_size(60)
 			.margin(5)
-			.caption("Bitwuzla Abstraction Deviation Graph", self.title_style)
+			.caption(title, self.title_style)
 			.build_cartesian_2d(x_range, y_range)?;
 
 		// Draw axis
@@ -154,7 +186,7 @@ impl GraphRenderer {
 		)?;
 
 		// Draw deviation data
-		for (i, run) in data.iter().enumerate() {
+		for (i, (args, run)) in data.iter().enumerate() {
 			if run.len() <= 0 {
 				continue;
 			}
@@ -175,7 +207,7 @@ impl GraphRenderer {
 				data,
 				true,
 				true,
-				&run[0].arguments.join(" "),
+				&args.join(" "),
 				Some(self.color_palette[i].to_rgba()),
 			)?
 		}
@@ -207,12 +239,26 @@ impl GraphRenderer {
 	/// `Result<PathBuf, Box<dyn Error>>`
 	///
 	/// Returns path of saved graph file, or error.
-	pub fn solver_comparison(
+	fn solver_comparison(
 		&self,
 		data: Vec<Benchmark>,
-		// TODO: Add a way to differenciate between different hash functions and different collision types
 	) -> Result<PathBuf, Box<dyn Error>> {
-		let file_name = format!("{}.svg", "test");
+		if data.is_empty() {
+			return Err(MissingData { graph_name: "comparison", dataset_name: "data" }.into());
+		}
+
+		let title = format!(
+			"{} {} Solver Comparison",
+			data[0].hash_function,
+			data[0].collision_type,
+		);
+
+		let file_name = format!(
+			"solver_comparison_{}_{}.svg",
+			data[0].hash_function,
+			data[0].collision_type,
+		);
+
 		let path = self.output_directory.join(file_name);
 
 		let mut sorted_data = data.clone();
@@ -233,7 +279,7 @@ impl GraphRenderer {
 			.x_label_area_size(45)
 			.y_label_area_size(60)
 			.margin(5)
-			.caption("SHA256 STD", self.title_style)
+			.caption(title, self.title_style)
 			.build_cartesian_2d(x_range, y_range.log_scale().base(2.0))?;
 
 		// Draw axis
@@ -245,6 +291,41 @@ impl GraphRenderer {
 			Some(&|y: &f64| format!("2^{}", y.log2())),
 		)?;
 
+		// // Draw background
+		// let col = RGBAColor(60, 60, 60, 0.25).filled();
+		// chart
+		// 	.draw_series(std::iter::once(
+		// 		Rectangle::new(
+		// 			[(x_range.start, y_range.end), (x_range.end, y_range.end - 125.0)],
+		// 			col,
+		// 		)
+		// 	))?
+		// 	.label("TIMEOUT")
+		// 	.legend(move |(x, y)| Rectangle::new([(x + 5, y - 5), (x + 15, y + 5)], col));
+		//
+		// let col = RGBAColor(255, 0, 0, 0.125).filled();
+		// chart
+		// 	.draw_series(std::iter::once(
+		// 		Rectangle::new(
+		// 			[(0, y_range.start), (8, y_range.end - 125.0)],
+		// 			col,
+		// 		)
+		// 	))?
+		// 	.label("UNSAT")
+		// 	.legend(move |(x, y)| Rectangle::new([(x + 5, y - 5), (x + 15, y + 5)], col));
+		//
+		// let col = RGBAColor(0, 255, 0, 0.125).filled();
+		// chart
+		// 	.draw_series(std::iter::once(
+		// 		Rectangle::new(
+		// 			[(8, y_range.start), (x_range.end, y_range.end - 125.0)],
+		// 			col,
+		// 		)
+		// 	))?
+		// 	.label("SAT")
+		// 	.legend(move |(x, y)| Rectangle::new([(x + 5, y - 5), (x + 15, y + 5)], col));
+
+		// Draw data
 		let mut split_data = BTreeMap::new();
 		for b in sorted_data {
 			split_data
@@ -269,5 +350,81 @@ impl GraphRenderer {
 		self.draw_legend(&mut chart)?;
 
 		Ok(path)
+	}
+
+	/// Collection function to generate all graphs.
+	pub fn generate_all_graphs(&self) -> Result<(), Box<dyn Error>> {
+		use crate::structs::hash_function::HashFunction::*;
+		use crate::structs::collision_type::CollisionType::*;
+
+
+		// Generate all solver comparisons for each HashFunction and CollisionType
+		for hash_function in [SHA224, SHA256, SHA512] {
+			for collision_type in [Standard, SemiFreeStart, FreeStart] {
+				let baselines = self.data_retriever.retrieve_all_baselines(
+					hash_function,
+					collision_type,
+					false,
+				)?;
+
+				if baselines.is_empty() {
+					println!(
+						"WARNING: {}",
+						FailedToGenerate {
+							hash_function,
+							collision_type,
+							err: &MissingData {
+								graph_name: "Time & Memory",
+								dataset_name: "Bitwuzla",
+							}.to_string(),
+						},
+					);
+					continue;
+				}
+				self.solver_comparison(baselines)?;
+			}
+		}
+
+
+		// Generate Bitwuzla detail chart
+		let bitwuzla_baseline = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			true,
+		)?;
+
+		if bitwuzla_baseline.is_empty() {
+			return Err(MissingData { graph_name: "Time & Memory", dataset_name: "Bitwuzla" }.into());
+		}
+		self.create_time_and_memory_chart(bitwuzla_baseline.clone())?;
+
+
+		// Generate Bitwuzla argument Graphs
+		let arg_categories = BTreeMap::from([
+			("Abstraction", "--abstraction"),
+			("Preprocessing", "--pp-"),
+			("Rewrite Level", "-rwl"),
+			("SAT Solver", "--sat-solver"),
+			("Solver Engine", "--bv-solver"),
+		]);
+
+		for (category, identifier) in arg_categories {
+			let deviation_data = self.data_retriever.retrieve_with_args(
+				SmtSolver::Bitwuzla,
+				SHA256,
+				Standard,
+				false,
+				identifier,
+			)?;
+
+			self.create_baseline_graph(
+				bitwuzla_baseline.clone(),
+				deviation_data,
+				category,
+			)?;
+		}
+
+		Ok(())
 	}
 }
