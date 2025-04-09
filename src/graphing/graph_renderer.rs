@@ -1,5 +1,9 @@
 use std::path::PathBuf;
 use plotters::prelude::RGBColor;
+use crate::data::data_retriever::DataRetriever;
+use crate::structs::collision_type::CollisionType;
+use crate::structs::hash_function::HashFunction;
+
 
 pub struct GraphRenderer {
 	pub(super) output_directory: PathBuf,
@@ -8,6 +12,7 @@ pub struct GraphRenderer {
 	pub(super) text_style: (&'static str, u32),
 	pub(super) color_palette: Box<[RGBColor]>,
 	pub(super) line_thickness: u32,
+	pub(super) data_retriever: DataRetriever,
 }
 
 impl GraphRenderer {
@@ -18,6 +23,7 @@ impl GraphRenderer {
 		text_style: (&'static str, u32),
 		color_palette: Box<[RGBColor]>,
 		line_thickness: u32,
+		data_retriever: DataRetriever,
 	) -> Self {
 		GraphRenderer {
 			output_directory,
@@ -26,6 +32,7 @@ impl GraphRenderer {
 			text_style,
 			color_palette,
 			line_thickness,
+			data_retriever,
 		}
 	}
 
@@ -47,6 +54,7 @@ impl GraphRenderer {
 				RGBColor(116, 143, 252), // Light Blue
 			]),
 			line_thickness: 2,
+			data_retriever: DataRetriever::default(),
 		}
 	}
 }
@@ -56,5 +64,16 @@ pub enum GraphRendererError<'a> {
 	#[error("failed to get range for {variable}")]
 	GetRangeFailed {
 		variable: &'a str,
+	},
+	#[error("failed to generate chart {hash_function} {collision_type}: {err}")]
+	FailedToGenerate {
+		hash_function: HashFunction,
+		collision_type: CollisionType,
+		err: &'a str,
+	},
+	#[error("{graph_name} graph generation - {dataset_name} data cannot be empty!")]
+	MissingData {
+		graph_name: &'a str,
+		dataset_name: &'a str,
 	},
 }
