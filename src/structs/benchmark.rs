@@ -104,12 +104,12 @@ impl Display for SmtSolver {
 		use SmtSolver::*;
 
 		write!(f, "{}", match self {
-			Z3 => "z3",
-			CVC5 => "cvc5",
-			Yices2 => "yices",
-			Bitwuzla => "bitwuzla",
-			Boolector => "boolector",
-			// STP => "stp",
+			Z3 => "Z3",
+			CVC5 => "CVC5",
+			Yices2 => "Yices",
+			Bitwuzla => "Bitwuzla",
+			Boolector => "Boolector",
+			// STP => "STP",
 		})
 	}
 }
