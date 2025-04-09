@@ -97,19 +97,6 @@ pub enum SmtSolver {
 //                          only)
 
 // TODO: Yices2
-
-// Bitwuzla:
-//  --bv-solver preprop
-// --pp-elim-extracts                [false]      eliminate extract on BV constants
-// --pp-elim-bvudiv                  [false]      eliminate bvudiv and bvurem
-// --pp-contr-ands                   [false]      enable contradicting ands preprocessing pass
-//   --abstraction-bvadd               [false]      term abstraction for bvadd
-//  --abstraction-initial-lemmas      [false]      use initial lemma refinements only
-//   --abstraction-inc-bitblast        [false]      incrementally bit-blast bvmul and bvadd
-//  --abstraction                     [false]      enable abstraction module
-// --prop-normalize                  [false]      enable normalization for local search
-//   -S <M>, --sat-solver <M>          [cadical]    backend SAT solver {kissat, cms, cadical}
-
 // TODO: Boolector
 
 impl Display for SmtSolver {
