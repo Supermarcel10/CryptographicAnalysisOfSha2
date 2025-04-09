@@ -36,11 +36,15 @@ impl GraphRenderer {
 			title_style: ("noto sans", 36),
 			text_style: ("noto sans", 14),
 			color_palette: Box::from([
-				RGBColor(37, 95, 133),
-				RGBColor(140, 33, 85),
-				RGBColor(221, 164, 72),
-				RGBColor(50, 150, 93),
-				RGBColor(0, 0, 0),
+				RGBColor(166, 30, 77), // Maroon
+				RGBColor(24, 100, 171), // Dark Blue
+				RGBColor(8, 127, 91), // Green
+				RGBColor(250, 176, 5), // Yellow
+				RGBColor(156, 54, 181), // Purple
+				RGBColor(12, 133, 153), // Cyan
+				RGBColor(95, 61, 196), // Light Purple
+				RGBColor(70, 210, 94), // Light Green
+				RGBColor(116, 143, 252), // Light Blue
 			]),
 			line_thickness: 2,
 		}
