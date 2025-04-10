@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -191,8 +192,9 @@ impl SmtBuilder {
 	fn final_state_update(&mut self) {
 		self.comment("Final state update");
 
+		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
 		let mut s = String::new();
-		for (i, var) in ('a'..='h').enumerate() {
+		for (i, var) in ('a'..='h').take(final_size).enumerate() {
 			for m in 0..2 {
 				let msg_round0 = msg_prefix(m, 0, self.collision_type);
 				let msg = msg_prefix(m, self.rounds.into(), self.collision_type);
@@ -229,8 +231,9 @@ impl SmtBuilder {
 	fn assert_hash_same(&mut self) {
 		self.comment("Assert output hash is the same");
 
+		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
 		let mut s = String::new();
-		for i in 0..8 {
+		for i in 0..final_size {
 			s += &format!("\t(= m0_hash{i} m1_hash{i})\n");
 		}
 
@@ -258,8 +261,9 @@ impl SmtBuilder {
 		self.break_line();
 
 		self.comment("Output hash");
+		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
 		let mut hash = String::new();
-		for i in 0..8 {
+		for i in 0..final_size {
 			hash += &format!("m0_hash{i} ");
 		}
 		self.smt += &format!("(get-value ({}))\n", hash.trim());
@@ -350,11 +354,11 @@ fn msg_prefix(
 	}
 }
 
-pub fn generate_smtlib_files() -> Result<(), Box<dyn std::error::Error>> {
+pub fn generate_smtlib_files() -> Result<(), Box<dyn Error>> {
 	use HashFunction::*;
 	use CollisionType::*;
 
-	for sha_function in [SHA256, SHA512] {
+	for sha_function in [SHA224, SHA256, SHA512] {
 		for collision_type in [Standard, SemiFreeStart, FreeStart] {
 			for rounds in 0..sha_function.max_rounds() {
 				let mut builder = SmtBuilder::new(sha_function, rounds, collision_type)?;
