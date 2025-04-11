@@ -1,0 +1,1 @@
+{"date_time":"2025-04-10T09:51:00.309568779Z","solver":"Z3","arguments":[],"hash_function":"SHA256","rounds":15,"collision_type":"SemiFreeStart","execution_time":{"secs":900,"nanos":99673895},"memory_bytes":0,"result":"CPUOut","console_output":["",""]}
