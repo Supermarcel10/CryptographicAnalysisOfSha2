@@ -36,14 +36,17 @@ mod data;
 const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
-const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/bitwuzla/abstraction"));
+const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/"));
 
 fn main() -> Result<(), Box<dyn Error>> {
 	generate_smtlib_files()?;
-	solve_by_brute_force();
+	// solve_by_brute_force();
 
-	// let graph_renderer = GraphRenderer::default();
-	// graph_renderer.generate_all_graphs()?;
+	let mut graph_renderer = GraphRenderer::default();
+	graph_renderer.generate_all_graphs()?;
+
+
+
 
 
 	Ok(())
@@ -51,21 +54,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn solve_by_brute_force() {
 	let solvers = [SmtSolver::Bitwuzla];
-	let arguments: Vec<SolverArg> = vec![
-		// "--no-prop-const-bits".into(),
-		// "--no-prop-ineq-bounds".into(),
-		// "--no-prop-sext".into(),
-		"--abstraction --no-abstraction-bvmul".into(),
-		"--abstraction --no-abstraction-bvudiv".into(),
-		"--abstraction --no-abstraction-bvurem".into(),
-		// "--no-pp-embedded".into(),
-		// "--no-pp-flatten-and".into(),
-		// "--no-pp-normalize".into(),
-		// "--no-pp-skeleton-preproc".into(),
-		// "--no-pp-variable-subst".into(),
-		// "--no-pp-variable-subst-norm-eq".into(),
-	];
-
+	let arguments: Vec<SolverArg> = vec![];
 	let hash_functions = [HashFunction::SHA256];
 	let collision_types = [CollisionType::Standard];
 
