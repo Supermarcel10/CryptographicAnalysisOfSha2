@@ -1,0 +1,1 @@
+{"date_time":"2025-04-13T22:54:46.469141033Z","solver":"Bitwuzla","arguments":["--no-prop-ineq-bounds"],"hash_function":"SHA256","rounds":19,"collision_type":"Standard","execution_time":{"secs":900,"nanos":99680444},"memory_bytes":0,"result":"CPUOut","console_output":["",""]}
