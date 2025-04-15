@@ -3,7 +3,6 @@ name = "sha-256-collision"
 version = "0.1.0"
 edition = "2024"
 license = "CC BY-NC-SA"
-license-file = "LICENSE.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
