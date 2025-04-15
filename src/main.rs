@@ -195,7 +195,7 @@ impl BenchmarkRunner {
 		}
 
 		full_args.extend(split_args);
-		full_args.push(smt_file);
+		full_args.push(smt_file.clone());
 
 		let date_time = Local::now().to_utc();
 		let start_time = Instant::now();
