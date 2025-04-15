@@ -107,9 +107,8 @@ fn solve_by_brute_force() {
 											println!("UNSAT");
 										}
 										Some(mut colliding_pair) => {
-											// TODO: Simplify this!
-											if VERIFY_HASH_DEFAULT && colliding_pair.verify(hash_function, rounds).expect("Failed to verify hash output!") {
-												colliding_pair.verified_hash = Some(colliding_pair.m0.expected_hash.clone());
+											if VERIFY_HASH_DEFAULT {
+												colliding_pair.verify(hash_function, rounds).expect("Failed to verify hash output!");
 											}
 
 											println!("{}", colliding_pair);

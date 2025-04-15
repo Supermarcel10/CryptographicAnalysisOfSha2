@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 use crate::sha::{HashError, MessageBlock, OutputHash, Sha, StartVector};
 use crate::structs::hash_function::HashFunction;
+use crate::structs::hash_result::HashResult;
 use crate::structs::sha_state::ShaState;
 use crate::verification::bit_differential::BitDifferential;
 use crate::verification::verify_hash::VerifyHash;
@@ -13,19 +14,28 @@ pub struct MessageData {
 	pub expected_hash: OutputHash,
 }
 
-impl VerifyHash for MessageData {
-	fn verify(
+impl MessageData {
+	fn run_sha(
 		&self,
 		hash_function: HashFunction,
 		rounds: u8
-	) -> Result<bool, HashError> {
-		let hash_result = Sha::from_message_block(
+	) -> Result<HashResult, HashError> {
+		Sha::from_message_block(
 			self.m,
 			hash_function,
 			rounds,
 			self.cv,
-		)?.execute()?;
+		)?.execute()
+	}
+}
 
+impl VerifyHash for MessageData {
+	fn verify(
+		&mut self,
+		hash_function: HashFunction,
+		rounds: u8,
+	) -> Result<bool, HashError> {
+		let hash_result = self.run_sha(hash_function, rounds)?;
 		Ok(hash_result.hash == self.expected_hash)
 	}
 }
@@ -38,11 +48,13 @@ pub struct CollidingPair {
 }
 
 impl VerifyHash for CollidingPair {
-	fn verify(&self, hash_function: HashFunction, rounds: u8) -> Result<bool, HashError> {
+	fn verify(&mut self, hash_function: HashFunction, rounds: u8) -> Result<bool, HashError> {
 		let m0_valid_hash = self.m0.verify(hash_function, rounds)?;
 		let m1_valid_hash = self.m1.verify(hash_function, rounds)?;
-		println!("{}", m0_valid_hash);
-		println!("{}", m1_valid_hash);
+
+		if !(m0_valid_hash && m1_valid_hash) {
+			self.verified_hash = Some(self.m0.run_sha(hash_function, rounds)?.hash);
+		}
 
 		Ok(m0_valid_hash && m1_valid_hash)
 	}
