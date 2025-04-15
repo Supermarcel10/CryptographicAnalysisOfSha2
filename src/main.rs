@@ -209,7 +209,7 @@ impl BenchmarkRunner {
 		let pid = child.id();
 		let spc = if arguments.len() > 0 { " " } else { "" };
 		let arg_string = arguments.join(" ");
-		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}{spc}{arg_string}; SMT solver PID: {pid}");
+		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}{spc}{arg_string}; SMT solver PID: {pid}\nFile: {smt_file}");
 
 		// Await process exit
 		let status = child.wait_timeout(TIMEOUT_DEFAULT)?;
