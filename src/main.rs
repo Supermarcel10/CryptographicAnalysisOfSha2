@@ -37,6 +37,7 @@ const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
 const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/w_encoding/"));
+const SAVE_BENCHMARKS: bool = false;
 
 fn main() -> Result<(), Box<dyn Error>> {
 	generate_smtlib_files()?;
@@ -84,7 +85,9 @@ fn solve_by_brute_force() {
 						);
 
 						if let Ok(benchmark) = result {
-							benchmark.save(*BENCHMARK_SAVE_PATH_DEFAULT).expect("Failed to save benchmark!");
+							if SAVE_BENCHMARKS {
+								benchmark.save(*BENCHMARK_SAVE_PATH_DEFAULT).expect("Failed to save benchmark!");
+							}
 
 							match benchmark.result {
 								BenchmarkResult::SMTError => {
