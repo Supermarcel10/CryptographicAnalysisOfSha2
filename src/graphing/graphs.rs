@@ -353,7 +353,7 @@ impl GraphRenderer {
 	}
 
 	/// Collection function to generate all graphs.
-	pub fn generate_all_graphs(&self) -> Result<(), Box<dyn Error>> {
+	pub fn generate_all_graphs(&mut self) -> Result<(), Box<dyn Error>> {
 		use crate::structs::hash_function::HashFunction::*;
 		use crate::structs::collision_type::CollisionType::*;
 
