@@ -140,7 +140,7 @@ impl SmtBuilder {
 
 		if self.rounds >= 16 {
 			let bv_size = self.hash_function.word_size().bits();
-			self.smt += &format!("(define-fun {msg}{rounds} () Word (_ bv0 {bv_size})) ; Unused for {rounds}, but kept for output format",
+			self.smt += &format!("(define-fun {msg}{rounds} () Word (_ bv0 {bv_size})) ; Unused for {rounds} rounds, but kept for output format\n",
 								 rounds = self.rounds);
 		}
 	}
