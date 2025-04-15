@@ -168,7 +168,9 @@ impl SmtBuilder {
 			if i < self.rounds {
 				self.smt += &format!("(define-fun m1_w{i} () Word (bvxor m0_w{i} delta_w{i}))\n");
 			} else {
-				self.smt += &format!("(define-fun m1_w{i} () Word (bvxor m0_w{i} delta_w{i})) ; Irrelevant for 2 rounds\n");
+				self.smt += &format!("(define-fun m1_w{i} () Word (bvxor m0_w{i} delta_w{i})) ; Irrelevant for {} rounds\n",
+									 self.rounds,
+				);
 			}
 		}
 	}
