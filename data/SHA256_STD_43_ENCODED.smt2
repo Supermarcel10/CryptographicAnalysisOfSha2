@@ -141,7 +141,8 @@
 (define-fun m0_w40 () Word (expandMessage m0_w24 m0_w25 m0_w33 m0_w38))
 (define-fun m0_w41 () Word (expandMessage m0_w25 m0_w26 m0_w34 m0_w39))
 (define-fun m0_w42 () Word (expandMessage m0_w26 m0_w27 m0_w35 m0_w40))
-(define-fun m0_w43 () Word (_ bv0 32)) ; Unused for 43, but kept for output format
+(define-fun m0_w43 () Word (_ bv0 32)) ; Unused for 43 rounds, but kept for output format
+
 ; Message Differential (W)
 (declare-fun delta_w0 () Word)
 (declare-fun delta_w1 () Word)
@@ -232,7 +233,7 @@
 (define-fun m1_w40 () Word (bvxor m0_w40 delta_w40))
 (define-fun m1_w41 () Word (bvxor m0_w41 delta_w41))
 (define-fun m1_w42 () Word (bvxor m0_w42 delta_w42))
-(define-fun m1_w43 () Word (bvxor m0_w43 delta_w43)) ; Irrelevant for 2 rounds
+(define-fun m1_w43 () Word (bvxor m0_w43 delta_w43)) ; Irrelevant for 43 rounds
 
 
 ;; MESSAGE COMPRESSION

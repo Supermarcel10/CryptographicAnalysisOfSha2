@@ -141,7 +141,8 @@
 (define-fun m0_w36 () Word (expandMessage m0_w20 m0_w21 m0_w29 m0_w34))
 (define-fun m0_w37 () Word (expandMessage m0_w21 m0_w22 m0_w30 m0_w35))
 (define-fun m0_w38 () Word (expandMessage m0_w22 m0_w23 m0_w31 m0_w36))
-(define-fun m0_w39 () Word (_ bv0 32)) ; Unused for 39, but kept for output format
+(define-fun m0_w39 () Word (_ bv0 32)) ; Unused for 39 rounds, but kept for output format
+
 ; MESSAGE 1
 ; Initial state
 (declare-fun m1_w0 () Word)
@@ -185,7 +186,8 @@
 (define-fun m1_w36 () Word (expandMessage m1_w20 m1_w21 m1_w29 m1_w34))
 (define-fun m1_w37 () Word (expandMessage m1_w21 m1_w22 m1_w30 m1_w35))
 (define-fun m1_w38 () Word (expandMessage m1_w22 m1_w23 m1_w31 m1_w36))
-(define-fun m1_w39 () Word (_ bv0 32)) ; Unused for 39, but kept for output format
+(define-fun m1_w39 () Word (_ bv0 32)) ; Unused for 39 rounds, but kept for output format
+
 
 ;; MESSAGE COMPRESSION
 ; MESSAGE 0

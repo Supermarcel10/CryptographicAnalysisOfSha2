@@ -94,7 +94,8 @@
 (declare-fun m0_w14 () Word)
 (declare-fun m0_w15 () Word)
 ; Message expansion irrelevant for 16 rounds
-(define-fun m0_w16 () Word (_ bv0 32)) ; Unused for 16, but kept for output format
+(define-fun m0_w16 () Word (_ bv0 32)) ; Unused for 16 rounds, but kept for output format
+
 ; MESSAGE 1
 ; Initial state
 (declare-fun m1_w0 () Word)
@@ -114,7 +115,8 @@
 (declare-fun m1_w14 () Word)
 (declare-fun m1_w15 () Word)
 ; Message expansion irrelevant for 16 rounds
-(define-fun m1_w16 () Word (_ bv0 32)) ; Unused for 16, but kept for output format
+(define-fun m1_w16 () Word (_ bv0 32)) ; Unused for 16 rounds, but kept for output format
+
 
 ;; MESSAGE COMPRESSION
 ; MESSAGE 0

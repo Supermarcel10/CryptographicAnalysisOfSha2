@@ -92,21 +92,21 @@
 
 ; MESSAGE 1 (Derived)
 (define-fun m1_w0 () Word (bvxor m0_w0 delta_w0))
-(define-fun m1_w1 () Word (bvxor m0_w1 delta_w1)) ; Irrelevant for 2 rounds
-(define-fun m1_w2 () Word (bvxor m0_w2 delta_w2)) ; Irrelevant for 2 rounds
-(define-fun m1_w3 () Word (bvxor m0_w3 delta_w3)) ; Irrelevant for 2 rounds
-(define-fun m1_w4 () Word (bvxor m0_w4 delta_w4)) ; Irrelevant for 2 rounds
-(define-fun m1_w5 () Word (bvxor m0_w5 delta_w5)) ; Irrelevant for 2 rounds
-(define-fun m1_w6 () Word (bvxor m0_w6 delta_w6)) ; Irrelevant for 2 rounds
-(define-fun m1_w7 () Word (bvxor m0_w7 delta_w7)) ; Irrelevant for 2 rounds
-(define-fun m1_w8 () Word (bvxor m0_w8 delta_w8)) ; Irrelevant for 2 rounds
-(define-fun m1_w9 () Word (bvxor m0_w9 delta_w9)) ; Irrelevant for 2 rounds
-(define-fun m1_w10 () Word (bvxor m0_w10 delta_w10)) ; Irrelevant for 2 rounds
-(define-fun m1_w11 () Word (bvxor m0_w11 delta_w11)) ; Irrelevant for 2 rounds
-(define-fun m1_w12 () Word (bvxor m0_w12 delta_w12)) ; Irrelevant for 2 rounds
-(define-fun m1_w13 () Word (bvxor m0_w13 delta_w13)) ; Irrelevant for 2 rounds
-(define-fun m1_w14 () Word (bvxor m0_w14 delta_w14)) ; Irrelevant for 2 rounds
-(define-fun m1_w15 () Word (bvxor m0_w15 delta_w15)) ; Irrelevant for 2 rounds
+(define-fun m1_w1 () Word (bvxor m0_w1 delta_w1)) ; Irrelevant for 1 rounds
+(define-fun m1_w2 () Word (bvxor m0_w2 delta_w2)) ; Irrelevant for 1 rounds
+(define-fun m1_w3 () Word (bvxor m0_w3 delta_w3)) ; Irrelevant for 1 rounds
+(define-fun m1_w4 () Word (bvxor m0_w4 delta_w4)) ; Irrelevant for 1 rounds
+(define-fun m1_w5 () Word (bvxor m0_w5 delta_w5)) ; Irrelevant for 1 rounds
+(define-fun m1_w6 () Word (bvxor m0_w6 delta_w6)) ; Irrelevant for 1 rounds
+(define-fun m1_w7 () Word (bvxor m0_w7 delta_w7)) ; Irrelevant for 1 rounds
+(define-fun m1_w8 () Word (bvxor m0_w8 delta_w8)) ; Irrelevant for 1 rounds
+(define-fun m1_w9 () Word (bvxor m0_w9 delta_w9)) ; Irrelevant for 1 rounds
+(define-fun m1_w10 () Word (bvxor m0_w10 delta_w10)) ; Irrelevant for 1 rounds
+(define-fun m1_w11 () Word (bvxor m0_w11 delta_w11)) ; Irrelevant for 1 rounds
+(define-fun m1_w12 () Word (bvxor m0_w12 delta_w12)) ; Irrelevant for 1 rounds
+(define-fun m1_w13 () Word (bvxor m0_w13 delta_w13)) ; Irrelevant for 1 rounds
+(define-fun m1_w14 () Word (bvxor m0_w14 delta_w14)) ; Irrelevant for 1 rounds
+(define-fun m1_w15 () Word (bvxor m0_w15 delta_w15)) ; Irrelevant for 1 rounds
 
 
 ;; MESSAGE COMPRESSION
