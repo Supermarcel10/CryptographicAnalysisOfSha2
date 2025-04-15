@@ -41,6 +41,8 @@ impl VerifyHash for CollidingPair {
 	fn verify(&self, hash_function: HashFunction, rounds: u8) -> Result<bool, HashError> {
 		let m0_valid_hash = self.m0.verify(hash_function, rounds)?;
 		let m1_valid_hash = self.m1.verify(hash_function, rounds)?;
+		println!("{}", m0_valid_hash);
+		println!("{}", m1_valid_hash);
 
 		Ok(m0_valid_hash && m1_valid_hash)
 	}
@@ -48,14 +50,16 @@ impl VerifyHash for CollidingPair {
 
 impl Display for CollidingPair {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		let hash_message = match self.verified_hash.clone() {
-			None => format!(
-				"Hash : {}\nHash': {}",
-				self.m0.expected_hash,
-				self.m1.expected_hash
-			),
-			Some(hash) => format!("Hash : {hash} (VERIFIED)"),
-		};
+		let is_m0_hash_same = self.verified_hash.is_some() && self.m0.expected_hash == self.verified_hash.clone().unwrap();
+		let is_m1_hash_same = self.verified_hash.is_some() && self.m1.expected_hash == self.verified_hash.clone().unwrap();
+
+		let mut hash_message = format!(
+			"Hash : {} (Valid? {})\nHash': {} (Valid? {})",
+			self.m0.expected_hash,
+			is_m0_hash_same,
+			self.m1.expected_hash,
+			is_m1_hash_same,
+		);
 
 		write!(f, "CV   : {}\n", self.m0.cv)?;
 		write!(f, "CV'  : {}\n", self.m1.cv)?;
