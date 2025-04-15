@@ -37,7 +37,7 @@ const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
 const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/w_encoding/"));
-const SAVE_BENCHMARKS: bool = false;
+const SAVE_BENCHMARKS: bool = true;
 
 fn main() -> Result<(), Box<dyn Error>> {
 	generate_smtlib_files()?;
