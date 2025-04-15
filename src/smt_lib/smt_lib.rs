@@ -145,6 +145,34 @@ impl SmtBuilder {
 		}
 	}
 
+	fn define_differential_expansion(&mut self) {
+		self.define_expansion_for_message(0);
+		self.break_line();
+		self.comment("Message Differential (W)");
+
+		for i in 0..=self.rounds.max(15) {
+			if i < self.rounds {
+				self.smt += &format!("(declare-fun delta_w{i} () Word)\n");
+			} else {
+				self.smt += &format!(
+					"(define-fun delta_w{i} () Word {}) ; Irrelevant for {} rounds\n",
+					smt_hex(self.hash_function.default_word(), &self.hash_function),
+					self.rounds,
+				);
+			}
+		}
+
+		self.break_line();
+		self.comment("MESSAGE 1 (Derived)");
+		for i in 0..=self.rounds.max(15) {
+			if i < self.rounds {
+				self.smt += &format!("(define-fun m1_w{i} () Word (bvxor m0_w{i} delta_w{i}))\n");
+			} else {
+				self.smt += &format!("(define-fun m1_w{i} () Word (bvxor m0_w{i} delta_w{i})) ; Irrelevant for 2 rounds\n");
+			}
+		}
+	}
+
 	fn define_compression_for_message(&mut self, message: u8) {
 		self.comment(&format!("MESSAGE {message}"));
 
@@ -228,6 +256,18 @@ impl SmtBuilder {
 		self.smt += &format!("(assert (or\n{s}))\n");
 	}
 
+	fn assert_message_difference(&mut self) {
+		self.comment("Assert messages not the same");
+		let word_size = self.hash_function.word_size().bits();
+
+		let mut s = String::new();
+		for i in 0..16 {
+			s += &format!("\t(= delta_w{i} #b{})\n", "0".repeat(word_size));
+		}
+
+		self.smt += &format!("(assert (not (and\n{s})))\n");
+	}
+
 	fn assert_hash_same(&mut self) {
 		self.comment("Assert output hash is the same");
 
@@ -285,7 +325,7 @@ impl SmtBuilder {
 		self.smt += &format!("(get-value ({}))\n", s.trim());
 	}
 
-	pub fn default(&mut self) {
+	pub fn brute_force_encoding(&mut self) {
 		self.title("SETUP");
 		self.set_logic();
 
@@ -318,6 +358,46 @@ impl SmtBuilder {
 			self.break_line();
 		} else {
 			self.assert_messages_not_same();
+			self.break_line();
+		}
+
+		self.assert_hash_same();
+
+		self.check_sat();
+		self.get_full_model();
+	}
+
+	pub fn differential_encoding(&mut self) {
+		self.title("SETUP");
+		self.set_logic();
+
+		self.title("TYPE");
+		self.define_word_type();
+
+		self.title("FUNCTIONS");
+		self.define_functions();
+
+		self.title("CONSTANTS");
+		self.define_constants();
+		self.break_line();
+		self.define_starting_vector();
+
+		self.title("MESSAGE EXPANSION");
+		self.define_differential_expansion();
+
+		self.title("MESSAGE COMPRESSION");
+		self.define_compression_for_message(0);
+		self.break_line();
+		self.define_compression_for_message(1);
+		self.break_line();
+		self.final_state_update();
+
+		self.title("ASSERTIONS");
+		if self.collision_type == CollisionType::FreeStart {
+			self.assert_starting_vector_not_same();
+			self.break_line();
+		} else {
+			self.assert_message_difference();
 			self.break_line();
 		}
 
@@ -362,8 +442,14 @@ pub fn generate_smtlib_files() -> Result<(), Box<dyn Error>> {
 		for collision_type in [Standard, SemiFreeStart, FreeStart] {
 			for rounds in 0..sha_function.max_rounds() {
 				let mut builder = SmtBuilder::new(sha_function, rounds, collision_type)?;
-				builder.default();
+				builder.brute_force_encoding();
 				builder.to_file(format!("data/{sha_function}_{collision_type}_{rounds}.smt2").into())?;
+
+				if sha_function == SHA256 && collision_type == Standard {
+					let mut builder = SmtBuilder::new(sha_function, rounds, collision_type)?;
+					builder.differential_encoding();
+					builder.to_file(format!("data/{sha_function}_{collision_type}_{rounds}_ENCODED.smt2").into())?;
+				}
 			}
 		}
 	}

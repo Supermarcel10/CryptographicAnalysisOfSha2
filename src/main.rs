@@ -36,14 +36,15 @@ mod data;
 const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
 const VERIFY_HASH_DEFAULT: bool = true;
-const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/"));
+const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/w_encoding/"));
 
 fn main() -> Result<(), Box<dyn Error>> {
 	generate_smtlib_files()?;
-	// solve_by_brute_force();
+	solve_by_brute_force();
 
-	let mut graph_renderer = GraphRenderer::default();
-	graph_renderer.generate_all_graphs()?;
+	// let mut graph_renderer = GraphRenderer::default();
+	// graph_renderer.generate_all_graphs()?;
+
 
 
 
@@ -61,7 +62,7 @@ fn solve_by_brute_force() {
 	for solver in solvers {
 		for hash_function in hash_functions {
 			for collision_type in collision_types {
-				for arg in arguments.iter() {
+				// for arg in arguments.iter() {
 					let mut sequential_fails: u8 = 0;
 					for rounds in 0..=hash_function.max_rounds() {
 						if sequential_fails == STOP_TOLERANCE_DEFAULT {
@@ -69,12 +70,17 @@ fn solve_by_brute_force() {
 							break;
 						}
 
+						// TODO: Make a neater way of retrieving files!
+						let smt_file = format!("data/{hash_function}_{collision_type}_{rounds}_ENCODED.smt2");
+
 						let result = BenchmarkRunner::run_solver_with_benchmark(
 							hash_function,
 							rounds,
 							collision_type,
 							solver,
-							vec![arg.clone()],
+							smt_file,
+							vec![],
+							// vec![arg.clone()],
 						);
 
 						if let Ok(benchmark) = result {
@@ -120,7 +126,7 @@ fn solve_by_brute_force() {
 							break;
 						}
 					}
-				}
+				// }
 			}
 		}
 	}
@@ -173,11 +179,11 @@ impl BenchmarkRunner {
 		rounds: u8,
 		collision_type: CollisionType,
 		solver: SmtSolver,
+		smt_file: String,
 		arguments: Vec<SolverArg>,
 	) -> Result<Benchmark, Box<dyn Error>> {
 		// TODO: Ensure that the command exists before attempting to run it, else status code 32512 is returned and this causes an ERRINVAL
 
-		let smt_file = format!("data/{hash_function}_{collision_type}_{rounds}.smt2"); // TODO: Make a neater way of retrieving files!
 		let mut full_args: Vec<SolverArg> = vec![
 			"-v".into(),
 			solver.command(),
