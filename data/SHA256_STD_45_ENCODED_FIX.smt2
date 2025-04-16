@@ -145,7 +145,6 @@
 (define-fun m0_w42 () Word (expandMessage m0_w26 m0_w27 m0_w35 m0_w40))
 (define-fun m0_w43 () Word (expandMessage m0_w27 m0_w28 m0_w36 m0_w41))
 (define-fun m0_w44 () Word (expandMessage m0_w28 m0_w29 m0_w37 m0_w42))
-(define-fun m0_w45 () Word (_ bv0 32)) ; Unused for 45 rounds, but kept for output format
 
 ; Message Differential (W)
 (declare-fun delta_w0 () Word)

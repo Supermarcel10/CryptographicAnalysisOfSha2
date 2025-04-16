@@ -173,7 +173,6 @@
 (define-fun m0_w52 () Word (expandMessage m0_w36 m0_w37 m0_w45 m0_w50))
 (define-fun m0_w53 () Word (expandMessage m0_w37 m0_w38 m0_w46 m0_w51))
 (define-fun m0_w54 () Word (expandMessage m0_w38 m0_w39 m0_w47 m0_w52))
-(define-fun m0_w55 () Word (_ bv0 32)) ; Unused for 55 rounds, but kept for output format
 
 ; MESSAGE 1
 ; Initial state
@@ -234,7 +233,6 @@
 (define-fun m1_w52 () Word (expandMessage m1_w36 m1_w37 m1_w45 m1_w50))
 (define-fun m1_w53 () Word (expandMessage m1_w37 m1_w38 m1_w46 m1_w51))
 (define-fun m1_w54 () Word (expandMessage m1_w38 m1_w39 m1_w47 m1_w52))
-(define-fun m1_w55 () Word (_ bv0 32)) ; Unused for 55 rounds, but kept for output format
 
 
 ;; MESSAGE COMPRESSION
