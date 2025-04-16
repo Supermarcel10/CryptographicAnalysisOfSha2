@@ -58,7 +58,7 @@
 ; Message Differential (W)
 
 ; MESSAGE 1 (Derived)
-; Message expansion irrelevant for 0 rounds
+; Message expansion assertions irrelevant for 0 rounds
 
 
 ;; MESSAGE COMPRESSION

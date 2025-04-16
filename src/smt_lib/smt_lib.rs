@@ -140,7 +140,6 @@ impl SmtBuilder {
 		self.define_expansion_for_message(0);
 		self.break_line();
 		self.comment("Message Differential (W)");
-
 		for i in 0..self.rounds.min(16) {
 			self.smt += &format!("(declare-fun delta_w{i} () Word)\n");
 		}
@@ -152,17 +151,14 @@ impl SmtBuilder {
 		}
 
 		if self.rounds <= 16 {
-			self.comment(&format!("Message expansion irrelevant for {} rounds", self.rounds));
+			self.comment(&format!("Message expansion assertions irrelevant for {} rounds", self.rounds));
 		} else {
 			self.break_line();
-			self.comment("Message Expansion");
+			self.comment("Message Expansion Assertions");
+			// TODO: This can be updated to reason fully only about differnces, if the input later down the line can reason about only differences.
 			for i in 16..self.rounds {
 				self.smt += &format!(
 					"(define-fun m1_w{i} () Word (expandMessage m1_w{} m1_w{} m1_w{} m1_w{}))\n",
-					i - 16, i - 15, i - 7, i - 2
-				);
-				self.smt += &format!(
-					"(assert (= m1_w{i} (expandMessage m1_w{} m1_w{} m1_w{} m1_w{})))\n",
 					i - 16, i - 15, i - 7, i - 2
 				);
 			}

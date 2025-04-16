@@ -126,9 +126,9 @@
 (define-fun m1_w14 () Word (bvxor m0_w14 delta_w14))
 (define-fun m1_w15 () Word (bvxor m0_w15 delta_w15))
 
-; Message Expansion
+; Message Expansion Assertions
 (define-fun m1_w16 () Word (expandMessage m1_w0 m1_w1 m1_w9 m1_w14))
-(assert (= m1_w16 (expandMessage m1_w0 m1_w1 m1_w9 m1_w14)))
+
 
 ;; MESSAGE COMPRESSION
 ; MESSAGE 0

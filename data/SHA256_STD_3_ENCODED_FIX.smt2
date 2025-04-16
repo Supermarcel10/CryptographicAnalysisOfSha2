@@ -70,7 +70,7 @@
 (define-fun m1_w0 () Word (bvxor m0_w0 delta_w0))
 (define-fun m1_w1 () Word (bvxor m0_w1 delta_w1))
 (define-fun m1_w2 () Word (bvxor m0_w2 delta_w2))
-; Message expansion irrelevant for 3 rounds
+; Message expansion assertions irrelevant for 3 rounds
 
 
 ;; MESSAGE COMPRESSION

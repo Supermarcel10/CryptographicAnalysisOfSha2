@@ -62,7 +62,7 @@
 
 ; MESSAGE 1 (Derived)
 (define-fun m1_w0 () Word (bvxor m0_w0 delta_w0))
-; Message expansion irrelevant for 1 rounds
+; Message expansion assertions irrelevant for 1 rounds
 
 
 ;; MESSAGE COMPRESSION

@@ -154,23 +154,23 @@
 (define-fun m1_w14 () Word (bvxor m0_w14 delta_w14))
 (define-fun m1_w15 () Word (bvxor m0_w15 delta_w15))
 
-; Message Expansion
+; Message Expansion Assertions
 (define-fun m1_w16 () Word (expandMessage m1_w0 m1_w1 m1_w9 m1_w14))
-(assert (= m1_w16 (expandMessage m1_w0 m1_w1 m1_w9 m1_w14)))(define-fun m1_w17 () Word (expandMessage m1_w1 m1_w2 m1_w10 m1_w15))
-(assert (= m1_w17 (expandMessage m1_w1 m1_w2 m1_w10 m1_w15)))(define-fun m1_w18 () Word (expandMessage m1_w2 m1_w3 m1_w11 m1_w16))
-(assert (= m1_w18 (expandMessage m1_w2 m1_w3 m1_w11 m1_w16)))(define-fun m1_w19 () Word (expandMessage m1_w3 m1_w4 m1_w12 m1_w17))
-(assert (= m1_w19 (expandMessage m1_w3 m1_w4 m1_w12 m1_w17)))(define-fun m1_w20 () Word (expandMessage m1_w4 m1_w5 m1_w13 m1_w18))
-(assert (= m1_w20 (expandMessage m1_w4 m1_w5 m1_w13 m1_w18)))(define-fun m1_w21 () Word (expandMessage m1_w5 m1_w6 m1_w14 m1_w19))
-(assert (= m1_w21 (expandMessage m1_w5 m1_w6 m1_w14 m1_w19)))(define-fun m1_w22 () Word (expandMessage m1_w6 m1_w7 m1_w15 m1_w20))
-(assert (= m1_w22 (expandMessage m1_w6 m1_w7 m1_w15 m1_w20)))(define-fun m1_w23 () Word (expandMessage m1_w7 m1_w8 m1_w16 m1_w21))
-(assert (= m1_w23 (expandMessage m1_w7 m1_w8 m1_w16 m1_w21)))(define-fun m1_w24 () Word (expandMessage m1_w8 m1_w9 m1_w17 m1_w22))
-(assert (= m1_w24 (expandMessage m1_w8 m1_w9 m1_w17 m1_w22)))(define-fun m1_w25 () Word (expandMessage m1_w9 m1_w10 m1_w18 m1_w23))
-(assert (= m1_w25 (expandMessage m1_w9 m1_w10 m1_w18 m1_w23)))(define-fun m1_w26 () Word (expandMessage m1_w10 m1_w11 m1_w19 m1_w24))
-(assert (= m1_w26 (expandMessage m1_w10 m1_w11 m1_w19 m1_w24)))(define-fun m1_w27 () Word (expandMessage m1_w11 m1_w12 m1_w20 m1_w25))
-(assert (= m1_w27 (expandMessage m1_w11 m1_w12 m1_w20 m1_w25)))(define-fun m1_w28 () Word (expandMessage m1_w12 m1_w13 m1_w21 m1_w26))
-(assert (= m1_w28 (expandMessage m1_w12 m1_w13 m1_w21 m1_w26)))(define-fun m1_w29 () Word (expandMessage m1_w13 m1_w14 m1_w22 m1_w27))
-(assert (= m1_w29 (expandMessage m1_w13 m1_w14 m1_w22 m1_w27)))(define-fun m1_w30 () Word (expandMessage m1_w14 m1_w15 m1_w23 m1_w28))
-(assert (= m1_w30 (expandMessage m1_w14 m1_w15 m1_w23 m1_w28)))
+(define-fun m1_w17 () Word (expandMessage m1_w1 m1_w2 m1_w10 m1_w15))
+(define-fun m1_w18 () Word (expandMessage m1_w2 m1_w3 m1_w11 m1_w16))
+(define-fun m1_w19 () Word (expandMessage m1_w3 m1_w4 m1_w12 m1_w17))
+(define-fun m1_w20 () Word (expandMessage m1_w4 m1_w5 m1_w13 m1_w18))
+(define-fun m1_w21 () Word (expandMessage m1_w5 m1_w6 m1_w14 m1_w19))
+(define-fun m1_w22 () Word (expandMessage m1_w6 m1_w7 m1_w15 m1_w20))
+(define-fun m1_w23 () Word (expandMessage m1_w7 m1_w8 m1_w16 m1_w21))
+(define-fun m1_w24 () Word (expandMessage m1_w8 m1_w9 m1_w17 m1_w22))
+(define-fun m1_w25 () Word (expandMessage m1_w9 m1_w10 m1_w18 m1_w23))
+(define-fun m1_w26 () Word (expandMessage m1_w10 m1_w11 m1_w19 m1_w24))
+(define-fun m1_w27 () Word (expandMessage m1_w11 m1_w12 m1_w20 m1_w25))
+(define-fun m1_w28 () Word (expandMessage m1_w12 m1_w13 m1_w21 m1_w26))
+(define-fun m1_w29 () Word (expandMessage m1_w13 m1_w14 m1_w22 m1_w27))
+(define-fun m1_w30 () Word (expandMessage m1_w14 m1_w15 m1_w23 m1_w28))
+
 
 ;; MESSAGE COMPRESSION
 ; MESSAGE 0
