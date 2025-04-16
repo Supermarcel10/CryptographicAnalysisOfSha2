@@ -31,7 +31,7 @@ impl MessageData {
 
 impl VerifyHash for MessageData {
 	fn verify(
-		&mut self,
+		&self,
 		hash_function: HashFunction,
 		rounds: u8,
 	) -> Result<bool, HashError> {
@@ -44,33 +44,39 @@ impl VerifyHash for MessageData {
 pub struct CollidingPair {
 	pub m0: MessageData,
 	pub m1: MessageData,
-	pub verified_hash: Option<OutputHash>,
-}
-
-impl VerifyHash for CollidingPair {
-	fn verify(&mut self, hash_function: HashFunction, rounds: u8) -> Result<bool, HashError> {
-		let m0_valid_hash = self.m0.verify(hash_function, rounds)?;
-		let m1_valid_hash = self.m1.verify(hash_function, rounds)?;
-
-		if !(m0_valid_hash && m1_valid_hash) {
-			self.verified_hash = Some(self.m0.run_sha(hash_function, rounds)?.hash);
-		}
-
-		Ok(m0_valid_hash && m1_valid_hash)
-	}
+	pub hash_function: HashFunction,
+	pub rounds: u8,
 }
 
 impl Display for CollidingPair {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		let is_m0_hash_same = self.verified_hash.is_some() && self.m0.expected_hash == self.verified_hash.clone().unwrap();
-		let is_m1_hash_same = self.verified_hash.is_some() && self.m1.expected_hash == self.verified_hash.clone().unwrap();
+		let is_m0_hash_same = self.m0.verify(self.hash_function, self.rounds).unwrap_or(false);
+		let is_m1_hash_same = self.m1.verify(self.hash_function, self.rounds).unwrap_or(false);
+
+		let mut mismatch_info = String::new();
+		if !is_m0_hash_same {
+			let actual_hash = self.m0.run_sha(self.hash_function, self.rounds);
+			match actual_hash {
+				Ok(result) => mismatch_info += &format!("\nActual Hash: {}\n", result.hash),
+				Err(_) => mismatch_info += "Unable to retrieve actual hash for M!\n",
+			}
+		}
+
+		if !is_m1_hash_same {
+			let actual_hash = self.m1.run_sha(self.hash_function, self.rounds);
+			match actual_hash {
+				Ok(result) => mismatch_info += &format!("\nActual Hash': {}\n", result.hash),
+				Err(_) => mismatch_info += "Unable to retrieve actual hash for M'!\n",
+			}
+		}
 
 		let mut hash_message = format!(
-			"Hash : {} (Valid? {})\nHash': {} (Valid? {})",
+			"Hash : {} (Valid? {})\nHash': {} (Valid? {})\n{}",
 			self.m0.expected_hash,
 			is_m0_hash_same,
 			self.m1.expected_hash,
 			is_m1_hash_same,
+			mismatch_info,
 		);
 
 		write!(f, "CV   : {}\n", self.m0.cv)?;

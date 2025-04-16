@@ -103,16 +103,8 @@ fn solve_by_brute_force() {
 									let colliding_pair = benchmark.parse_output().unwrap();
 
 									match colliding_pair {
-										None => {
-											println!("UNSAT");
-										}
-										Some(mut colliding_pair) => {
-											if VERIFY_HASH_DEFAULT {
-												colliding_pair.verify(hash_function, rounds).expect("Failed to verify hash output!");
-											}
-
-											println!("{}", colliding_pair);
-										}
+										None => println!("UNSAT"),
+										Some(colliding_pair) => println!("{}", colliding_pair),
 									}
 
 									sequential_fails = 0;

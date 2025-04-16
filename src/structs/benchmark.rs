@@ -343,7 +343,8 @@ impl Benchmark {
 		Ok(Some(CollidingPair {
 			m0,
 			m1,
-			verified_hash: None,
+			hash_function: self.hash_function,
+			rounds: self.rounds,
 		}))
 	}
 
