@@ -177,19 +177,30 @@ impl SmtBuilder {
 				(define-fun m{message}_t2_{i} () Word (t2 {msg}a{prev} {msg}b{prev} {msg}c{prev}))\n"));
 
 			for var in 'a'..='h' {
-				let prev_var = get_previous_var(var);
-
 				if var == 'a' {
 					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word (bvadd m{message}_t1_{i} m{message}_t2_{i}))\n"))
 				} else if var == 'e' {
 					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word (bvadd {msg}d{prev} m{message}_t1_{i}))\n"))
 				} else {
+					let prev_var = get_previous_var(var);
 					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word {msg}{prev_var}{prev})\n"))
 				}
 			}
 		}
 
 		self.smt += &s;
+	}
+
+	fn define_differential_for_working_variables(&mut self) {
+		self.comment("Variable Differential");
+
+		for i in 1..=self.rounds {
+			for var in 'a'..='h' {
+				self.smt += &format!(
+					"(define-fun delta_{var}{i} () Word (bvxor m0_{var}{i} m1_{var}{i}))\n"
+				);
+			}
+		}
 	}
 
 	fn define_starting_vector(&mut self) {
@@ -213,17 +224,23 @@ impl SmtBuilder {
 		self.comment("Final state update");
 
 		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
-		let mut s = String::new();
 		for (i, var) in ('a'..='h').take(final_size).enumerate() {
 			for m in 0..2 {
 				let msg_round0 = msg_prefix(m, 0, self.collision_type);
 				let msg = msg_prefix(m, self.rounds.into(), self.collision_type);
-				s += &format!("(define-fun m{m}_hash{i} () Word (bvadd {msg_round0}{var}0 {msg}{var}{round}))\n",
+				self.smt += &format!("(define-fun m{m}_hash{i} () Word (bvadd {msg_round0}{var}0 {msg}{var}{round}))\n",
 							  round = self.rounds);
 			}
 		}
+	}
 
-		self.smt += &s;
+	fn final_state_difference(&mut self) {
+		self.comment("Final state difference");
+
+		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
+		for i in 0..final_size {
+			self.smt += &format!("(define-fun delta_hash{i} () Word (bvxor m0_hash{i} m1_hash{i}))\n");
+		}
 	}
 
 	fn assert_starting_vector_not_same(&mut self) {
@@ -271,6 +288,19 @@ impl SmtBuilder {
 		let mut s = String::new();
 		for i in 0..final_size {
 			s += &format!("\t(= m0_hash{i} m1_hash{i})\n");
+		}
+
+		self.smt += format!("(assert (and\n{s}))\n").as_str();
+	}
+
+	fn assert_hash_difference_equal(&mut self) {
+		self.comment("Assert difference in output hash is none");
+
+		let word_size = self.hash_function.word_size().bits();
+		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
+		let mut s = String::new();
+		for i in 0..final_size {
+			s += &format!("\t(= delta_hash{i} #b{})\n", "0".repeat(word_size));
 		}
 
 		self.smt += format!("(assert (and\n{s}))\n").as_str();
@@ -391,7 +421,12 @@ impl SmtBuilder {
 		self.break_line();
 		self.define_compression_for_message(1);
 		self.break_line();
+		self.define_differential_for_working_variables();
+
+		self.break_line();
 		self.final_state_update();
+		self.break_line();
+		self.final_state_difference();
 
 		self.title("ASSERTIONS");
 		if self.collision_type == CollisionType::FreeStart {
@@ -402,7 +437,7 @@ impl SmtBuilder {
 			self.break_line();
 		}
 
-		self.assert_hash_same();
+		self.assert_hash_difference_equal();
 
 		self.check_sat();
 		self.get_full_model();
