@@ -128,8 +128,7 @@
 
 ; Message Expansion
 (define-fun m1_w16 () Word (expandMessage m1_w0 m1_w1 m1_w9 m1_w14))
-(assert (= m1_w16 (expandMessage m1_w0 m1_w1 m1_w9 m1_w14))
-)
+(assert (= m1_w16 (expandMessage m1_w0 m1_w1 m1_w9 m1_w14)))
 
 ;; MESSAGE COMPRESSION
 ; MESSAGE 0

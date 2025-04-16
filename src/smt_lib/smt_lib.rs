@@ -162,7 +162,7 @@ impl SmtBuilder {
 					i - 16, i - 15, i - 7, i - 2
 				);
 				self.smt += &format!(
-					"(assert (= m1_w{i} (expandMessage m1_w{} m1_w{} m1_w{} m1_w{}))\n)",
+					"(assert (= m1_w{i} (expandMessage m1_w{} m1_w{} m1_w{} m1_w{})))\n",
 					i - 16, i - 15, i - 7, i - 2
 				);
 			}
