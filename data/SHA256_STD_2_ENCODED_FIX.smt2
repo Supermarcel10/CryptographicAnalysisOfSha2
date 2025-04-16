@@ -114,6 +114,24 @@
 (define-fun m1_g2 () Word m1_f1)
 (define-fun m1_h2 () Word m1_g1)
 
+; Variable Differential
+(define-fun delta_a1 () Word (bvxor m0_a1 m1_a1))
+(define-fun delta_b1 () Word (bvxor m0_b1 m1_b1))
+(define-fun delta_c1 () Word (bvxor m0_c1 m1_c1))
+(define-fun delta_d1 () Word (bvxor m0_d1 m1_d1))
+(define-fun delta_e1 () Word (bvxor m0_e1 m1_e1))
+(define-fun delta_f1 () Word (bvxor m0_f1 m1_f1))
+(define-fun delta_g1 () Word (bvxor m0_g1 m1_g1))
+(define-fun delta_h1 () Word (bvxor m0_h1 m1_h1))
+(define-fun delta_a2 () Word (bvxor m0_a2 m1_a2))
+(define-fun delta_b2 () Word (bvxor m0_b2 m1_b2))
+(define-fun delta_c2 () Word (bvxor m0_c2 m1_c2))
+(define-fun delta_d2 () Word (bvxor m0_d2 m1_d2))
+(define-fun delta_e2 () Word (bvxor m0_e2 m1_e2))
+(define-fun delta_f2 () Word (bvxor m0_f2 m1_f2))
+(define-fun delta_g2 () Word (bvxor m0_g2 m1_g2))
+(define-fun delta_h2 () Word (bvxor m0_h2 m1_h2))
+
 ; Final state update
 (define-fun m0_hash0 () Word (bvadd a0 m0_a2))
 (define-fun m1_hash0 () Word (bvadd a0 m1_a2))
@@ -132,6 +150,16 @@
 (define-fun m0_hash7 () Word (bvadd h0 m0_h2))
 (define-fun m1_hash7 () Word (bvadd h0 m1_h2))
 
+; Final state difference
+(define-fun delta_hash0 () Word (bvxor m0_hash0 m1_hash0))
+(define-fun delta_hash1 () Word (bvxor m0_hash1 m1_hash1))
+(define-fun delta_hash2 () Word (bvxor m0_hash2 m1_hash2))
+(define-fun delta_hash3 () Word (bvxor m0_hash3 m1_hash3))
+(define-fun delta_hash4 () Word (bvxor m0_hash4 m1_hash4))
+(define-fun delta_hash5 () Word (bvxor m0_hash5 m1_hash5))
+(define-fun delta_hash6 () Word (bvxor m0_hash6 m1_hash6))
+(define-fun delta_hash7 () Word (bvxor m0_hash7 m1_hash7))
+
 
 ;; ASSERTIONS
 ; Assert messages not the same
@@ -140,16 +168,16 @@
 	(distinct delta_w1 #b00000000000000000000000000000000)
 ))
 
-; Assert output hash is the same
+; Assert difference in output hash is none
 (assert (and
-	(= m0_hash0 m1_hash0)
-	(= m0_hash1 m1_hash1)
-	(= m0_hash2 m1_hash2)
-	(= m0_hash3 m1_hash3)
-	(= m0_hash4 m1_hash4)
-	(= m0_hash5 m1_hash5)
-	(= m0_hash6 m1_hash6)
-	(= m0_hash7 m1_hash7)
+	(= delta_hash0 #b00000000000000000000000000000000)
+	(= delta_hash1 #b00000000000000000000000000000000)
+	(= delta_hash2 #b00000000000000000000000000000000)
+	(= delta_hash3 #b00000000000000000000000000000000)
+	(= delta_hash4 #b00000000000000000000000000000000)
+	(= delta_hash5 #b00000000000000000000000000000000)
+	(= delta_hash6 #b00000000000000000000000000000000)
+	(= delta_hash7 #b00000000000000000000000000000000)
 ))
 
 

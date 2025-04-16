@@ -66,6 +66,8 @@
 
 ; MESSAGE 1
 
+; Variable Differential
+
 ; Final state update
 (define-fun m0_hash0 () Word (bvadd a0 a0))
 (define-fun m1_hash0 () Word (bvadd a0 a0))
@@ -84,20 +86,30 @@
 (define-fun m0_hash7 () Word (bvadd h0 h0))
 (define-fun m1_hash7 () Word (bvadd h0 h0))
 
+; Final state difference
+(define-fun delta_hash0 () Word (bvxor m0_hash0 m1_hash0))
+(define-fun delta_hash1 () Word (bvxor m0_hash1 m1_hash1))
+(define-fun delta_hash2 () Word (bvxor m0_hash2 m1_hash2))
+(define-fun delta_hash3 () Word (bvxor m0_hash3 m1_hash3))
+(define-fun delta_hash4 () Word (bvxor m0_hash4 m1_hash4))
+(define-fun delta_hash5 () Word (bvxor m0_hash5 m1_hash5))
+(define-fun delta_hash6 () Word (bvxor m0_hash6 m1_hash6))
+(define-fun delta_hash7 () Word (bvxor m0_hash7 m1_hash7))
+
 
 ;; ASSERTIONS
 ; Assert messages not the same
 
-; Assert output hash is the same
+; Assert difference in output hash is none
 (assert (and
-	(= m0_hash0 m1_hash0)
-	(= m0_hash1 m1_hash1)
-	(= m0_hash2 m1_hash2)
-	(= m0_hash3 m1_hash3)
-	(= m0_hash4 m1_hash4)
-	(= m0_hash5 m1_hash5)
-	(= m0_hash6 m1_hash6)
-	(= m0_hash7 m1_hash7)
+	(= delta_hash0 #b00000000000000000000000000000000)
+	(= delta_hash1 #b00000000000000000000000000000000)
+	(= delta_hash2 #b00000000000000000000000000000000)
+	(= delta_hash3 #b00000000000000000000000000000000)
+	(= delta_hash4 #b00000000000000000000000000000000)
+	(= delta_hash5 #b00000000000000000000000000000000)
+	(= delta_hash6 #b00000000000000000000000000000000)
+	(= delta_hash7 #b00000000000000000000000000000000)
 ))
 
 
