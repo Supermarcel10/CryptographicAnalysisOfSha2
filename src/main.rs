@@ -1,5 +1,6 @@
 use std::error::Error;
-use std::io::{BufReader, Read};
+use std::io::{BufReader, Read, Write};
+use std::ops::Deref;
 use std::os::unix::prelude::CommandExt;
 use std::path::Path;
 use std::process::{Command, ExitStatus, Stdio};
@@ -10,7 +11,7 @@ use nix::unistd::Pid;
 use wait_timeout::ChildExt;
 use once_cell::unsync::Lazy;
 use crate::graphing::graph_renderer::GraphRenderer;
-use crate::sha::Word;
+use crate::sha::{HashError, MessageBlock, Word};
 use crate::smt_lib::smt_lib::generate_smtlib_files;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
 use crate::structs::collision_type::CollisionType;
@@ -35,8 +36,7 @@ mod data;
 // TODO: Add overrides for these as parameters
 const STOP_TOLERANCE_DEFAULT: u8 = 3;
 const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
-const VERIFY_HASH_DEFAULT: bool = true;
-const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/w_encoding/"));
+const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/w_encoding_fix/"));
 const SAVE_BENCHMARKS: bool = true;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -47,9 +47,17 @@ fn main() -> Result<(), Box<dyn Error>> {
 	// graph_renderer.generate_all_graphs()?;
 
 
+	// let benchmarks = result_store.load_results()?;
+	// println!("{:?}", benchmarks);
 
 
+	// result_store.create_table()?;
 
+	// let benchmarks = Benchmark::load_all(&PathBuf::from("results"), true)?;
+
+	// for benchmark in benchmarks {
+	// 	result_store.save_result(&benchmark)?;
+	// }
 
 	Ok(())
 }
@@ -65,14 +73,14 @@ fn solve_by_brute_force() {
 			for collision_type in collision_types {
 				// for arg in arguments.iter() {
 					let mut sequential_fails: u8 = 0;
-					for rounds in 0..=hash_function.max_rounds() {
+					for rounds in 5..30 {
 						if sequential_fails == STOP_TOLERANCE_DEFAULT {
 							println!("Failed {sequential_fails} in a row!\n");
 							break;
 						}
 
 						// TODO: Make a neater way of retrieving files!
-						let smt_file = format!("data/{hash_function}_{collision_type}_{rounds}_ENCODED.smt2");
+						let smt_file = format!("data/{hash_function}_{collision_type}_{rounds}_ENCODED_FIX.smt2");
 
 						let result = BenchmarkRunner::run_solver_with_benchmark(
 							hash_function,

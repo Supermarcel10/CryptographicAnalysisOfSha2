@@ -71,17 +71,6 @@
 (declare-fun m0_w2 () Word)
 (declare-fun m0_w3 () Word)
 (declare-fun m0_w4 () Word)
-(define-fun m0_w5 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m0_w6 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m0_w7 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m0_w8 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m0_w9 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m0_w10 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m0_w11 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m0_w12 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m0_w13 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m0_w14 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m0_w15 () Word #x0000000000000000) ; Irrelevant for 5 rounds
 ; Message expansion irrelevant for 5 rounds
 
 ; MESSAGE 1
@@ -91,17 +80,6 @@
 (declare-fun m1_w2 () Word)
 (declare-fun m1_w3 () Word)
 (declare-fun m1_w4 () Word)
-(define-fun m1_w5 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m1_w6 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m1_w7 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m1_w8 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m1_w9 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m1_w10 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m1_w11 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m1_w12 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m1_w13 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m1_w14 () Word #x0000000000000000) ; Irrelevant for 5 rounds
-(define-fun m1_w15 () Word #x0000000000000000) ; Irrelevant for 5 rounds
 ; Message expansion irrelevant for 5 rounds
 
 
@@ -267,4 +245,4 @@
 (get-value (m0_hash0 m0_hash1 m0_hash2 m0_hash3 m0_hash4 m0_hash5 m0_hash6 m0_hash7))
 
 ; Output round A/E/W state changes
-(get-value (m0_a0 m1_a0 m0_e0 m1_e0 m0_w0 m1_w0 m0_a1 m1_a1 m0_e1 m1_e1 m0_w1 m1_w1 m0_a2 m1_a2 m0_e2 m1_e2 m0_w2 m1_w2 m0_a3 m1_a3 m0_e3 m1_e3 m0_w3 m1_w3 m0_a4 m1_a4 m0_e4 m1_e4 m0_w4 m1_w4 m0_a5 m1_a5 m0_e5 m1_e5 m0_w5 m1_w5))
+(get-value (m0_a0 m1_a0 m0_e0 m1_e0 m0_w0 m1_w0 m0_a1 m1_a1 m0_e1 m1_e1 m0_w1 m1_w1 m0_a2 m1_a2 m0_e2 m1_e2 m0_w2 m1_w2 m0_a3 m1_a3 m0_e3 m1_e3 m0_w3 m1_w3 m0_a4 m1_a4 m0_e4 m1_e4 m0_w4 m1_w4))

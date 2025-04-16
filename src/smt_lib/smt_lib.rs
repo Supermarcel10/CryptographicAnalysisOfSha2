@@ -109,7 +109,7 @@ impl SmtBuilder {
 
 		self.comment("Initial state");
 		let mut s = String::new();
-		for i in 0..16 {
+		for i in 0..self.rounds.min(16) {
 			if i < self.rounds.min(16) {
 				s += &format!("(declare-fun {msg}{i} () Word)\n");
 			} else {
@@ -127,15 +127,12 @@ impl SmtBuilder {
 		} else {
 			self.break_line();
 			self.comment("Message expansion");
-			let mut s = String::new();
 			for i in 16..self.rounds {
-				s += &format!(
+				self.smt += &format!(
 					"(define-fun {msg}{i} () Word (expandMessage {msg}{} {msg}{} {msg}{} {msg}{}))\n",
 					i - 16, i - 15, i - 7, i - 2
 				)
 			}
-
-			self.smt += &s;
 		}
 
 		if self.rounds >= 16 {
@@ -150,26 +147,29 @@ impl SmtBuilder {
 		self.break_line();
 		self.comment("Message Differential (W)");
 
-		for i in 0..=self.rounds.max(15) {
-			if i < self.rounds {
-				self.smt += &format!("(declare-fun delta_w{i} () Word)\n");
-			} else {
-				self.smt += &format!(
-					"(define-fun delta_w{i} () Word {}) ; Irrelevant for {} rounds\n",
-					smt_hex(self.hash_function.default_word(), &self.hash_function),
-					self.rounds,
-				);
-			}
+		for i in 0..self.rounds.min(16) {
+			self.smt += &format!("(declare-fun delta_w{i} () Word)\n");
 		}
 
 		self.break_line();
 		self.comment("MESSAGE 1 (Derived)");
-		for i in 0..=self.rounds.max(15) {
-			if i < self.rounds {
-				self.smt += &format!("(define-fun m1_w{i} () Word (bvxor m0_w{i} delta_w{i}))\n");
-			} else {
-				self.smt += &format!("(define-fun m1_w{i} () Word (bvxor m0_w{i} delta_w{i})) ; Irrelevant for {} rounds\n",
-									 self.rounds,
+		for i in 0..self.rounds.min(16) {
+			self.smt += &format!("(define-fun m1_w{i} () Word (bvxor m0_w{i} delta_w{i}))\n");
+		}
+
+		if self.rounds <= 16 {
+			self.comment(&format!("Message expansion irrelevant for {} rounds", self.rounds));
+		} else {
+			self.break_line();
+			self.comment("Message Expansion");
+			for i in 16..self.rounds {
+				self.smt += &format!(
+					"(define-fun m1_w{i} () Word (expandMessage m1_w{} m1_w{} m1_w{} m1_w{}))\n",
+					i - 16, i - 15, i - 7, i - 2
+				);
+				self.smt += &format!(
+					"(assert (= m1_w{i} (expandMessage m1_w{} m1_w{} m1_w{} m1_w{}))\n)",
+					i - 16, i - 15, i - 7, i - 2
 				);
 			}
 		}
@@ -251,7 +251,7 @@ impl SmtBuilder {
 		self.comment("Assert messages not the same");
 
 		let mut s = String::new();
-		for i in 0..16 {
+		for i in 0..self.rounds.min(16) {
 			s += &format!("\t(distinct m0_w{i} m1_w{i})\n");
 		}
 
@@ -263,11 +263,15 @@ impl SmtBuilder {
 		let word_size = self.hash_function.word_size().bits();
 
 		let mut s = String::new();
-		for i in 0..16 {
-			s += &format!("\t(= delta_w{i} #b{})\n", "0".repeat(word_size));
+		for i in 0..self.rounds.min(16) {
+			s += &format!("\t(distinct delta_w{i} #b{})\n", "0".repeat(word_size));
 		}
 
-		self.smt += &format!("(assert (not (and\n{s})))\n");
+		if self.rounds == 1 {
+			self.smt += &format!("(assert\n{s})\n");
+		} else if self.rounds > 1 {
+			self.smt += &format!("(assert (or\n{s}))\n");
+		}
 	}
 
 	fn assert_hash_same(&mut self) {
@@ -313,11 +317,16 @@ impl SmtBuilder {
 
 		self.comment("Output round A/E/W state changes");
 		let mut s = String::new();
-		for i in 0..=self.rounds {
+		for i in 0..self.rounds {
 			for var in ['a', 'e', 'w'] {
 				if i == 0 && self.collision_type != CollisionType::FreeStart && var != 'w' {
 					s += &format!("{var}{i} ");
 				} else {
+					// if i == self.rounds && var == 'w' {
+					// 	s += &format!("m{m}_w{i}");
+					// 	continue;
+					// }
+
 					for m in 0..2 {
 						s += &format!("m{m}_{var}{i} ");
 					}
@@ -426,7 +435,7 @@ fn get_previous_var(var: char) -> char {
 fn msg_prefix(
 	message: u8,
 	i: u64,
-	collision_type: CollisionType
+	collision_type: CollisionType,
 ) -> String {
 	// SemiFreeStart has separate parameters for the 0th iteration
 	if i == 0 && collision_type != CollisionType::FreeStart {
@@ -450,7 +459,7 @@ pub fn generate_smtlib_files() -> Result<(), Box<dyn Error>> {
 				if sha_function == SHA256 && collision_type == Standard {
 					let mut builder = SmtBuilder::new(sha_function, rounds, collision_type)?;
 					builder.differential_encoding();
-					builder.to_file(format!("data/{sha_function}_{collision_type}_{rounds}_ENCODED.smt2").into())?;
+					builder.to_file(format!("data/{sha_function}_{collision_type}_{rounds}_ENCODED_FIX.smt2").into())?;
 				}
 			}
 		}

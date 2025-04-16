@@ -89,8 +89,6 @@
 (declare-fun m0_w11 () Word)
 (declare-fun m0_w12 () Word)
 (declare-fun m0_w13 () Word)
-(define-fun m0_w14 () Word #x00000000) ; Irrelevant for 14 rounds
-(define-fun m0_w15 () Word #x00000000) ; Irrelevant for 14 rounds
 ; Message expansion irrelevant for 14 rounds
 
 ; MESSAGE 1
@@ -109,8 +107,6 @@
 (declare-fun m1_w11 () Word)
 (declare-fun m1_w12 () Word)
 (declare-fun m1_w13 () Word)
-(define-fun m1_w14 () Word #x00000000) ; Irrelevant for 14 rounds
-(define-fun m1_w15 () Word #x00000000) ; Irrelevant for 14 rounds
 ; Message expansion irrelevant for 14 rounds
 
 
@@ -456,4 +452,4 @@
 (get-value (m0_hash0 m0_hash1 m0_hash2 m0_hash3 m0_hash4 m0_hash5 m0_hash6 m0_hash7))
 
 ; Output round A/E/W state changes
-(get-value (m0_a0 m1_a0 m0_e0 m1_e0 m0_w0 m1_w0 m0_a1 m1_a1 m0_e1 m1_e1 m0_w1 m1_w1 m0_a2 m1_a2 m0_e2 m1_e2 m0_w2 m1_w2 m0_a3 m1_a3 m0_e3 m1_e3 m0_w3 m1_w3 m0_a4 m1_a4 m0_e4 m1_e4 m0_w4 m1_w4 m0_a5 m1_a5 m0_e5 m1_e5 m0_w5 m1_w5 m0_a6 m1_a6 m0_e6 m1_e6 m0_w6 m1_w6 m0_a7 m1_a7 m0_e7 m1_e7 m0_w7 m1_w7 m0_a8 m1_a8 m0_e8 m1_e8 m0_w8 m1_w8 m0_a9 m1_a9 m0_e9 m1_e9 m0_w9 m1_w9 m0_a10 m1_a10 m0_e10 m1_e10 m0_w10 m1_w10 m0_a11 m1_a11 m0_e11 m1_e11 m0_w11 m1_w11 m0_a12 m1_a12 m0_e12 m1_e12 m0_w12 m1_w12 m0_a13 m1_a13 m0_e13 m1_e13 m0_w13 m1_w13 m0_a14 m1_a14 m0_e14 m1_e14 m0_w14 m1_w14))
+(get-value (m0_a0 m1_a0 m0_e0 m1_e0 m0_w0 m1_w0 m0_a1 m1_a1 m0_e1 m1_e1 m0_w1 m1_w1 m0_a2 m1_a2 m0_e2 m1_e2 m0_w2 m1_w2 m0_a3 m1_a3 m0_e3 m1_e3 m0_w3 m1_w3 m0_a4 m1_a4 m0_e4 m1_e4 m0_w4 m1_w4 m0_a5 m1_a5 m0_e5 m1_e5 m0_w5 m1_w5 m0_a6 m1_a6 m0_e6 m1_e6 m0_w6 m1_w6 m0_a7 m1_a7 m0_e7 m1_e7 m0_w7 m1_w7 m0_a8 m1_a8 m0_e8 m1_e8 m0_w8 m1_w8 m0_a9 m1_a9 m0_e9 m1_e9 m0_w9 m1_w9 m0_a10 m1_a10 m0_e10 m1_e10 m0_w10 m1_w10 m0_a11 m1_a11 m0_e11 m1_e11 m0_w11 m1_w11 m0_a12 m1_a12 m0_e12 m1_e12 m0_w12 m1_w12 m0_a13 m1_a13 m0_e13 m1_e13 m0_w13 m1_w13))

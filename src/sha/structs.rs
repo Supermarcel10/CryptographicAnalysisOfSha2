@@ -180,6 +180,13 @@ impl Word {
 			_ => Err(HashError::FailedToConvertBytes),
 		}
 	}
+
+	pub fn to_be_bytes(self) -> Box<[u8]> {
+		match self {
+			Word::W32(w) => Box::from(w.to_be_bytes()),
+			Word::W64(w) => Box::from(w.to_be_bytes()),
+		}
+	}
 }
 
 #[cfg(test)]

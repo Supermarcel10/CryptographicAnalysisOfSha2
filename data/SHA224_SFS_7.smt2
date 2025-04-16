@@ -67,15 +67,6 @@
 (declare-fun m0_w4 () Word)
 (declare-fun m0_w5 () Word)
 (declare-fun m0_w6 () Word)
-(define-fun m0_w7 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m0_w8 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m0_w9 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m0_w10 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m0_w11 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m0_w12 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m0_w13 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m0_w14 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m0_w15 () Word #x00000000) ; Irrelevant for 7 rounds
 ; Message expansion irrelevant for 7 rounds
 
 ; MESSAGE 1
@@ -87,15 +78,6 @@
 (declare-fun m1_w4 () Word)
 (declare-fun m1_w5 () Word)
 (declare-fun m1_w6 () Word)
-(define-fun m1_w7 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m1_w8 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m1_w9 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m1_w10 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m1_w11 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m1_w12 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m1_w13 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m1_w14 () Word #x00000000) ; Irrelevant for 7 rounds
-(define-fun m1_w15 () Word #x00000000) ; Irrelevant for 7 rounds
 ; Message expansion irrelevant for 7 rounds
 
 
@@ -271,15 +253,6 @@
 	(distinct m0_w4 m1_w4)
 	(distinct m0_w5 m1_w5)
 	(distinct m0_w6 m1_w6)
-	(distinct m0_w7 m1_w7)
-	(distinct m0_w8 m1_w8)
-	(distinct m0_w9 m1_w9)
-	(distinct m0_w10 m1_w10)
-	(distinct m0_w11 m1_w11)
-	(distinct m0_w12 m1_w12)
-	(distinct m0_w13 m1_w13)
-	(distinct m0_w14 m1_w14)
-	(distinct m0_w15 m1_w15)
 ))
 
 ; Assert output hash is the same
@@ -306,4 +279,4 @@
 (get-value (m0_hash0 m0_hash1 m0_hash2 m0_hash3 m0_hash4 m0_hash5 m0_hash6))
 
 ; Output round A/E/W state changes
-(get-value (a0 e0 m0_w0 m1_w0 m0_a1 m1_a1 m0_e1 m1_e1 m0_w1 m1_w1 m0_a2 m1_a2 m0_e2 m1_e2 m0_w2 m1_w2 m0_a3 m1_a3 m0_e3 m1_e3 m0_w3 m1_w3 m0_a4 m1_a4 m0_e4 m1_e4 m0_w4 m1_w4 m0_a5 m1_a5 m0_e5 m1_e5 m0_w5 m1_w5 m0_a6 m1_a6 m0_e6 m1_e6 m0_w6 m1_w6 m0_a7 m1_a7 m0_e7 m1_e7 m0_w7 m1_w7))
+(get-value (a0 e0 m0_w0 m1_w0 m0_a1 m1_a1 m0_e1 m1_e1 m0_w1 m1_w1 m0_a2 m1_a2 m0_e2 m1_e2 m0_w2 m1_w2 m0_a3 m1_a3 m0_e3 m1_e3 m0_w3 m1_w3 m0_a4 m1_a4 m0_e4 m1_e4 m0_w4 m1_w4 m0_a5 m1_a5 m0_e5 m1_e5 m0_w5 m1_w5 m0_a6 m1_a6 m0_e6 m1_e6 m0_w6 m1_w6))
