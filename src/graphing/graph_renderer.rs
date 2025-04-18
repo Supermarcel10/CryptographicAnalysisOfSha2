@@ -1,3 +1,6 @@
+use std::error::Error;
+use std::fs;
+use std::ops::Range;
 use std::path::PathBuf;
 use plotters::prelude::RGBColor;
 use crate::data::data_retriever::DataRetriever;
@@ -57,6 +60,27 @@ impl GraphRenderer {
 			line_thickness: 2,
 			data_retriever: DataRetriever::default(),
 		}
+	}
+
+	pub(super) fn calculate_percent_dev(
+		&self,
+		baseline_range: Range<u128>,
+		deviation_range: Range<u128>,
+		buffer_percent: f64
+	) -> Range<f64> {
+		let lower_percentage = (deviation_range.start as f64 - baseline_range.start as f64) /
+			baseline_range.start as f64 * 100.0;
+
+		let upper_percentage = (deviation_range.end as f64 - baseline_range.end as f64) /
+			baseline_range.end as f64 * 100.0;
+
+		let min_val = lower_percentage.min(upper_percentage);
+		let max_val = lower_percentage.max(upper_percentage);
+
+		let range_size = max_val - min_val;
+		let buffer = range_size * buffer_percent / 100.0;
+
+		(min_val - buffer)..(max_val + buffer)
 	}
 }
 

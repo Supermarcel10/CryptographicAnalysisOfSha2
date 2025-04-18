@@ -154,10 +154,29 @@ impl GraphRenderer {
 		let mut baseline_data = baseline_data.clone();
 		baseline_data.sort_by_key(|b| b.rounds);
 
+		// Get range for baseline
+		let baseline_range = get_range(&baseline_data, &|b| b.execution_time.as_nanos())
+			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range baseline" })?;
+
+		// Get range for all plots
+		let mut deviation_range: Range<u128> = u128::MAX..u128::MIN;
+		for (_, benchmarks) in data.clone() {
+			for benchmark in benchmarks {
+				let time = benchmark.execution_time.as_nanos();
+				if time < deviation_range.start {
+					deviation_range.start = time;
+				}
+
+				if time > deviation_range.end {
+					deviation_range.end = time;
+				}
+			}
+		}
+
 		// Define ranges
 		let x_range = get_range(&baseline_data, &|b| b.rounds as u32)
-			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range"})?;
-		let y_range = -25.0..25.0; // TODO: Derive this some other way?
+			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range" })?;
+		let y_range = self.calculate_percent_dev(baseline_range, deviation_range, 10.0);
 
 		let mut baseline = BTreeMap::new();
 		for b in baseline_data {
@@ -174,7 +193,24 @@ impl GraphRenderer {
 			.y_label_area_size(60)
 			.margin(5)
 			.caption(title, self.title_style)
-			.build_cartesian_2d(x_range, y_range)?;
+			.build_cartesian_2d(x_range.clone(), y_range.clone())?;
+
+		// Draw background
+		chart
+			.draw_series(std::iter::once(
+				Rectangle::new(
+					[(x_range.start, 0.0), (x_range.end, y_range.start)],
+					RGBAColor(182, 255, 182, 0.125).filled(),
+				)
+			))?;
+
+		chart
+			.draw_series(std::iter::once(
+				Rectangle::new(
+					[(x_range.start, 0.0), (x_range.end, y_range.end)],
+					RGBAColor(255, 182, 182, 0.125).filled(),
+				)
+			))?;
 
 		// Draw axis
 		self.set_x_axis_as_rounds(&mut chart)?;
