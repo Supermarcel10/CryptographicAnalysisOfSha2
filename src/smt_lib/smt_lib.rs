@@ -75,7 +75,6 @@ impl SmtBuilder {
 		let t1 = "(define-fun t1 ((h Word) (e Word) (f Word) (g Word) (k Word) (w Word)) Word\n\t(bvadd h (sigma1 e) (ch e f g) k w)\n)";
 		let t2 = "(define-fun t2 ((a Word) (b Word) (c Word)) Word\n\t(bvadd (sigma0 a) (maj a b c))\n)";
 		let expand_message = "(define-fun expandMessage ((a Word) (b Word) (c Word) (d Word)) Word\n\t(bvadd a (gamma0 b) c (gamma1 d))\n)";
-		// TODO: Hash truncation for SHA224 and friends!
 
 		self.smt += &format!("{ch}\n{maj}\n{sigma0}\n{sigma1}\n{gamma0}\n{gamma1}\n{t1}\n{t2}\n{expand_message}");
 	}
