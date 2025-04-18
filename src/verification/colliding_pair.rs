@@ -70,7 +70,7 @@ impl Display for CollidingPair {
 			}
 		}
 
-		let mut hash_message = format!(
+		let hash_message = format!(
 			"Hash : {} (Valid? {})\nHash': {} (Valid? {})\n{}",
 			self.m0.expected_hash,
 			is_m0_hash_same,
