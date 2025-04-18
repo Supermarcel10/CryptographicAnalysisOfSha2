@@ -5,6 +5,33 @@ use crate::structs::hash_function::HashFunction;
 use crate::structs::hash_result::HashResult;
 use crate::structs::sha_state::ShaState;
 
+macro_rules! impl_word_display {
+    ($type:ty, $closure:expr) => {
+        impl Display for $type {
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                for (i, word) in $closure(self).iter().enumerate() {
+                    if i > 0 {
+                        write!(f, " ")?;
+                    }
+                    write!(f, "{word}")?;
+                }
+
+                Ok(())
+            }
+        }
+    };
+}
+
+macro_rules! impl_from_word_array {
+    ($array_type:ty, $array_size:expr, $for_type:ty, $constructor:expr) => {
+        impl From<[$array_type; $array_size]> for $for_type {
+            fn from(arr: [$array_type; $array_size]) -> Self {
+                $constructor(arr.map(Word::from))
+            }
+        }
+    };
+}
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub enum StartVector {
 	/// Initial Vector
@@ -12,6 +39,9 @@ pub enum StartVector {
 	/// Chaining Vector
 	CV([Word; 8])
 }
+
+impl_from_word_array!(u32, 8, StartVector, StartVector::CV);
+impl_from_word_array!(u64, 8, StartVector, StartVector::CV);
 
 impl Display for StartVector {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -57,60 +87,14 @@ impl StartVector {
 #[derive(Copy, Clone, Debug)]
 pub struct MessageBlock(pub [Word; 16]);
 
-impl Display for MessageBlock {
-	// TODO: Consider a macro here, since this code repeats 3 times
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		for (i, word) in self.0.iter().enumerate() {
-			if i > 0 {
-				write!(f, " ")?;
-			}
-			write!(f, "{word}")?;
-		}
-
-		Ok(())
-	}
-}
-
-// TODO: Maybe use a macro here
-impl From<[u32; 8]> for StartVector {
-	fn from(arr: [u32; 8]) -> Self {
-		StartVector::CV(arr.map(Word::from))
-	}
-}
-
-impl From<[u32; 16]> for MessageBlock {
-	fn from(arr: [u32; 16]) -> Self {
-		MessageBlock(arr.map(Word::from))
-	}
-}
-
-impl From<[u64; 8]> for StartVector {
-	fn from(arr: [u64; 8]) -> Self {
-		StartVector::CV(arr.map(Word::from))
-	}
-}
-
-impl From<[u64; 16]> for MessageBlock {
-	fn from(arr: [u64; 16]) -> Self {
-		MessageBlock(arr.map(Word::from))
-	}
-}
+impl_word_display!(MessageBlock, |mb: &MessageBlock| mb.0);
+impl_from_word_array!(u32, 16, MessageBlock, MessageBlock);
+impl_from_word_array!(u64, 16, MessageBlock, MessageBlock);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OutputHash(pub Box<[Word]>);
 
-impl Display for OutputHash {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		for (i, word) in self.0.iter().enumerate() {
-			if i > 0 {
-				write!(f, " ")?;
-			}
-			write!(f, "{word}")?;
-		}
-
-		Ok(())
-	}
-}
+impl_word_display!(OutputHash, |oh: &OutputHash| oh.0.clone());
 
 #[derive(Debug)]
 pub struct Sha {
