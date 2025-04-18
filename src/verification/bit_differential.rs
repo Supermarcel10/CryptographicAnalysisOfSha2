@@ -38,7 +38,6 @@ macro_rules! impl_bit_differential_for {
 						let representation = match (bit_self, bit_other) {
 							(false, true) => DiffType::INCREASE,
 							(true, false) => DiffType::DECREASE,
-							//? TODO: Figure out what the difference is between this and the below
 							_ if bit_self == bit_other => DiffType::EQUAL,
 							(false, false) => DiffType::FALSE,
 							(true, true) => DiffType::TRUE,
