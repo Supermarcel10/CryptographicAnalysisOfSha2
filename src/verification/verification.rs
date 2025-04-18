@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::sha::{Sha, StartVector};
+	use crate::sha::{Sha, StartVector, Word};
 	use crate::sha::StartVector::IV;
 	use crate::structs::hash_function::HashFunction::*;
 	use crate::verification::bit_differential::BitDifferential;
@@ -27,7 +27,7 @@ mod tests {
 			0x4b098611, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
 		];
 
-		let _expected: [u32; 8] = [
+		let expected: [u32; 8] = [
 			0x431cadcd, 0xce6893bb, 0xd6c9689a, 0x334854e8,
 			0x3baae1ab, 0x038a195a, 0xccf54a19, 0x1c40606d,
 		];
@@ -43,7 +43,9 @@ mod tests {
 			.unwrap();
 
 		println!("{}", result_m.states.bit_diff(result_m_prime.states));
-		// TODO: Assertion vs paper!
+
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
 	}
 
 	#[test]
@@ -63,7 +65,7 @@ mod tests {
 			0x26f0aa8790cb1813, 0xa9809e5c4015bc45, 0x53892c5a64e94edb, 0x8e60d500013a1932,
 		];
 
-		let _expected: [u64; 8] = [
+		let expected: [u64; 8] = [
 			0xdceb3d88adf54bd2, 0x966c4cb1ab0cf400, 0x01e701fdf10ab603, 0x796d6e5028a5e89a,
 			0xf29a7517b216c09f, 0x46dbae73b1db8cce, 0x8ea44d45041010ea, 0x26a7a6b902f2632f,
 		];
@@ -79,7 +81,9 @@ mod tests {
 			.unwrap();
 
 		println!("{}", result_m.states.bit_diff(result_m_prime.states));
-		// TODO: Assertion vs paper!
+
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
 	}
 
 	#[test]
@@ -109,7 +113,7 @@ mod tests {
 			0xce4b002d, 0x3c74f1f3, 0xfaa0c1fe, 0x35c62535,
 		];
 
-		let _expected: [u32; 7] = [
+		let expected: [u32; 7] = [
 			0x9af50cac, 0xc165a72f, 0xb6f1c9f3, 0xef54bad9,
 			0xaf0cfb1f, 0x57d357c9, 0xc6462616,
 		];
@@ -125,6 +129,8 @@ mod tests {
 			.unwrap();
 
 		println!("{}", result_m.states.bit_diff(result_m_prime.states));
-		// TODO: Assertion vs paper!
+
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
 	}
 }
