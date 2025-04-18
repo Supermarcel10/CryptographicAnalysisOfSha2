@@ -2,6 +2,7 @@
 /// Useful for distinguishing between bits and bytes in code.
 pub struct Size(usize);
 
+#[allow(dead_code)]
 impl Size {
 	/// Construct a size from a given number of bits.
 	///

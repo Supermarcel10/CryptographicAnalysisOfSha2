@@ -21,6 +21,7 @@ impl DataRetriever {
 		}
 	}
 
+	#[allow(dead_code)]
 	pub fn default() -> Self {
 		DataRetriever {
 			data_location: PathBuf::from(*BENCHMARK_SAVE_PATH_DEFAULT),

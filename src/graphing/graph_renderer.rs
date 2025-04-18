@@ -36,6 +36,7 @@ impl GraphRenderer {
 		}
 	}
 
+	#[allow(dead_code)]
 	pub fn default() -> Self {
 		GraphRenderer {
 			output_directory: PathBuf::from("graphs/"),
