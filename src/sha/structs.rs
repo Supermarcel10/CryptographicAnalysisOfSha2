@@ -18,8 +18,7 @@ pub enum HashError {
 	}
 }
 
-#[cfg_attr(feature = "benchmarking", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub enum Word {
 	W32(u32),
 	W64(u64)

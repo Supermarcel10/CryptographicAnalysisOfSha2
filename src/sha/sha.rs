@@ -5,8 +5,7 @@ use crate::structs::hash_function::HashFunction;
 use crate::structs::hash_result::HashResult;
 use crate::structs::sha_state::ShaState;
 
-#[cfg_attr(feature = "benchmarking", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub enum StartVector {
 	/// Initial Vector
 	IV,

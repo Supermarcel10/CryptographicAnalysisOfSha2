@@ -26,7 +26,7 @@ use crate::verification::verify_hash::VerifyHash;
 // - CPU Core Clock difference
 // - Run to run variance
 
-#[cfg(feature = "smt-gen")] mod smt_lib;
+mod smt_lib;
 mod sha;
 mod verification;
 mod structs;

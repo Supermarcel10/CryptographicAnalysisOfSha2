@@ -3,4 +3,4 @@ pub mod hash_result;
 pub mod sha_state;
 pub mod size;
 pub mod hash_function;
-#[cfg(any(feature = "benchmarking", feature = "graphing"))] pub mod benchmark;
+pub mod benchmark;
