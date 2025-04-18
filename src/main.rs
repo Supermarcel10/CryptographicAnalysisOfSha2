@@ -26,6 +26,9 @@ use crate::verification::verify_hash::VerifyHash;
 // - CPU Core Clock difference
 // - Run to run variance
 
+#[cfg(not(unix))]
+compile_error!("This crate supports only Unix-like operating systems");
+
 mod smt_lib;
 mod sha;
 mod verification;
