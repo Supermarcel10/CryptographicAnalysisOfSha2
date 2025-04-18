@@ -129,14 +129,6 @@ impl SmtSolver {
 	}
 }
 
-pub enum SatSolver {
-	CryptoMiniSat,
-	Glucose,
-	GlucoseSyrup,
-	CreuSAT,
-	Varisat,
-}
-
 pub type SolverArg = String;
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
