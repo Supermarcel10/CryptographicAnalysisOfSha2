@@ -10,6 +10,7 @@ use chrono::{DateTime, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use crate::sha::{MessageBlock, OutputHash, StartVector, Word};
+use crate::smt_lib::encoding_types::EncodingType;
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
 use crate::structs::sha_state::ShaState;
@@ -241,19 +242,24 @@ pub struct Benchmark {
 	pub memory_bytes: u64,
 	pub result: BenchmarkResult,
 	pub console_output: (String, String),
+	pub is_baseline: bool,
+	pub is_rerun: bool,
+	pub encoding: EncodingType,
+	pub stop_tolerance: u8,
+	pub timeout: Duration,
 }
 
 impl Benchmark {
 	pub fn save(&self, path: &Path) -> Result<PathBuf, Box<dyn Error>> {
 		if !path.exists() {
-			fs::create_dir(path)?;
+			fs::create_dir_all(path)?;
 		}
 
 		let path = path.join(
 			format!("{}_{}_{}_{}_{}.json",
-					self.solver,
-					self.collision_type,
 					self.hash_function,
+					self.collision_type,
+					self.solver,
 					self.rounds,
 					self.date_time,
 			)

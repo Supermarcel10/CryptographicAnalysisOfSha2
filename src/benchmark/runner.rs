@@ -8,6 +8,7 @@ use chrono::Local;
 use nix::sys::signal::{killpg, Signal};
 use nix::unistd::Pid;
 use wait_timeout::ChildExt;
+use crate::smt_lib::encoding_types::EncodingType;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
@@ -226,6 +227,8 @@ impl BenchmarkRunner {
 			}
 		}
 
+		let is_baseline = arguments.is_empty() && self.timeout == Duration::from_secs(900);
+
 		Ok(Benchmark {
 			date_time,
 			solver,
@@ -237,6 +240,11 @@ impl BenchmarkRunner {
 			memory_bytes: bytes_rss,
 			result: Self::categorize_status(status, &cout)?,
 			console_output: (cout, cerr),
+			is_baseline,
+			is_rerun: false, // TODO
+			encoding: EncodingType::BruteForce, // TODO
+			stop_tolerance: self.stop_tolerance,
+			timeout: self.timeout,
 		})
 	}
 

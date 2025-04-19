@@ -13,7 +13,6 @@ pub struct DataRetriever {
 	all_results: Option<Vec<Benchmark>>,
 }
 
-// TODO: Update to use all_results cache instead.
 impl DataRetriever {
 	pub fn new(data_dir: PathBuf) -> Result<Self, Box<dyn Error>> {
 		if !data_dir.exists() {
@@ -44,28 +43,40 @@ impl DataRetriever {
 	}
 
 	pub fn retrieve_all_baselines(
-		&self,
+		&mut self,
 		hash_function: HashFunction,
 		collision_type: CollisionType,
-		prefer_test_reruns: bool, // TODO: Implement!
+		prefer_test_reruns: bool,
 	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
-		let benchmarks = Benchmark::load_all(
-			&self.data_dir.join("brute-force-up-to-20"),
-			false
-		)?;
+		if self.all_results.is_none() {
+			self.cache_all()?;
+		}
 
-		Ok(
-			benchmarks
-				.into_iter()
-				.filter(|b| b.hash_function == hash_function)
-				.filter(|b| b.collision_type == collision_type)
-				.filter(|b| b.arguments.is_empty())
-				.collect()
-		)
+		let mut baselines = Vec::new();
+		let mut reruns = Vec::new();
+		for b in self.all_results.clone().unwrap() {
+			if b.is_baseline
+				&& b.hash_function == hash_function
+				&& b.collision_type == collision_type
+				&& b.arguments.is_empty()
+			{
+				if b.is_rerun {
+					reruns.push(b);
+				} else {
+					baselines.push(b);
+				}
+			}
+		}
+
+		if prefer_test_reruns {
+			substitute_reruns(&mut baselines, reruns);
+		}
+
+		Ok(baselines)
 	}
 
 	pub fn retrieve_baseline(
-		&self,
+		&mut self,
 		solver: SmtSolver,
 		hash_function: HashFunction,
 		collision_type: CollisionType,
@@ -90,7 +101,7 @@ impl DataRetriever {
 		solver: SmtSolver,
 		hash_function: HashFunction,
 		collision_type: CollisionType,
-		prefer_test_reruns: bool, // TODO: Implement!
+		prefer_test_reruns: bool,
 		arg_identifier: &str,
 	) -> Result<BTreeMap<Vec<SolverArg>, Vec<Benchmark>>, Box<dyn Error>> {
 		if self.all_results.is_none() {
@@ -101,18 +112,28 @@ impl DataRetriever {
 			benchmark.arguments.iter().any(|arg| arg.contains(identifier))
 		}
 
-		let filtered: Vec<_> = self.all_results
-			.clone()
-			.unwrap()
-			.into_iter()
-			.filter(|b| b.solver == solver)
-			.filter(|b| b.hash_function == hash_function)
-			.filter(|b| b.collision_type == collision_type)
-			.filter(|b| has_similar_arg(b, arg_identifier))
-			.collect();
+		let mut baselines = Vec::new();
+		let mut reruns = Vec::new();
+		for b in self.all_results.clone().unwrap() {
+			if b.solver == solver
+				&& b.hash_function == hash_function
+				&& b.collision_type == collision_type
+				&& has_similar_arg(&b, arg_identifier)
+			{
+				if b.is_rerun {
+					reruns.push(b);
+				} else {
+					baselines.push(b);
+				}
+			}
+		}
+
+		if prefer_test_reruns {
+			substitute_reruns(&mut baselines, reruns);
+		}
 
 		let mut map = BTreeMap::new();
-		for benchmark in filtered {
+		for benchmark in baselines {
 			let key = benchmark.arguments.clone();
 			map.entry(key)
 				.or_insert_with(Vec::new)
@@ -120,5 +141,23 @@ impl DataRetriever {
 		}
 
 		Ok(map)
+	}
+}
+
+fn substitute_reruns(
+	baselines: &mut Vec<Benchmark>,
+	reruns: Vec<Benchmark>,
+) {
+	for rerun in reruns.into_iter() {
+		for baseline in baselines.iter_mut() {
+			if baseline.rounds == rerun.rounds
+				&& baseline.collision_type == rerun.collision_type
+				&& baseline.hash_function == rerun.hash_function
+				&& baseline.solver == rerun.solver
+			{
+				*baseline = rerun;
+				break;
+			}
+		}
 	}
 }
