@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -469,21 +470,27 @@ fn msg_prefix(
 	}
 }
 
-pub fn generate_smtlib_files() -> Result<(), Box<dyn Error>> {
+pub fn generate_smtlib_files(
+	save_path: PathBuf,
+) -> Result<(), Box<dyn Error>> {
 	use HashFunction::*;
 	use CollisionType::*;
+
+	if !save_path.exists() {
+		fs::create_dir_all(save_path.clone())?;
+	}
 
 	for sha_function in [SHA224, SHA256, SHA512] {
 		for collision_type in [Standard, SemiFreeStart, FreeStart] {
 			for rounds in 0..=sha_function.max_rounds() {
 				let mut builder = SmtBuilder::new(sha_function, rounds, collision_type)?;
 				builder.brute_force_encoding();
-				builder.to_file(format!("data/{sha_function}_{collision_type}_{rounds}.smt2").into())?;
+				builder.to_file(save_path.join(format!("{sha_function}_{collision_type}_{rounds}.smt2")))?;
 
 				if sha_function == SHA256 && collision_type == Standard {
 					let mut builder = SmtBuilder::new(sha_function, rounds, collision_type)?;
 					builder.differential_encoding();
-					builder.to_file(format!("data/{sha_function}_{collision_type}_{rounds}_ENCODED_FIX.smt2").into())?;
+					builder.to_file(save_path.join(format!("{sha_function}_{collision_type}_{rounds}_ENCODED.smt2")))?;
 				}
 			}
 		}

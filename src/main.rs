@@ -1,30 +1,14 @@
 use std::error::Error;
-use std::io::{BufReader, Read, Write};
-use std::ops::Deref;
-use std::os::unix::prelude::CommandExt;
-use std::path::Path;
-use std::process::{Command, ExitStatus, Stdio};
-use std::time::{Duration, Instant};
-use chrono::Local;
-use nix::sys::signal::{killpg, Signal};
-use nix::unistd::Pid;
-use wait_timeout::ChildExt;
-use once_cell::unsync::Lazy;
+use std::path::{PathBuf};
+use std::time::{Duration};
+use clap::{Parser, Subcommand};
+use plotters::prelude::RGBColor;
+use crate::benchmark::runner::BenchmarkRunner;
+use crate::data::data_retriever::DataRetriever;
 use crate::graphing::graph_renderer::GraphRenderer;
-use crate::sha::{HashError, MessageBlock, Word};
+use crate::sha::{Sha, StartVector};
 use crate::smt_lib::smt_lib::generate_smtlib_files;
-use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
-use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
-use crate::structs::sha_state::ShaState;
-use crate::verification::verify_hash::VerifyHash;
-
-// TODO: Look into benchmarking:
-// - Different arguments for each solver
-// - Different kernels (https://askubuntu.com/a/126671)
-// - Different memory timings
-// - CPU Core Clock difference
-// - Run to run variance
 
 #[cfg(not(unix))]
 compile_error!("This crate supports only Unix-like operating systems");
@@ -35,272 +19,191 @@ mod verification;
 mod structs;
 mod graphing;
 mod data;
+mod benchmark;
 
-// TODO: Add overrides for these as parameters
-const STOP_TOLERANCE_DEFAULT: u8 = 3;
-const TIMEOUT_DEFAULT: Duration = Duration::from_secs(15 * 60);
-const BENCHMARK_SAVE_PATH_DEFAULT: Lazy<&Path> = Lazy::new(|| Path::new("results/w_encoding_fix/"));
-const SAVE_BENCHMARKS: bool = true;
+// TODO: Remove
+const BENCHMARK_SAVE_PATH_DEFAULT: &str = "/home/marcel/Projects/Programming/CSG-IN3007/results";
+
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+	#[command(subcommand)]
+	command: Commands,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+	/// Generate SMTLIB 2.6 standard files
+	Generate {
+		/// Directory where smt2 files will be saved
+		output_dir: PathBuf,
+	},
+
+	/// Run all benchmarks
+	Benchmark {
+		/// The number of required sequential failures to stop. Default 3
+		#[arg(short, long)]
+		stop_tolerance:  Option<u8>,
+
+		/// Duration after which run is marked as timed out. Default 15 mins
+		#[arg(short, long)]
+		timeout_sec: Option<u64>,
+
+		/// Input data path
+		data: PathBuf,
+
+		/// Should results be saved to files. Default true
+		#[arg(short, long)]
+		save_results: Option<bool>,
+
+		/// Should remaining benchmark runs continue despite error on one. Default false
+		#[arg(short, long)]
+		continue_on_fail: Option<bool>,
+	},
+
+	/// Run the underlying sha2 function
+	Sha2 {
+		/// Message to hash
+		msg: String,
+
+		/// Message digest block (pre-padded and pre-processed digest)
+		// msg_block: MessageBlock,
+
+		/// Hash function
+		hash_function: HashFunction,
+
+		/// Number of compression rounds. Defaults to max
+		#[arg(short, long, default_value = None)]
+		rounds: Option<u8>,
+
+		// start_vector: Option<StartVector>,
+	},
+
+	// TODO: Add verify
+	//
+	// Verify {
+	//
+	// },
+
+	/// Render result graphs
+	Graph {
+		/// Directory where graphs will be saved
+		output_dir: PathBuf,
+
+		/// Directory where all benchmark results are stored
+		result_dir: PathBuf,
+	}
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
-	generate_smtlib_files()?;
-	solve_by_brute_force();
+	let cli = Cli::parse();
 
-	// let mut graph_renderer = GraphRenderer::default();
-	// graph_renderer.generate_all_graphs()?;
+	match &cli.command {
+		Commands::Generate { output_dir } => {
+			generate_smtlib_files(output_dir.clone())?;
+		},
 
+		Commands::Benchmark {
+			stop_tolerance,
+			timeout_sec: timeout,
+			data,
+			save_results,
+			continue_on_fail,
+		} => {
+			let stop_tolerance = (*stop_tolerance).unwrap_or(3);
+			let timeout = Duration::from_secs((*timeout).unwrap_or(15 * 60));
+			let save_results = (*save_results).unwrap_or(true);
+			let continue_on_fail = (*continue_on_fail).unwrap_or(false);
 
-	// let benchmarks = result_store.load_results()?;
-	// println!("{:?}", benchmarks);
+			let runner = BenchmarkRunner::new(
+				stop_tolerance,
+				timeout,
+				PathBuf::from(BENCHMARK_SAVE_PATH_DEFAULT),
+				save_results,
+				continue_on_fail,
+			);
 
+			runner.run_benchmarks()?;
+		},
 
-	// result_store.create_table()?;
+		Commands::Sha2 {
+			msg,
+			// msg_block,
+			hash_function,
+			rounds
+		} => {
+			let rounds = rounds.unwrap_or(hash_function.max_rounds());
+			// TODO: Use provided start vector or IV by default
+			let start_vector = StartVector::IV;
 
-	// let benchmarks = Benchmark::load_all(&PathBuf::from("results"), true)?;
+			let result = if (*msg).len() != 0 {
+				Sha::from_string(
+					msg,
+					*hash_function,
+					rounds,
+					start_vector,
+				)?.execute()?
+			}
+			// else if (*msg_block).len() != 0 {
+			// 	Sha::from_message_block(
+			// 		*msg_block,
+			// 		*hash_function,
+			// 		*rounds,
+			// 		start_vector,
+			// 	)?.execute()?
+			// }
+			else {
+				return Err(Box::from("Either msg or msg_block must be provided"));
+			};
 
-	// for benchmark in benchmarks {
-	// 	result_store.save_result(&benchmark)?;
-	// }
+			println!("{}", result.hash);
+		},
+
+		Commands::Graph {
+			output_dir,
+			result_dir,
+		} => {
+			let mut graph_renderer = GraphRenderer::new(
+				output_dir.clone(),
+				(1024, 768),
+				("noto sans", 36),
+				("noto sans", 14),
+				Box::from([
+					RGBColor(166, 30, 77), // Maroon
+					RGBColor(24, 100, 171), // Dark Blue
+					RGBColor(8, 127, 91), // Green
+					RGBColor(250, 176, 5), // Yellow
+					RGBColor(156, 54, 181), // Purple
+					RGBColor(12, 133, 153), // Cyan
+					RGBColor(95, 61, 196), // Light Purple
+					RGBColor(70, 210, 94), // Light Green
+					RGBColor(116, 143, 252), // Light Blue
+				]),
+				2,
+				DataRetriever::new(result_dir.clone())?,
+			)?;
+
+			graph_renderer.generate_all_graphs()?;
+		},
+	}
 
 	Ok(())
 }
 
-fn solve_by_brute_force() {
-	let solvers = [SmtSolver::Bitwuzla];
-	let arguments: Vec<SolverArg> = vec![];
-	let hash_functions = [HashFunction::SHA256];
-	let collision_types = [CollisionType::Standard];
+// TODO: Finish DB migration stuff using rusqlite
+//
+// let db_path = PathBuf::from("results.sqlite");
+// let mut result_store = ResultStore::new(db_path);
 
-	for solver in solvers {
-		for hash_function in hash_functions {
-			for collision_type in collision_types {
-				// for arg in arguments.iter() {
-					let mut sequential_fails: u8 = 0;
-					for rounds in 5..30 {
-						if sequential_fails == STOP_TOLERANCE_DEFAULT {
-							println!("Failed {sequential_fails} in a row!\n");
-							break;
-						}
+// let benchmarks = result_store.load_results()?;
+// println!("{:?}", benchmarks);
 
-						// TODO: Make a neater way of retrieving files!
-						let smt_file = format!("data/{hash_function}_{collision_type}_{rounds}_ENCODED_FIX.smt2");
 
-						let result = BenchmarkRunner::run_solver_with_benchmark(
-							hash_function,
-							rounds,
-							collision_type,
-							solver,
-							smt_file,
-							vec![],
-							// vec![arg.clone()],
-						);
+// result_store.create_table()?;
 
-						if let Ok(benchmark) = result {
-							if SAVE_BENCHMARKS {
-								benchmark.save(*BENCHMARK_SAVE_PATH_DEFAULT).expect("Failed to save benchmark!");
-							}
+// let benchmarks = Benchmark::load_all(&PathBuf::from("results"), true)?;
 
-							match benchmark.result {
-								BenchmarkResult::SMTError => {
-									println!("Received SMT Error: {:?}", benchmark.console_output);
-									sequential_fails += 1;
-									continue;
-								}
-								BenchmarkResult::Aborted => {
-									println!("Test aborted!");
-									break;
-								}
-								BenchmarkResult::Sat | BenchmarkResult::Unsat => {
-									let colliding_pair = benchmark.parse_output().unwrap();
-
-									match colliding_pair {
-										None => println!("UNSAT"),
-										Some(colliding_pair) => println!("{}", colliding_pair),
-									}
-
-									sequential_fails = 0;
-								}
-								_ => {
-									println!("{}", benchmark.result);
-									sequential_fails += 1;
-								}
-							}
-							println!();
-						} else {
-							println!("An error occurred during benchmark runtime: {}", result.unwrap_err());
-							break;
-						}
-					}
-				// }
-			}
-		}
-	}
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct MutableShaState {
-	pub i: u8,
-	pub w: Option<Word>,
-	pub a: Option<Word>,
-	pub e: Option<Word>,
-}
-
-impl Default for MutableShaState {
-	fn default() -> Self {
-		MutableShaState {
-			i: 0,
-			w: None,
-			a: None,
-			e: None,
-		}
-	}
-}
-
-impl MutableShaState {
-	fn to_immutable(self) -> Option<ShaState> {
-		Some(ShaState {
-			i: self.i,
-			w: self.w?,
-			a: self.a?,
-			e: self.e?,
-		})
-	}
-}
-
-fn update_state_variable(state: &mut MutableShaState, variable: char, value: Word) {
-	match variable {
-		'a' => state.a = Some(value),
-		'e' => state.e = Some(value),
-		'w' => state.w = Some(value),
-		_ => {},
-	}
-}
-
-struct BenchmarkRunner;
-
-impl BenchmarkRunner {
-	fn run_solver_with_benchmark(
-		hash_function: HashFunction,
-		rounds: u8,
-		collision_type: CollisionType,
-		solver: SmtSolver,
-		smt_file: String,
-		arguments: Vec<SolverArg>,
-	) -> Result<Benchmark, Box<dyn Error>> {
-		// TODO: Ensure that the command exists before attempting to run it, else status code 32512 is returned and this causes an ERRINVAL
-
-		let mut full_args: Vec<SolverArg> = vec![
-			"-v".into(),
-			solver.command(),
-		];
-
-		let mut split_args: Vec<String> = vec![];
-		for arg in arguments.iter() {
-			split_args.extend(arg.split(" ").map(String::from));
-		}
-
-		full_args.extend(split_args);
-		full_args.push(smt_file.clone());
-
-		let date_time = Local::now().to_utc();
-		let start_time = Instant::now();
-		let mut child = Command::new("time")
-			.args(full_args)
-			.process_group(0)
-			.stdout(Stdio::piped())
-			.stderr(Stdio::piped())
-			.spawn()?;
-
-		let pid = child.id();
-		let spc = if arguments.len() > 0 { " " } else { "" };
-		let arg_string = arguments.join(" ");
-		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}{spc}{arg_string}; SMT solver PID: {pid}\nFile: {smt_file}");
-
-		// Await process exit
-		let status = child.wait_timeout(TIMEOUT_DEFAULT)?;
-		let execution_time = start_time.elapsed();
-
-		// Read output
-		let (cout, cerr) = match status {
-			None => {
-				killpg(Pid::from_raw(pid as i32), Signal::SIGKILL)?;
-				child.wait()?;
-				(String::new(), String::new())
-			},
-			Some(_) => {
-				let cout = if let Some(stdout) = child.stdout.take() {
-					let mut cout = String::new();
-					BufReader::new(stdout).read_to_string(&mut cout)?;
-					cout
-				} else { String::new() };
-
-				let cerr = if let Some(stderr) = child.stderr.take() {
-					let mut cerr = String::new();
-					BufReader::new(stderr).read_to_string(&mut cerr)?;
-					cerr
-				} else { String::new() };
-
-				(cout, cerr)
-			}
-		};
-
-		// Extract memory information
-		let mut bytes_rss = 0;
-		if let Some(line) = cerr
-			.lines()
-			.find(|line| line.contains("Maximum resident set size")) {
-			if let Some(val_str) = line.split(':').nth(1) {
-				if let Ok(value) = val_str.trim().parse::<u64>() {
-					// Convert kB to bytes
-					bytes_rss = value * 1024;
-				}
-			}
-		}
-
-		Ok(Benchmark {
-			date_time,
-			solver,
-			arguments,
-			hash_function,
-			rounds,
-			collision_type,
-			execution_time,
-			memory_bytes: bytes_rss,
-			result: Self::categorize_status(status, &cout)?,
-			console_output: (cout, cerr),
-		})
-	}
-
-	fn categorize_status(exit_status: Option<ExitStatus>, cout: &String) -> Result<BenchmarkResult, Box<dyn Error>> {
-		use Signal::*;
-		use BenchmarkResult::*;
-
-		Ok(match exit_status {
-			None => CPUOut,
-			Some(status) => {
-				let code = status.code().ok_or("Failed to retrieve status code!")?;
-				let outcome = cout
-					.lines()
-					.next()
-					.unwrap_or("unknown")
-					.to_lowercase();
-
-				if outcome.contains("unsat") {
-					Unsat
-				} else if outcome.contains("sat") {
-					Sat
-				} else {
-					let signal = Signal::try_from(code)?;
-
-					match signal {
-						SIGABRT | SIGKILL | SIGSEGV => MemOut,
-						SIGALRM | SIGTERM | SIGXCPU => CPUOut,
-						SIGHUP | SIGILL | SIGSYS => SMTError,
-						_ => Unknown,
-					}
-				}
-			}
-		})
-	}
-}
-
+// for benchmark in benchmarks {
+// 	result_store.save_result(&benchmark)?;
+// }

@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 use crate::sha::{HashError, Word};
 use crate::structs::size::Size;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, serde::Serialize, serde::Deserialize, clap::ValueEnum)]
 pub enum HashFunction {
 	SHA224,
 	SHA256,

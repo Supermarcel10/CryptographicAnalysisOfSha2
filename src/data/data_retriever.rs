@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::error::Error;
+use std::fs;
 use std::path::PathBuf;
 use crate::BENCHMARK_SAVE_PATH_DEFAULT;
 use crate::structs::benchmark::{Benchmark, SmtSolver, SolverArg};
@@ -8,29 +9,33 @@ use crate::structs::hash_function::HashFunction;
 
 
 pub struct DataRetriever {
-	data_location: PathBuf,
+	data_dir: PathBuf,
 	all_results: Option<Vec<Benchmark>>,
 }
 
 // TODO: Update to use all_results cache instead.
 impl DataRetriever {
-	pub fn new(data_location: PathBuf) -> Self {
-		DataRetriever {
-			data_location,
-			all_results: None,
+	pub fn new(data_dir: PathBuf) -> Result<Self, Box<dyn Error>> {
+		if !data_dir.exists() {
+			fs::create_dir_all(data_dir.clone())?;
 		}
+
+		Ok(DataRetriever {
+			data_dir,
+			all_results: None,
+		})
 	}
 
 	#[allow(dead_code)]
 	pub fn default() -> Self {
 		DataRetriever {
-			data_location: PathBuf::from(*BENCHMARK_SAVE_PATH_DEFAULT),
+			data_dir: PathBuf::from(BENCHMARK_SAVE_PATH_DEFAULT),
 			all_results: None,
 		}
 	}
 
 	fn cache_all(&mut self) -> Result<(), Box<dyn Error>> {
-		let benchmarks = Benchmark::load_all(&self.data_location, true)?;
+		let benchmarks = Benchmark::load_all(&self.data_dir, true)?;
 		if !benchmarks.is_empty() {
 			self.all_results = Some(benchmarks);
 		}
@@ -45,7 +50,7 @@ impl DataRetriever {
 		prefer_test_reruns: bool, // TODO: Implement!
 	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
 		let benchmarks = Benchmark::load_all(
-			&self.data_location.join("brute-force-up-to-20"),
+			&self.data_dir.join("brute-force-up-to-20"),
 			false
 		)?;
 

@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::sha::{MessageBlock, OutputHash, StartVector, Word};
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
-use crate::{update_state_variable, MutableShaState};
+use crate::structs::sha_state::ShaState;
 use crate::verification::colliding_pair::{CollidingPair, MessageData};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq, Hash, Ord, PartialOrd)]
@@ -95,6 +95,12 @@ pub enum SmtSolver {
 //  --minisat-simplification=MODE
 //                          Simplifications to be performed by Minisat. (EXPERTS
 //                          only)
+
+// - Different arguments for each solver
+// - Different kernels (https://askubuntu.com/a/126671)
+// - Different memory timings
+// - CPU Core Clock difference
+// - Run to run variance
 
 // TODO: Yices2
 // TODO: Boolector
@@ -181,6 +187,45 @@ impl SmtOutputFormat {
 		};
 
 		Ok(Word::from_str_radix(capture, radix_size, hash_function)?)
+	}
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MutableShaState {
+	pub i: u8,
+	pub w: Option<Word>,
+	pub a: Option<Word>,
+	pub e: Option<Word>,
+}
+
+impl Default for MutableShaState {
+	fn default() -> Self {
+		MutableShaState {
+			i: 0,
+			w: None,
+			a: None,
+			e: None,
+		}
+	}
+}
+
+impl MutableShaState {
+	fn to_immutable(self) -> Option<ShaState> {
+		Some(ShaState {
+			i: self.i,
+			w: self.w?,
+			a: self.a?,
+			e: self.e?,
+		})
+	}
+
+	fn update_state_variable(&mut self, variable: char, value: Word) {
+		match variable {
+			'a' => self.a = Some(value),
+			'e' => self.e = Some(value),
+			'w' => self.w = Some(value),
+			_ => {},
+		}
 	}
 }
 
@@ -368,11 +413,11 @@ impl Benchmark {
 
 			// Upsert updated state
 			states[msg].entry(round).and_modify(|state| {
-				update_state_variable(state, var_char, val);
+				state.update_state_variable(var_char, val);
 			}).or_insert_with(|| {
 				let mut state = MutableShaState::default();
 				state.i = round as u8;
-				update_state_variable(&mut state, var_char, val);
+				state.update_state_variable(var_char, val);
 				state
 			});
 		}

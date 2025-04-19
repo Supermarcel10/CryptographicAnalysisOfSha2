@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::error::Error;
+use std::ops::Range;
 use std::path::PathBuf;
 use plotters::prelude::*;
 use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
@@ -34,7 +35,7 @@ impl GraphRenderer {
 			data[0].hash_function,
 			data[0].collision_type,
 		);
-		let path = self.output_directory.join(file_name);
+		let path = self.output_dir.join(file_name);
 
 		let mut sorted_data = data.clone();
 		sorted_data.sort_by_key(|b| b.rounds);
@@ -149,7 +150,7 @@ impl GraphRenderer {
 			argument_name.to_lowercase().replace(" ", "_"),
 		);
 
-		let path = self.output_directory.join(file_name);
+		let path = self.output_dir.join(file_name);
 
 		let mut baseline_data = baseline_data.clone();
 		baseline_data.sort_by_key(|b| b.rounds);
@@ -295,7 +296,7 @@ impl GraphRenderer {
 			data[0].collision_type,
 		);
 
-		let path = self.output_directory.join(file_name);
+		let path = self.output_dir.join(file_name);
 
 		let mut sorted_data = data.clone();
 		sorted_data.sort_by_key(|b| b.rounds);
