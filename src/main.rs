@@ -6,7 +6,7 @@ use plotters::prelude::RGBColor;
 use crate::benchmark::runner::BenchmarkRunner;
 use crate::data::data_retriever::DataRetriever;
 use crate::graphing::graph_renderer::GraphRenderer;
-use crate::sha::{Sha, StartVector};
+use crate::sha::{MessageBlock, Sha, StartVector};
 use crate::smt_lib::smt_lib::generate_smtlib_files;
 use crate::structs::hash_function::HashFunction;
 
@@ -63,15 +63,17 @@ enum Commands {
 	/// Run the underlying sha2 function
 	Sha2 {
 		/// Message to hash
-		msg: String,
+		#[arg(short, long)]
+		msg: Option<String>,
 
-		/// Message digest block (pre-padded and pre-processed digest)
-		// msg_block: MessageBlock,
+		/// Message digest block to hash (pre-padded and pre-processed digest)
+		#[arg(alias = "mb", long)]
+		msg_block: Option<String>,
 
 		/// Hash function
 		hash_function: HashFunction,
 
-		/// Number of compression rounds. Defaults to max
+		/// Number of compression rounds. Default hash function max
 		#[arg(short, long, default_value = None)]
 		rounds: Option<u8>,
 
@@ -136,7 +138,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 		Commands::Sha2 {
 			msg,
-			// msg_block,
+			msg_block,
 			hash_function,
 			rounds
 		} => {
@@ -144,23 +146,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 			// TODO: Use provided start vector or IV by default
 			let start_vector = StartVector::IV;
 
-			let result = if (*msg).len() != 0 {
+			let result = if let Some(msg) = msg {
 				Sha::from_string(
 					msg,
 					*hash_function,
 					rounds,
 					start_vector,
 				)?.execute()?
-			}
-			// else if (*msg_block).len() != 0 {
-			// 	Sha::from_message_block(
-			// 		*msg_block,
-			// 		*hash_function,
-			// 		*rounds,
-			// 		start_vector,
-			// 	)?.execute()?
-			// }
-			else {
+			} else if let Some(msg_block) = msg_block {
+				Sha::from_message_block(
+					MessageBlock::from_str_radix(msg_block, 16, *hash_function)?,
+					*hash_function,
+					rounds,
+					start_vector,
+				)?.execute()?
+			} else {
 				return Err(Box::from("Either msg or msg_block must be provided"));
 			};
 

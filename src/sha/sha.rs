@@ -1,4 +1,5 @@
 use std::cmp::PartialEq;
+use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use crate::sha::structs::{HashError, Word};
 use crate::structs::hash_function::HashFunction;
@@ -90,6 +91,33 @@ pub struct MessageBlock(pub [Word; 16]);
 impl_word_display!(MessageBlock, |mb: &MessageBlock| mb.0);
 impl_from_word_array!(u32, 16, MessageBlock, MessageBlock);
 impl_from_word_array!(u64, 16, MessageBlock, MessageBlock);
+
+impl MessageBlock {
+	pub fn from_str_radix(
+		src: &str,
+		radix: u32,
+		hash_function: HashFunction,
+	) -> Result<MessageBlock, Box<dyn Error>> {
+		let mut words = Vec::with_capacity(16);
+		for word_str in src.split_whitespace() {
+			words.push(Word::from_str_radix(word_str, radix, hash_function)?);
+		}
+
+		if words.len() != 16 {
+			return Err(Box::from(format!("Message digest should be 16 words in length, parsed {} instead", words.len())));
+		}
+
+		// Ensure all words are same size
+		let base_discriminant = std::mem::discriminant(&words[0]);
+		for word in words.iter() {
+			if base_discriminant != std::mem::discriminant(word) {
+				return Err(Box::from("Words length must be of the same size, parsed both u32 and u64"));
+			}
+		}
+
+		Ok(MessageBlock(<[Word; 16]>::try_from(words).expect("Failed to word Vec convert to array")))
+	}
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OutputHash(pub Box<[Word]>);
