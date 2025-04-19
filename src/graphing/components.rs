@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::fmt::Debug;
 use std::ops::Add;
 use num_traits::One;
 use plotters::chart::DualCoordChartContext;
