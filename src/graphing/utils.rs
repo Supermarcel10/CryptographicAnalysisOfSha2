@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use std::ops::{Add, Range};
 use num_traits::One;
 use crate::structs::benchmark::Benchmark;
