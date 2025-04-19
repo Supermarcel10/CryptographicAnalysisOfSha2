@@ -24,8 +24,7 @@ pub enum BenchmarkError {
 pub struct BenchmarkRunner {
 	stop_tolerance: u8,
 	timeout: Duration,
-	benchmark_save_path: PathBuf,
-	save_benchmarks: bool,
+	benchmark_save_dir: Option<PathBuf>,
 	continue_on_failure: bool,
 }
 
@@ -33,15 +32,13 @@ impl BenchmarkRunner {
 	pub fn new(
 		stop_tolerance: u8,
 		timeout: Duration,
-		benchmark_save_path: PathBuf,
-		save_benchmarks: bool,
+		benchmark_save_dir: Option<PathBuf>,
 		continue_on_failure: bool,
 	) -> Self {
 		BenchmarkRunner {
 			stop_tolerance,
 			timeout,
-			benchmark_save_path,
-			save_benchmarks,
+			benchmark_save_dir,
 			continue_on_failure,
 		}
 	}
@@ -108,9 +105,9 @@ impl BenchmarkRunner {
 	) -> Result<(), Box<dyn Error>> {
 		match result {
 			Ok(benchmark) => {
-				if self.save_benchmarks {
+				if let Some(path) = &self.benchmark_save_dir {
 					benchmark
-						.save(&self.benchmark_save_path)
+						.save(path)
 						.expect("Failed to save benchmark!");
 				}
 

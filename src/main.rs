@@ -21,9 +21,6 @@ mod graphing;
 mod data;
 mod benchmark;
 
-// TODO: Remove
-const BENCHMARK_SAVE_PATH_DEFAULT: &str = "/home/marcel/Projects/Programming/CSG-IN3007/results";
-
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -50,15 +47,16 @@ enum Commands {
 		#[arg(short, long)]
 		timeout_sec: Option<u64>,
 
-		/// Input data path
-		data: PathBuf,
-
-		/// Should results be saved to files. Default true
+		/// Path to directory containing SMT files. Default `smt/`
 		#[arg(long)]
-		save_results: Option<bool>,
+		smt_dir: Option<PathBuf>,
+
+		/// Path to directory where result files will be saved to. `None` to disable output. Default `results/`
+		#[arg(long)]
+		result_dir: Option<PathBuf>,
 
 		/// Should remaining benchmark runs continue despite error on one. Default false
-		#[arg(short, long)]
+		#[arg(long)]
 		continue_on_fail: Option<bool>,
 	},
 
@@ -106,21 +104,30 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 		Commands::Benchmark {
 			stop_tolerance,
-			timeout_sec: timeout,
-			data,
-			save_results,
+			timeout_sec,
+			smt_dir,
+			result_dir,
 			continue_on_fail,
 		} => {
 			let stop_tolerance = (*stop_tolerance).unwrap_or(3);
-			let timeout = Duration::from_secs((*timeout).unwrap_or(15 * 60));
-			let save_results = (*save_results).unwrap_or(true);
+			let timeout = Duration::from_secs((*timeout_sec).unwrap_or(15 * 60));
 			let continue_on_fail = (*continue_on_fail).unwrap_or(false);
+
+			let save_dir = if result_dir
+				.clone()
+				.is_some_and(|path| path.to_str().unwrap().to_lowercase() == "none")
+			{
+				None
+			} else if let Some(path) = result_dir.clone() {
+				Some(path)
+			} else {
+				Some(PathBuf::from("results/"))
+			};
 
 			let runner = BenchmarkRunner::new(
 				stop_tolerance,
 				timeout,
-				PathBuf::from(BENCHMARK_SAVE_PATH_DEFAULT),
-				save_results,
+				save_dir,
 				continue_on_fail,
 			);
 
