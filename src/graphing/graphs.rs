@@ -439,8 +439,9 @@ impl GraphRenderer {
 
 		// Generate Bitwuzla argument Graphs
 		let arg_categories = BTreeMap::from([
-			("Abstraction", "--abstraction"),
-			("Preprocessing", "--pp-"),
+			("Abstraction", "-abstraction"),
+			("Preprocessing", "-pp-"),
+			("Propagation", "-prop"),
 			("Rewrite Level", "-rwl"),
 			("SAT Solver", "--sat-solver"),
 			("Solver Engine", "--bv-solver"),
