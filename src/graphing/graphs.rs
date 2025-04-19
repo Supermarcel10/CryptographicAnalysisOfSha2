@@ -90,7 +90,7 @@ impl GraphRenderer {
 			&mut chart,
 			time_data,
 			true,
-			false,
+			true,
 			"Time",
 			Some(self.color_palette[0].to_rgba())
 		)?;
