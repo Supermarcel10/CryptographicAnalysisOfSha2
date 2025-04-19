@@ -219,7 +219,7 @@ impl GraphRenderer {
 			&mut chart,
 			"Time (%dev)",
 			None,
-			Some(&|v| format!("{:+}%", v)),
+			Some(&|v| format!("{:+.1}%", v)),
 		)?;
 
 		// Draw deviation data
