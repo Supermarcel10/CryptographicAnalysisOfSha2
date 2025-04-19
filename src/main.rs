@@ -179,6 +179,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 					RGBColor(95, 61, 196), // Light Purple
 					RGBColor(70, 210, 94), // Light Green
 					RGBColor(116, 143, 252), // Light Blue
+					RGBColor(0, 0, 0),
 				]),
 				2,
 				DataRetriever::new(result_dir.clone())?,
