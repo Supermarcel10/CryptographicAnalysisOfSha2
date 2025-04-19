@@ -44,8 +44,8 @@ impl GraphRenderer {
 	}
 
 	#[allow(dead_code)]
-	pub fn default() -> Self {
-		GraphRenderer {
+	pub fn default() -> Result<Self, Box<dyn Error>> {
+		Ok(GraphRenderer {
 			output_dir: PathBuf::from("graphs/"),
 			output_size: (1024, 768),
 			title_style: ("noto sans", 36),
@@ -63,8 +63,8 @@ impl GraphRenderer {
 				RGBColor(0, 0, 0), // Black
 			]),
 			line_thickness: 2,
-			data_retriever: DataRetriever::default(),
-		}
+			data_retriever: DataRetriever::default()?,
+		})
 	}
 
 	pub(super) fn calculate_percent_dev(
