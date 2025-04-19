@@ -23,7 +23,7 @@ pub enum SmtSolver {
 	Yices2,
 	Bitwuzla,
 	Boolector,
-	// STP, // TODO: Figure out what to do with STP, since the
+	// STP, // STP Does not support SMTLIB 2.6!
 	// Colibri, // TODO: Figure out how to install this thing
 }
 
