@@ -201,25 +201,25 @@ Time (s)
 <circle cx="922" cy="183" r="3" opacity="1" fill="#9C36B5" stroke="none" stroke-width="1"/>
 <circle cx="970" cy="44" r="3" opacity="1" fill="#9C36B5" stroke="none" stroke-width="1"/>
 <circle cx="1018" cy="44" r="3" opacity="1" fill="#9C36B5" stroke="none" stroke-width="1"/>
-<rect x="915" y="623" width="99" height="90" opacity="0.3" fill="#8C8C8C" stroke="none"/>
-<text x="955" y="633" dy="0.76em" text-anchor="start" font-family="sans-serif" font-size="9.67741935483871" opacity="1" fill="#000000">
+<rect x="907" y="612" width="107" height="101" opacity="0.5" fill="#B4B4B4" stroke="none"/>
+<text x="947" y="622" dy="0.76em" text-anchor="start" font-family="noto sans" font-size="11.290322580645162" opacity="1" fill="#000000">
 Z3
 </text>
-<text x="955" y="648" dy="0.76em" text-anchor="start" font-family="sans-serif" font-size="9.67741935483871" opacity="1" fill="#000000">
+<text x="947" y="640" dy="0.76em" text-anchor="start" font-family="noto sans" font-size="11.290322580645162" opacity="1" fill="#000000">
 CVC5
 </text>
-<text x="955" y="663" dy="0.76em" text-anchor="start" font-family="sans-serif" font-size="9.67741935483871" opacity="1" fill="#000000">
+<text x="947" y="657" dy="0.76em" text-anchor="start" font-family="noto sans" font-size="11.290322580645162" opacity="1" fill="#000000">
 Yices
 </text>
-<text x="955" y="678" dy="0.76em" text-anchor="start" font-family="sans-serif" font-size="9.67741935483871" opacity="1" fill="#000000">
+<text x="947" y="675" dy="0.76em" text-anchor="start" font-family="noto sans" font-size="11.290322580645162" opacity="1" fill="#000000">
 Bitwuzla
 </text>
-<text x="955" y="693" dy="0.76em" text-anchor="start" font-family="sans-serif" font-size="9.67741935483871" opacity="1" fill="#000000">
+<text x="947" y="692" dy="0.76em" text-anchor="start" font-family="noto sans" font-size="11.290322580645162" opacity="1" fill="#000000">
 Boolector
 </text>
-<polyline fill="none" opacity="1" stroke="#A61E4D" stroke-width="1" points="925,638 945,638 "/>
-<polyline fill="none" opacity="1" stroke="#1864AB" stroke-width="1" points="925,653 945,653 "/>
-<polyline fill="none" opacity="1" stroke="#087F5B" stroke-width="1" points="925,668 945,668 "/>
-<polyline fill="none" opacity="1" stroke="#FAB005" stroke-width="1" points="925,683 945,683 "/>
-<polyline fill="none" opacity="1" stroke="#9C36B5" stroke-width="1" points="925,698 945,698 "/>
+<polyline fill="none" opacity="1" stroke="#A61E4D" stroke-width="1" points="917,627 937,627 "/>
+<polyline fill="none" opacity="1" stroke="#1864AB" stroke-width="1" points="917,645 937,645 "/>
+<polyline fill="none" opacity="1" stroke="#087F5B" stroke-width="1" points="917,662 937,662 "/>
+<polyline fill="none" opacity="1" stroke="#FAB005" stroke-width="1" points="917,680 937,680 "/>
+<polyline fill="none" opacity="1" stroke="#9C36B5" stroke-width="1" points="917,697 937,697 "/>
 </svg>
