@@ -34,7 +34,7 @@ enum Commands {
 	/// Generate SMTLIB 2.6 standard files
 	Generate {
 		/// Directory where smt2 files will be saved
-		output_dir: PathBuf,
+		smt_dir: PathBuf,
 	},
 
 	/// Run all benchmarks
@@ -87,7 +87,7 @@ enum Commands {
 	/// Render result graphs
 	Graph {
 		/// Directory where graphs will be saved
-		output_dir: PathBuf,
+		graph_dir: PathBuf,
 
 		/// Directory where all benchmark results are stored
 		result_dir: PathBuf,
@@ -98,8 +98,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let cli = Cli::parse();
 
 	match &cli.command {
-		Commands::Generate { output_dir } => {
-			generate_smtlib_files(output_dir.clone())?;
+		Commands::Generate { smt_dir } => {
+			generate_smtlib_files(smt_dir.clone())?;
 		},
 
 		Commands::Benchmark {
@@ -168,11 +168,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 		},
 
 		Commands::Graph {
-			output_dir,
+			graph_dir,
 			result_dir,
 		} => {
 			let mut graph_renderer = GraphRenderer::new(
-				output_dir.clone(),
+				graph_dir.clone(),
 				(1024, 768),
 				("noto sans", 36),
 				("noto sans", 14),
