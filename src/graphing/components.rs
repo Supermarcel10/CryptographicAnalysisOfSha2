@@ -1,9 +1,12 @@
 use std::error::Error;
+use std::fmt::Debug;
+use std::ops::Add;
+use num_traits::One;
 use plotters::chart::DualCoordChartContext;
 use plotters::coord::ranged1d::ValueFormatter;
 use plotters::prelude::*;
 use crate::graphing::graph_renderer::GraphRenderer;
-
+use crate::graphing::utils::split_data;
 
 /// Generalized components for reuse in graphs.
 impl GraphRenderer {
@@ -149,30 +152,49 @@ impl GraphRenderer {
 		DB::ErrorType: 'static,
 		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
 		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
-		XT: Clone + 'static,
+		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
 		YT: Clone + 'static,
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
 
-		chart
-			.draw_series(LineSeries::new(
-				data.clone(),
-				ShapeStyle {
-					color: color.to_rgba(),
-					filled: false,
-					stroke_width: self.line_thickness,
-				}
-			))?
-			.label(label)
-			.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
+		// Split into data contigious data segments
+		let data = if discontinue_line {
+			split_data(data)
+		} else {
+			vec![data]
+		};
 
-		if with_points {
-			chart.draw_series(PointSeries::of_element(
-				data,
-				3,
-				color,
-				&|c, s, st| Circle::new(c, s, st.filled()),
-			))?;
+		// Render
+		let mut was_legend_defined = false;
+		for split in data {
+			let series = chart
+				.draw_series(LineSeries::new(
+					split.clone(),
+					ShapeStyle {
+						color: color.to_rgba(),
+						filled: false,
+						stroke_width: self.line_thickness,
+					}
+				))?
+				.label(label)
+				.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
+
+			// Define only once
+			if !was_legend_defined {
+				was_legend_defined = true;
+				series
+					.label(label)
+					.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
+			}
+
+			if with_points {
+				chart.draw_series(PointSeries::of_element(
+					split,
+					3,
+					color,
+					&|c, s, st| Circle::new(c, s, st.filled()),
+				))?;
+			}
 		}
 
 		Ok(())
@@ -207,31 +229,48 @@ impl GraphRenderer {
 		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
 		Y1: Ranged<ValueType = YT1> + ValueFormatter<YT1>,
 		Y2: Ranged<ValueType = YT2> + ValueFormatter<YT2>,
-		XT: Clone + 'static,
+		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
 		YT1: Clone + 'static,
 		YT2: Clone + 'static,
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
 
-		chart
-			.draw_secondary_series(LineSeries::new(
-				data.clone(),
-				ShapeStyle {
-					color: color.to_rgba(),
-					filled: false,
-					stroke_width: self.line_thickness,
-				}
-			))?
-			.label(label)
-			.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
+		// Split into data contigious data segments
+		let data = if discontinue_line {
+			split_data(data)
+		} else {
+			vec![data]
+		};
 
-		if with_points {
-			chart.draw_secondary_series(PointSeries::of_element(
-				data,
-				3,
-				color,
-				&|c, s, st| Circle::new(c, s, st.filled()),
-			))?;
+		// Render
+		let mut was_legend_defined = false;
+		for split in data {
+			let series = chart
+				.draw_secondary_series(LineSeries::new(
+					split.clone(),
+					ShapeStyle {
+						color: color.to_rgba(),
+						filled: false,
+						stroke_width: self.line_thickness,
+					}
+				))?;
+
+			// Define only once
+			if !was_legend_defined {
+				was_legend_defined = true;
+				series
+					.label(label)
+					.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
+			}
+
+			if with_points {
+				chart.draw_secondary_series(PointSeries::of_element(
+					split,
+					3,
+					color,
+					&|c, s, st| Circle::new(c, s, st.filled()),
+				))?;
+			}
 		}
 
 		Ok(())
