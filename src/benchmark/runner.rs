@@ -48,7 +48,9 @@ impl BenchmarkRunner {
 	// TODO: Split out somehow
 	pub fn run_benchmarks(&self) -> Result<(), Box<dyn Error>> {
 		let solvers = [SmtSolver::Bitwuzla];
-		let arguments: Vec<SolverArg> = vec![];
+		let arguments: Vec<SolverArg> = vec![
+			"--sat-solver kissat".into()
+		];
 		let hash_functions = [HashFunction::SHA256];
 		let collision_types = [CollisionType::Standard];
 
@@ -95,7 +97,7 @@ impl BenchmarkRunner {
 		rounds: u8,
 	) -> String {
 		// TODO: Implement properly to do retrieval
-		format!("data/{hash_function}_{collision_type}_{rounds}_ENCODED_FIX.smt2")
+		format!("smt/{hash_function}_{collision_type}_{rounds}.smt2")
 	}
 
 	fn handle_result(
