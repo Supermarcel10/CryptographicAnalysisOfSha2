@@ -119,10 +119,6 @@ impl GraphRenderer {
 		Ok(())
 	}
 
-	// TODO: Implement discontinue_line for draw_series and draw_secondary_series
-
-
-
 	/// Draw a line series of provided data on the primary Y-Axis.
 	/// For drawing on the secondary Y-Axis see [Self::draw_secondary_series].
 	///
