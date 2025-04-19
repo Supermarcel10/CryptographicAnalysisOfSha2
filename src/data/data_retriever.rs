@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
-use crate::BENCHMARK_SAVE_PATH_DEFAULT;
 use crate::structs::benchmark::{Benchmark, SmtSolver, SolverArg};
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
@@ -26,11 +25,8 @@ impl DataRetriever {
 	}
 
 	#[allow(dead_code)]
-	pub fn default() -> Self {
-		DataRetriever {
-			data_dir: PathBuf::from(BENCHMARK_SAVE_PATH_DEFAULT),
-			all_results: None,
-		}
+	pub fn default() -> Result<Self, Box<dyn Error>> {
+		DataRetriever::new(PathBuf::from("results/"))
 	}
 
 	fn cache_all(&mut self) -> Result<(), Box<dyn Error>> {
