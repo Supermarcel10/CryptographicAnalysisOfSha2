@@ -54,7 +54,7 @@ enum Commands {
 		data: PathBuf,
 
 		/// Should results be saved to files. Default true
-		#[arg(short, long)]
+		#[arg(long)]
 		save_results: Option<bool>,
 
 		/// Should remaining benchmark runs continue despite error on one. Default false
