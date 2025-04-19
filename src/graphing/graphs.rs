@@ -201,7 +201,7 @@ impl GraphRenderer {
 			.draw_series(std::iter::once(
 				Rectangle::new(
 					[(x_range.start, 0.0), (x_range.end, y_range.start)],
-					RGBAColor(182, 255, 182, 0.125).filled(),
+					RGBAColor(182, 255, 182, 0.4).filled(),
 				)
 			))?;
 
@@ -209,7 +209,7 @@ impl GraphRenderer {
 			.draw_series(std::iter::once(
 				Rectangle::new(
 					[(x_range.start, 0.0), (x_range.end, y_range.end)],
-					RGBAColor(255, 182, 182, 0.125).filled(),
+					RGBAColor(255, 182, 182, 0.4).filled(),
 				)
 			))?;
 
