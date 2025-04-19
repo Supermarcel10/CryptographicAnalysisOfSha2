@@ -14,9 +14,8 @@ use crate::structs::benchmark::Benchmark;
 /// `Option<Range<T>>`
 ///
 /// Returns `None` if length 0 data provided, otherwise provides a range of the retrieved data type.
-// TODO: Look into why Range<u8> does not work?
-//? Potential issue in plotters.rs?
-//? Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
+// Potential bug/oversight with plotters.rs?
+// Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
 pub(super) fn get_range<T: Copy + PartialOrd>(
 	data: &Vec<Benchmark>,
 	retr: &dyn Fn(&Benchmark) -> T,
