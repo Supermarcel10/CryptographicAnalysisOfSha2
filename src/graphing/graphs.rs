@@ -6,7 +6,7 @@ use plotters::prelude::*;
 use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
 use crate::graphing::utils::get_range;
-use crate::structs::benchmark::{Benchmark, SmtSolver, SolverArg};
+use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
 
 
 /// Implementation of graph types
@@ -38,21 +38,21 @@ impl GraphRenderer {
 		);
 		let path = self.output_dir.join(file_name);
 
-		let mut sorted_data = data.clone();
+		let data: Vec<_> = data
+			.into_iter()
+			.filter(|b| b.result == BenchmarkResult::Sat || b.result == BenchmarkResult::Unsat)
+			.collect();
+
+		let mut sorted_data = data;
 		sorted_data.sort_by_key(|b| b.rounds);
 
 		// Define ranges
-		let x_range = get_range(&data, &|b| b.rounds as u32)
+		let x_range = get_range(&sorted_data.clone(), &|b| b.rounds as u32)
 			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range"})?;
-		let y_range_mem = get_range(&data, &|b| b.memory_bytes as f64 / 1048576.0)
+		let y_range_mem = get_range(&sorted_data.clone(), &|b| b.memory_bytes as f64 / 1048576.0)
 			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range_mem"})?;
-		let y_range_time = get_range(&data, &|b| b.execution_time.as_secs_f64())
+		let y_range_time = get_range(&sorted_data.clone(), &|b| b.execution_time.as_secs_f64())
 			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range_time"})?;
-
-		// Define Cartesian mapped data
-		let sorted_data = sorted_data
-			.into_iter()
-			.map(|b| (b.rounds as u32, b.memory_bytes as f64 / 1048576.0, b.execution_time.as_secs_f64()));
 
 		let path_clone_bind = path.clone();
 		let root = SVGBackend::new(&path_clone_bind, self.output_size)
@@ -85,7 +85,12 @@ impl GraphRenderer {
 		)?;
 
 		// Draw primary data
-		let time_data: Vec<_> = sorted_data.clone().map(|(r, _, t)| (r, t)).collect();
+		let time_data: Vec<_> = sorted_data
+			.clone()
+			.into_iter()
+			.map(|b| (b.rounds as u32, b.execution_time.as_secs_f64()))
+			.collect();
+
 		self.draw_series(
 			&mut chart,
 			time_data,
@@ -96,7 +101,12 @@ impl GraphRenderer {
 		)?;
 
 		// Draw secondary data
-		let memory_data: Vec<_> = sorted_data.clone().map(|(r, m, _)| (r, m)).collect();
+		let memory_data: Vec<_> = sorted_data
+			.clone()
+			.into_iter()
+			.map(|b| (b.rounds as u32, b.memory_bytes as f64 / 1048576.0))
+			.collect();
+
 		self.draw_secondary_series(
 			&mut chart,
 			memory_data,
