@@ -404,6 +404,7 @@ dependencies = [
  "chrono",
  "clap",
  "nix",
+ "num-traits",
  "plotters",
  "regex",
  "serde",

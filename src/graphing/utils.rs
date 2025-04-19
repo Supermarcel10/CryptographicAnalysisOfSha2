@@ -1,4 +1,6 @@
-use std::ops::Range;
+use std::fmt::Debug;
+use std::ops::{Add, Range};
+use num_traits::One;
 use crate::structs::benchmark::Benchmark;
 
 
@@ -31,4 +33,49 @@ pub(super) fn get_range<T: Copy + PartialOrd>(
 	});
 
 	Some(min..max)
+}
+
+/// Splits a data set to multiple segments.
+/// This is useful when there is a gap in the data which is meant to be rendered as disjoint.
+///
+/// # Arguments
+///
+/// * `data`: Data to split.
+///
+/// # Returns
+/// Vec<Vec<(XT, YT), Global>, Global>
+///
+/// A set of continious cartesian data.
+pub(super) fn split_data<XT, YT>(
+	data: Vec<(XT, YT)>
+) -> Vec<Vec<(XT, YT)>>
+where
+	XT: Clone + Copy + Add<Output = XT> + PartialOrd + One + 'static,
+	YT: Clone + 'static,
+{
+	if data.is_empty() {
+		return vec![];
+	}
+
+	let mut segments = Vec::new();
+	let mut current_segment = Vec::new();
+	current_segment.push(data[0].clone());
+
+	for window in data.windows(2) {
+		let (x1, _) = window[0];
+		let (x2, _) = window[1];
+
+		if x2 > x1 + XT::one() {
+			segments.push(current_segment);
+			current_segment = Vec::new();
+		}
+
+		current_segment.push(window[1].clone());
+	}
+
+	if !current_segment.is_empty() {
+		segments.push(current_segment);
+	}
+
+	segments
 }
