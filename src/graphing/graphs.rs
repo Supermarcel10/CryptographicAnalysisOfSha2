@@ -29,9 +29,10 @@ impl GraphRenderer {
 			println!("{}", MissingData { graph_name: "Time & Memory", dataset_name: "data" });
 		}
 
+		let solver_name = data[0].solver.to_string().to_lowercase();
 		let file_name = format!(
 			"detailed_{}_{}_{}.svg",
-			data[0].solver.to_string().to_lowercase(),
+			solver_name,
 			data[0].hash_function,
 			data[0].collision_type,
 		);
@@ -58,12 +59,13 @@ impl GraphRenderer {
 			.into_drawing_area();
 		root.fill(&WHITE)?;
 
+		let title = format!("{solver_name}; Memory & Time vs Rounds");
 		let mut chart = ChartBuilder::on(&root)
 			.x_label_area_size(45)
 			.y_label_area_size(60)
 			.right_y_label_area_size(60)
 			.margin(5)
-			.caption("Memory & Time vs Rounds", self.title_style)
+			.caption(title, self.title_style)
 			.build_cartesian_2d(x_range.clone(), y_range_time.log_scale().base(2.0))? // Time
 			.set_secondary_coord(x_range, y_range_mem); // Memory
 
