@@ -1,0 +1,1 @@
+{"date_time":"2025-04-13T03:07:03.751165781Z","solver":"CVC5","arguments":[],"hash_function":"SHA224","rounds":5,"collision_type":"SemiFreeStart","execution_time":{"secs":900,"nanos":99647573},"memory_bytes":0,"result":"CPUOut","console_output":["",""],"is_baseline":true,"is_rerun":false,"encoding":"BruteForce","stop_tolerance":0,"timeout":{"secs":900,"nanos":0}}

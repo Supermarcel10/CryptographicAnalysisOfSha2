@@ -1,0 +1,1 @@
+{"date_time":"2025-04-07T17:08:08.236050951Z","solver":"Yices2","arguments":[],"hash_function":"SHA256","rounds":11,"collision_type":"Standard","execution_time":{"secs":900,"nanos":99673115},"memory_bytes":0,"result":"CPUOut","console_output":["",""],"is_baseline":true,"is_rerun":false,"encoding":"BruteForce","stop_tolerance":0,"timeout":{"secs":900,"nanos":0}}

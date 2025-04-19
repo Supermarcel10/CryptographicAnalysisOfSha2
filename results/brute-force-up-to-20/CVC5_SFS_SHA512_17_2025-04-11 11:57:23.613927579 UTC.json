@@ -1,1 +1,0 @@
-{"date_time":"2025-04-11T11:57:23.613927579Z","solver":"CVC5","arguments":[],"hash_function":"SHA512","rounds":17,"collision_type":"SemiFreeStart","execution_time":{"secs":900,"nanos":99664287},"memory_bytes":0,"result":"CPUOut","console_output":["",""]}
