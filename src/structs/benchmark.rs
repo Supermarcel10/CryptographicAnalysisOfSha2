@@ -445,10 +445,8 @@ impl Benchmark {
 			Ok(SmtOutputFormat::Boolean)
 		} else if smt_output.contains("#x") {
 			Ok(SmtOutputFormat::Hex)
-		} else if smt_output.contains("") {
-			Ok(SmtOutputFormat::Decimal)
 		} else {
-			Err("Invalid output format: Expected boolean (#b), hex (#x) or decimal".into())
+			Ok(SmtOutputFormat::Decimal)
 		}
 	}
 }
