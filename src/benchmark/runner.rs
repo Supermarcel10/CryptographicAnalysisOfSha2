@@ -74,7 +74,13 @@ impl BenchmarkRunner {
 								vec![],
 							);
 
-							self.handle_result(result, &mut sequential_fails)?;
+							if let Err(err) = self.handle_result(result, &mut sequential_fails) {
+								if !self.continue_on_failure {
+									return Err(err);
+								}
+
+								continue;
+							}
 
 							if self.stop_tolerance != 0 && self.stop_tolerance == sequential_fails {
 								println!("Failed {sequential_fails} in a row!\n");
