@@ -167,6 +167,7 @@ impl Display for BenchmarkResult {
 enum SmtOutputFormat {
 	Boolean,
 	Hex,
+	Decimal,
 }
 
 impl SmtOutputFormat {
@@ -174,6 +175,7 @@ impl SmtOutputFormat {
 		match self {
 			SmtOutputFormat::Boolean => "#b([01]*)",
 			SmtOutputFormat::Hex => "#x([0-9a-fA-F]*)",
+			SmtOutputFormat::Decimal => "([0-9]*)",
 		}.to_string()
 	}
 
@@ -185,7 +187,8 @@ impl SmtOutputFormat {
 		let radix_size = match self {
 			SmtOutputFormat::Boolean => 2,
 			SmtOutputFormat::Hex => 16,
-		};
+			SmtOutputFormat::Decimal => 10,
+ 		};
 
 		Ok(Word::from_str_radix(capture, radix_size, hash_function)?)
 	}
@@ -440,8 +443,10 @@ impl Benchmark {
 			Ok(SmtOutputFormat::Boolean)
 		} else if smt_output.contains("#x") {
 			Ok(SmtOutputFormat::Hex)
+		} else if smt_output.contains("") {
+			Ok(SmtOutputFormat::Decimal)
 		} else {
-			Err("Invalid output format: Expected boolean (#b) or hex (#x)".into())
+			Err("Invalid output format: Expected boolean (#b), hex (#x) or decimal".into())
 		}
 	}
 }
