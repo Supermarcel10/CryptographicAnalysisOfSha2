@@ -55,19 +55,21 @@ impl Display for CollidingPair {
 
 		let mut mismatch_info = String::new();
 		if !is_m0_hash_same {
-			let actual_hash = self.m0.run_sha(self.hash_function, self.rounds);
-			match actual_hash {
-				Ok(result) => mismatch_info += &format!("\nActual Hash: {}\n", result.hash),
-				Err(_) => mismatch_info += "Unable to retrieve actual hash for M!\n",
+			match self.m0.run_sha(self.hash_function, self.rounds) {
+				Ok(result) => mismatch_info += &format!("\nActual Hash: {}", result.hash),
+				Err(_) => mismatch_info += "\nUnable to retrieve actual hash for M!",
 			}
 		}
 
 		if !is_m1_hash_same {
-			let actual_hash = self.m1.run_sha(self.hash_function, self.rounds);
-			match actual_hash {
-				Ok(result) => mismatch_info += &format!("\nActual Hash': {}\n", result.hash),
-				Err(_) => mismatch_info += "Unable to retrieve actual hash for M'!\n",
+			match self.m1.run_sha(self.hash_function, self.rounds) {
+				Ok(result) => mismatch_info += &format!("\nActual Hash': {}", result.hash),
+				Err(_) => mismatch_info += "\nUnable to retrieve actual hash for M'!",
 			}
+		}
+
+		if mismatch_info.len() > 0 {
+			mismatch_info += "\n";
 		}
 
 		let hash_message = format!(
