@@ -436,17 +436,13 @@ impl GraphRenderer {
 
 
 		// Generate Bitwuzla detail chart
-		let bitwuzla_baseline = self.data_retriever.retrieve_baseline(
+		let bitwuzla_baseline_with_anomalies = self.data_retriever.retrieve_baseline(
 			SmtSolver::Bitwuzla,
 			SHA256,
 			Standard,
 			true,
 		)?;
-
-		if bitwuzla_baseline.is_empty() {
-			return Err(MissingData { graph_name: "Time & Memory", dataset_name: "Bitwuzla" }.into());
-		}
-		self.create_time_and_memory_chart(bitwuzla_baseline.clone())?;
+		self.create_time_and_memory_chart(bitwuzla_baseline_with_anomalies.clone())?;
 
 
 		// Generate Bitwuzla argument Graphs
@@ -458,6 +454,13 @@ impl GraphRenderer {
 			("SAT Solver", "--sat-solver"),
 			("Solver Engine", "--bv-solver"),
 		]);
+
+		let bitwuzla_baseline = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			false,
+		)?;
 
 		for (category, identifier) in arg_categories {
 			let deviation_data = self.data_retriever.retrieve_with_args(
