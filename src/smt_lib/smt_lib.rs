@@ -337,8 +337,12 @@ impl SmtBuilder {
 			hash += &format!("m0_hash{i} ");
 		}
 		self.smt += &format!("(get-value ({}))\n", hash.trim());
-		self.break_line();
 
+		if self.rounds == 0 {
+			return;
+		}
+
+		self.break_line();
 		self.comment("Output round A/E/W state changes");
 		let mut s = String::new();
 		for i in 0..self.rounds {
@@ -346,11 +350,6 @@ impl SmtBuilder {
 				if i == 0 && self.collision_type != CollisionType::FreeStart && var != 'w' {
 					s += &format!("{var}{i} ");
 				} else {
-					// if i == self.rounds && var == 'w' {
-					// 	s += &format!("m{m}_w{i}");
-					// 	continue;
-					// }
-
 					for m in 0..2 {
 						s += &format!("m{m}_{var}{i} ");
 					}
