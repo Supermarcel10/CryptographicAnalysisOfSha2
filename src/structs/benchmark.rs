@@ -250,6 +250,7 @@ pub struct Benchmark {
 	pub memory_bytes: u64,
 	pub result: BenchmarkResult,
 	pub console_output: (String, String),
+	pub is_valid: Option<bool>,
 	pub is_baseline: bool,
 	pub is_rerun: bool,
 	pub encoding: EncodingType,
@@ -306,7 +307,7 @@ impl Benchmark {
 		Ok(benchmarks)
 	}
 
-	pub fn parse_output(self) -> Result<Option<CollidingPair>, Box<dyn Error>> {
+	pub fn parse_output(&mut self) -> Result<Option<CollidingPair>, Box<dyn Error>> {
 		if self.result != BenchmarkResult::Sat {
 			return Ok(None);
 		}
@@ -319,7 +320,7 @@ impl Benchmark {
 			)
 		)?;
 
-		let (smt_output, _) = self.console_output;
+		let (smt_output, _) = self.console_output.clone();
 		let default_word = self.hash_function.default_word();
 
 		let mut hash = Box::new([None; 8]);
@@ -415,12 +416,17 @@ impl Benchmark {
 		}
 
 		let [m0, m1] = messages.try_into().unwrap();
-		Ok(Some(CollidingPair {
+		let colliding_pair = CollidingPair {
 			m0,
 			m1,
 			hash_function: self.hash_function,
 			rounds: self.rounds,
-		}))
+		};
+
+		// Verify benchmark
+		self.is_valid = Some(colliding_pair.verify()?);
+
+		Ok(Some(colliding_pair))
 	}
 
 	fn parse_update_for_msg(

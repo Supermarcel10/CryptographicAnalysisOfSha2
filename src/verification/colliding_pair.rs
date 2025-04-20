@@ -48,6 +48,15 @@ pub struct CollidingPair {
 	pub rounds: u8,
 }
 
+impl CollidingPair {
+	pub fn verify(&self) -> Result<bool, HashError> {
+		let is_m0_hash_same = self.m0.verify(self.hash_function, self.rounds)?;
+		let is_m1_hash_same = self.m0.verify(self.hash_function, self.rounds)?;
+
+		Ok(is_m0_hash_same && is_m1_hash_same)
+	}
+}
+
 impl Display for CollidingPair {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		let is_m0_hash_same = self.m0.verify(self.hash_function, self.rounds).unwrap_or(false);

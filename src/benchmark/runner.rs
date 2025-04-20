@@ -64,7 +64,7 @@ impl BenchmarkRunner {
 								rounds,
 							);
 
-							let result = self.run_solver_with_benchmark(
+							let mut result = self.run_solver_with_benchmark(
 								hash_function,
 								rounds,
 								collision_type,
@@ -74,7 +74,7 @@ impl BenchmarkRunner {
 								vec![],
 							);
 
-							if let Err(err) = self.handle_result(result, &mut sequential_fails) {
+							if let Err(err) = self.handle_result(&mut result, &mut sequential_fails) {
 								if !self.continue_on_failure {
 									return Err(err);
 								}
@@ -107,7 +107,7 @@ impl BenchmarkRunner {
 
 	fn handle_result(
 		&self,
-		result: Result<Benchmark, Box<dyn Error>>,
+		result: &mut Result<Benchmark, Box<dyn Error>>,
 		sequential_fails: &mut u8,
 	) -> Result<(), Box<dyn Error>> {
 		match result {
@@ -141,7 +141,7 @@ impl BenchmarkRunner {
 			Err(err) => {
 				println!("{}\n", err);
 				if !self.continue_on_failure {
-					Err(err)
+					Err(Box::from("Aborting benchmarks!"))
 				} else {
 					println!("Continuing!\n\n");
 					Ok(())
@@ -244,6 +244,7 @@ impl BenchmarkRunner {
 			memory_bytes: bytes_rss,
 			result: Self::categorize_status(status, &cout)?,
 			console_output: (cout, cerr),
+			is_valid: None,
 			is_baseline,
 			is_rerun: false, // TODO
 			encoding: EncodingType::BruteForce, // TODO
