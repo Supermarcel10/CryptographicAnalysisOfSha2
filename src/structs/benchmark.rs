@@ -312,10 +312,10 @@ impl Benchmark {
 		}
 
 		let output_format = self.get_output_format()?;
+		let number_format = output_format.output_string();
 		let re = Regex::new(
 			&format!(
-				r"\((?:m([01])_|)([a-hw]|hash)([0-9]+) {}\)",
-				output_format.output_string()
+				r"\((?:m([01])_|)([a-hw]|hash)([0-9]+) (?:\(_ bv{number_format} (?:32|64)\)|{number_format})\)",
 			)
 		)?;
 
@@ -331,7 +331,15 @@ impl Benchmark {
 			let msg= capture.get(1);
 			let var = &capture[2];
 			let round: usize = capture[3].parse()?;
-			let val = output_format.get_base_size(&capture[4], self.hash_function)?;
+
+			let val = match (capture.get(4), capture.get(5)) {
+				(Some(val), _) => val,
+				(_, Some(val)) => val,
+				(None, None) => {
+					return Err(Box::from("Failed to retrieve value"));
+				}
+			};
+			let val = output_format.get_base_size(val.into(), self.hash_function)?;
 
 			match msg {
 				Some(msg) => {
