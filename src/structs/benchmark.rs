@@ -372,12 +372,13 @@ impl Benchmark {
 		}
 
 		// Trim hash
-		let mut trimmed_hash = Vec::with_capacity(8);
+		let output_size = self.hash_function.truncate_to_length().unwrap_or(8);
+		let mut trimmed_hash = Vec::with_capacity(output_size);
 		for (i, word) in hash.into_iter().enumerate() {
 			if let Some(word) = word {
 				trimmed_hash.push(word);
-			} else if i <= self.hash_function.truncate_to_length().unwrap_or(8) {
-				trimmed_hash.push(self.hash_function.default_word());
+			} else if i == output_size {
+				break;
 			}
 		}
 
