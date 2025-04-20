@@ -366,7 +366,11 @@ impl Benchmark {
 		let mut messages = vec![];
 		for (i, message_states) in states.into_iter().enumerate() {
 			let mut states = vec![];
-			for (_, state) in message_states {
+			for (_, mut state) in message_states {
+				if self.rounds == 0 {
+					state.w = Some(self.hash_function.default_word());
+				}
+
 				states.push(
 					state
 						.to_immutable()
