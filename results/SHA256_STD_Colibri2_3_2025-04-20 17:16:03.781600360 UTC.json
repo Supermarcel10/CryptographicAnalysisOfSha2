@@ -1,0 +1,1 @@
+{"date_time":"2025-04-20T17:16:03.781600360Z","solver":"Colibri2","arguments":[],"hash_function":"SHA256","rounds":3,"collision_type":"Standard","execution_time":{"secs":900,"nanos":99629050},"memory_bytes":0,"result":"CPUOut","console_output":["",""],"is_baseline":true,"is_rerun":false,"encoding":"BruteForce","stop_tolerance":0,"timeout":{"secs":900,"nanos":0}}
