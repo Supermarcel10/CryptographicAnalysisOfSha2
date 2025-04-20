@@ -123,6 +123,3 @@
 
 ; Output hash
 (get-value (m0_hash0 m0_hash1 m0_hash2 m0_hash3 m0_hash4 m0_hash5 m0_hash6 m0_hash7))
-
-; Output round A/E/W state changes
-(get-value ())
