@@ -245,7 +245,7 @@ impl GraphRenderer {
 			for b in run {
 				if let Some(&base_time) = baseline.get(&(b.rounds as u32)) {
 					let dev_time = b.execution_time.as_secs_f64();
-					data.push((b.rounds as u32, 1.0 - (dev_time / base_time)))
+					data.push((b.rounds as u32, ((dev_time / base_time) - 1.0) * 100.0))
 				}
 			}
 
