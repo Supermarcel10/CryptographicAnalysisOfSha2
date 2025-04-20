@@ -84,8 +84,6 @@
 
 ;; ASSERTIONS
 ; Assert messages not the same
-(assert (or
-))
 
 ; Assert output hash is the same
 (assert (and

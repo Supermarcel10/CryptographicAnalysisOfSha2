@@ -262,7 +262,11 @@ impl SmtBuilder {
 			s += &format!("\t(distinct m0_w{i} m1_w{i})\n");
 		}
 
-		self.smt += &format!("(assert (or\n{s}))\n");
+ 		if self.rounds == 1 {
+			self.smt += &format!("(assert\n{s})\n");
+		} else if self.rounds > 1 {
+			self.smt += &format!("(assert (or\n{s}))\n");
+		}
 	}
 
 	fn assert_message_difference(&mut self) {

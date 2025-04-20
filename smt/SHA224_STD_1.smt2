@@ -107,9 +107,9 @@
 
 ;; ASSERTIONS
 ; Assert messages not the same
-(assert (or
+(assert
 	(distinct m0_w0 m1_w0)
-))
+)
 
 ; Assert output hash is the same
 (assert (and
