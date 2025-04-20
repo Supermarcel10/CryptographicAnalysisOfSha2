@@ -24,7 +24,7 @@ pub enum SmtSolver {
 	Bitwuzla,
 	Boolector,
 	// STP, // STP Does not support SMTLIB 2.6!
-	// Colibri, // TODO: Figure out how to install this thing
+	Colibri2,
 }
 
 // TODO: TO TEST:
@@ -117,6 +117,7 @@ impl Display for SmtSolver {
 			Bitwuzla => "Bitwuzla",
 			Boolector => "Boolector",
 			// STP => "STP",
+			Colibri2 => "Colibri2",
 		})
 	}
 }
@@ -132,6 +133,7 @@ impl SmtSolver {
 			Bitwuzla => "bitwuzla",
 			Boolector => "boolector",
 			// STP => "stp",
+			Colibri2 => "./solvers/colibri2",
 		}.into()
 	}
 }
