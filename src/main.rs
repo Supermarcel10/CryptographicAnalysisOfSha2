@@ -33,8 +33,9 @@ struct Cli {
 enum Commands {
 	/// Generate SMTLIB 2.6 standard files
 	Generate {
-		/// Directory where smt2 files will be saved
-		smt_dir: PathBuf,
+		/// Directory where smt2 files will be saved. Default `smt/`
+		#[arg(long)]
+		smt_dir: Option<PathBuf>,
 	},
 
 	/// Run all benchmarks
@@ -88,11 +89,13 @@ enum Commands {
 
 	/// Render result graphs
 	Graph {
-		/// Directory where graphs will be saved
-		graph_dir: PathBuf,
+		/// Directory where graphs will be saved. Default `graphs/`
+		#[arg(long)]
+		graph_dir: Option<PathBuf>,
 
-		/// Directory where all benchmark results are stored
-		result_dir: PathBuf,
+		/// Directory where all benchmark results are stored. Default `results/`
+		#[arg(long)]
+		result_dir: Option<PathBuf>,
 	}
 }
 
@@ -101,7 +104,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 	match &cli.command {
 		Commands::Generate { smt_dir } => {
-			generate_smtlib_files(smt_dir.clone())?;
+			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
+			generate_smtlib_files(smt_dir)?;
 		},
 
 		Commands::Benchmark {
@@ -114,6 +118,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			let stop_tolerance = (*stop_tolerance).unwrap_or(3);
 			let timeout = Duration::from_secs((*timeout_sec).unwrap_or(15 * 60));
 			let continue_on_fail = (*continue_on_fail).unwrap_or(false);
+			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
 
 			let save_dir = if result_dir
 				.clone()
@@ -171,6 +176,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 			graph_dir,
 			result_dir,
 		} => {
+			let graph_dir = graph_dir.clone().unwrap_or(PathBuf::from("graphs/"));
+			let result_dir = result_dir.clone().unwrap_or(PathBuf::from("results/"));
+
 			let mut graph_renderer = GraphRenderer::new(
 				graph_dir.clone(),
 				(1024, 768),
