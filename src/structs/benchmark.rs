@@ -25,6 +25,7 @@ pub enum SmtSolver {
 	Boolector,
 	// STP, // STP Does not support SMTLIB 2.6!
 	Colibri2,
+	MathSAT,
 }
 
 // TODO: TO TEST:
@@ -118,6 +119,7 @@ impl Display for SmtSolver {
 			Boolector => "Boolector",
 			// STP => "STP",
 			Colibri2 => "Colibri2",
+			MathSAT => "MathSAT",
 		})
 	}
 }
@@ -134,6 +136,7 @@ impl SmtSolver {
 			Boolector => "boolector",
 			// STP => "stp",
 			Colibri2 => "./solvers/colibri2",
+			MathSAT => "./solvers/mathsat",
 		}.into()
 	}
 }
@@ -319,7 +322,7 @@ impl Benchmark {
 		let (smt_output, _) = self.console_output;
 		let default_word = self.hash_function.default_word();
 
-		let mut hash = Box::new([default_word; 8]);
+		let mut hash = Box::new([None; 8]);
 		let mut start_blocks = [[default_word; 16]; 2];
 		let mut start_vectors = [[default_word; 8]; 2];
 		let mut states = [BTreeMap::new(), BTreeMap::new()];
@@ -368,6 +371,17 @@ impl Benchmark {
 			}
 		}
 
+		// Trim hash
+		let mut trimmed_hash = Vec::with_capacity(8);
+		for (i, word) in hash.into_iter().enumerate() {
+			if let Some(word) = word {
+				trimmed_hash.push(word);
+			} else if i <= self.hash_function.truncate_to_length().unwrap_or(8) {
+				trimmed_hash.push(self.hash_function.default_word());
+			}
+		}
+
+		// Process messages
 		let mut messages = vec![];
 		for (i, message_states) in states.into_iter().enumerate() {
 			let mut states = vec![];
@@ -387,7 +401,7 @@ impl Benchmark {
 				m: MessageBlock(start_blocks[i]),
 				cv: StartVector::CV(start_vectors[i]),
 				states,
-				expected_hash: OutputHash(hash.clone()),
+				expected_hash: OutputHash(Box::from(trimmed_hash.clone())),
 			});
 		}
 
@@ -405,13 +419,13 @@ impl Benchmark {
 		var: &str,
 		round: usize,
 		val: Word,
-		hash: &mut Box<[Word; 8]>,
+		hash: &mut Box<[Option<Word>; 8]>,
 		start_blocks: &mut [[Word; 16]; 2],
 		start_vectors: &mut [[Word; 8]; 2],
 		states: &mut [BTreeMap<usize, MutableShaState>; 2],
 	) -> Result<(), Box<dyn Error>> {
 		if var == "hash" {
-			hash[round] = val;
+			hash[round] = Some(val);
 		} else {
 			let var_char: char = var.parse()?;
 

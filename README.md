@@ -39,12 +39,13 @@
 
 ### Solver Versions
 
-| **Solver** | **Version** | **License** |             Notes             |
-|-----------:|:-----------:|:-----------:|:-----------------------------:|
-|         Z3 |   4.13.4    |     MIT     |                               |
-|       CVC5 |    1.2.1    |    BSD 3    |                               |
-|      Yices |    2.6.5    |   GPL3.0    |                               |
-|   Bitwuzla |    0.7.0    |     MIT     |                               |
-|  Boolector |    3.2.3    |     MIT     |                               |
-|        STP |    2.3.4    |     MIT     |  Support for SMTLIB 2.0 only  |
-|   Colibri2 |  0.4-dirty  |  LGPLv2.1   | Portable binary in `solvers/` |
+| **Solver** |      **Version**      | **License** |               Notes                |
+|-----------:|:---------------------:|:-----------:|:----------------------------------:|
+|         Z3 |        4.13.4         |     MIT     |                                    |
+|       CVC5 |         1.2.1         |    BSD 3    |                                    |
+|      Yices |         2.6.5         |   GPL3.0    |                                    |
+|   Bitwuzla |         0.7.0         |     MIT     |                                    |
+|  Boolector |         3.2.3         |     MIT     |                                    |
+|        STP |         2.3.4         |     MIT     |    Support for SMTLIB 2.0 only     |
+|   Colibri2 |       0.4-dirty       |  LGPLv2.1   |   Portable binary in `solvers/`    |
+|    MathSAT | 5.6.11 (1a1154baf0ab) |   Custom    | Binary in `solvers/`, autopatchelf |
