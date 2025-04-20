@@ -164,7 +164,7 @@ impl GraphRenderer {
 
 		let path = self.output_dir.join(file_name);
 
-		let mut baseline_data = baseline_data.clone();
+		let mut baseline_data = baseline_data;
 		baseline_data.sort_by_key(|b| b.rounds);
 
 		// Get range for baseline
