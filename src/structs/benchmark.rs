@@ -181,7 +181,7 @@ impl SmtOutputFormat {
 		}.to_string()
 	}
 
-	fn get_value(
+	fn get_base_size(
 		self,
 		capture: &str,
 		hash_function: HashFunction
@@ -328,7 +328,7 @@ impl Benchmark {
 			let msg= capture.get(1);
 			let var = &capture[2];
 			let round: usize = capture[3].parse()?;
-			let val = output_format.get_value(&capture[4], self.hash_function)?;
+			let val = output_format.get_base_size(&capture[4], self.hash_function)?;
 
 			match msg {
 				Some(msg) => {
