@@ -45,9 +45,9 @@ impl BenchmarkRunner {
 
 	// TODO: Split out somehow
 	pub fn run_benchmarks(&self) -> Result<(), Box<dyn Error>> {
-		let solvers = [SmtSolver::Bitwuzla];
+		let solvers = [SmtSolver::Colibri2];
 		let arguments: Vec<SolverArg> = vec![
-			"--sat-solver kissat".into()
+			// "--sat-solver kissat".into()
 		];
 		let hash_functions = [HashFunction::SHA256];
 		let collision_types = [CollisionType::Standard];
@@ -55,9 +55,9 @@ impl BenchmarkRunner {
 		for solver in solvers {
 			for hash_function in hash_functions {
 				for collision_type in collision_types {
-					for arg in arguments.iter() {
+					// for arg in arguments.iter() {
 						let mut sequential_fails: u8 = 0;
-						for rounds in [5, 18] {
+						for rounds in 0..=20 {
 							let smt_file = self.retrieve_file(
 								hash_function,
 								collision_type,
@@ -70,7 +70,8 @@ impl BenchmarkRunner {
 								collision_type,
 								solver,
 								smt_file,
-								vec![arg.clone()],
+								// vec![arg.clone()],
+								vec![],
 							);
 
 							self.handle_result(result, &mut sequential_fails)?;
@@ -80,7 +81,7 @@ impl BenchmarkRunner {
 								break;
 							}
 						}
-					}
+					// }
 				}
 			}
 		}
