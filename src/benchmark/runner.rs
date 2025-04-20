@@ -49,7 +49,7 @@ impl BenchmarkRunner {
 		let arguments: Vec<SolverArg> = vec![
 			// "--sat-solver kissat".into()
 		];
-		let hash_functions = [HashFunction::SHA256];
+		let hash_functions = [HashFunction::SHA224, HashFunction::SHA256, HashFunction::SHA512];
 		let collision_types = [CollisionType::Standard];
 
 		for solver in solvers {
