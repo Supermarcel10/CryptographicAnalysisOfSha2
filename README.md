@@ -16,6 +16,7 @@
   * [🖥️ Runners](#-runners)
     * [Runner Specifications](#runner-specifications)
     * [Solver Versions](#solver-versions)
+  * [🔬 Testing](#-testing)
   * [📁 Project Structure](#-project-structure)
   * [🔄 Dependencies](#-dependencies)
   * [➕️ Forks & Contributions](#-forks--contributions)
@@ -74,6 +75,10 @@ Every subcommand and flag has been thorougly documented, with defaults and enume
 |        STP |         2.3.4         |     MIT     |    Support for SMTLIB 2.0 only     |
 |   Colibri2 |       0.4-dirty       |  LGPLv2.1   |   Portable binary in `solvers/`    |
 |    MathSAT | 5.6.11 (1a1154baf0ab) |   Custom    | Binary in `solvers/`, autopatchelf |
+
+## 🔬 Testing
+Some segments of code have unit tests in order to assert corectness over changes.
+In order to run these tests invoke `cargo test`.
 
 ## 📁 Project Structure
 - `docs/`: Source and produced documentation.
