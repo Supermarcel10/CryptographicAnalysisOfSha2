@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fs;
+use std::ops::Range;
 use std::path::{PathBuf};
 use std::time::{Duration};
 use clap::{Parser, Subcommand};
@@ -48,17 +49,25 @@ enum Commands {
 		#[arg(required = true, long)]
 		solver: Vec<SmtSolver>,
 
-		/// Argument to select hash function. Use separate `--hash-function <HASH_FUNCTION>` statements for multiple
+		/// Argument to select hash function. Use separate `--hash-function <HASH_FUNCTION>` statements for multiple hash functions
 		#[arg(required = true, long)]
 		hash_function: Vec<HashFunction>,
 
-		/// Argument to select collision type. Use separate `--collision-type <COLLISION_TYPE>` statements for multiple
+		/// Argument to select collision type. Use separate `--collision-type <COLLISION_TYPE>` statements for multiple collision types
 		#[arg(required = true, long)]
 		collision_type: Vec<CollisionType>,
 
-		// /// Argument to set range of compression rounds. Default 1..max
-		// #[arg(long)]
-		// round_range: Range<u8>,
+		/// Argument to set (non-inclusive) range of compression rounds. Input with `--round-range <MIN>..<MAX>`. Default 1..hash function max
+		#[arg(long, value_parser = parse_range)]
+		round_range: Option<Range<u8>>,
+
+		/// Argument to set the solver argument sets (combinations of solver arguments).
+		/// An arugment set can contain multiple arguments which will all be executed on the solver.
+		/// To test each argument separately, set each solver argument as a separate --arg-set.
+		/// Use separate `--arg-set "<ARG_SET>"` statements for multiple argument sets.
+		/// Default <No Args>
+		#[arg(long, allow_hyphen_values = true)]
+		arg_set: Option<Vec<String>>,
 
 		/// The number of required sequential failures to stop. Default 3
 		#[arg(short, long)]
@@ -147,7 +156,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 			solver: solvers,
 			hash_function: hash_functions,
 			collision_type: collision_types,
-			// round_range,
+			round_range,
+			arg_set,
 			stop_tolerance,
 			timeout_sec,
 			smt_dir,
@@ -156,7 +166,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 			encoding_type,
 			is_rerun,
 		} => {
-			// let round_range = round_range.unwrap_or(1..80);
+			let round_range = round_range.clone().unwrap_or(1..80);
+			let arg_set = arg_set.clone().unwrap_or(Vec::with_capacity(0));
 			let stop_tolerance = (*stop_tolerance).unwrap_or(3);
 			let timeout = Duration::from_secs((*timeout_sec).unwrap_or(15 * 60));
 			let continue_on_fail = (*continue_on_fail).unwrap_or(false);
@@ -189,8 +200,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 				solvers.clone(),
 				hash_functions.clone(),
 				collision_types.clone(),
-				1..21, // TODO
-				vec![], // TODO
+				round_range,
+				arg_set,
 			)?;
 		}
 
@@ -326,6 +337,16 @@ fn load_mapped(
 	}
 
 	Ok(map)
+}
+
+fn parse_range(s: &str) -> Result<Range<u8>, String> {
+	let (start, end) = s.split_once("..")
+		.ok_or_else(|| format!("Invalid range format: '{}'", s))?;
+
+	Ok(Range {
+		start: start.parse().map_err(|e| format!("Start: {}", e))?,
+		end: end.parse().map_err(|e| format!("End: {}", e))?
+	})
 }
 
 // TODO: Finish DB migration stuff using rusqlite

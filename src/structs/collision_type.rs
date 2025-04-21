@@ -3,10 +3,13 @@ use std::fmt::{Display, Formatter};
 #[derive(Debug, Eq, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize, clap::ValueEnum)]
 pub enum CollisionType {
 	/// Use the fixed iv for both m0 and m1, where m0 != m1
+	#[value(name = "std")]
 	Standard,
 	/// Use a shared cv for both m0 and m1, where m0 != m1
+	#[value(name = "sfs")]
 	SemiFreeStart,
 	/// Use cv0 for m0, cv1 for m1, where cv0 != cv1 and m0 ?= m1
+	#[value(name = "fs")]
 	FreeStart,
 }
 
