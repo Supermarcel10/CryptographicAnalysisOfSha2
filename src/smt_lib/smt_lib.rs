@@ -485,7 +485,7 @@ pub fn generate_smtlib_files(
 
 	for sha_function in [SHA224, SHA256, SHA512] {
 		for collision_type in [Standard, SemiFreeStart, FreeStart] {
-			for rounds in 0..=sha_function.max_rounds() {
+			for rounds in 1..=sha_function.max_rounds() {
 				let mut builder = SmtBuilder::new(sha_function, rounds, collision_type)?;
 				builder.brute_force_encoding();
 				builder.to_file(save_path.join(format!("{sha_function}_{collision_type}_{rounds}.smt2")))?;
