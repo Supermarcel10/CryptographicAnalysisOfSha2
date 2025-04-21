@@ -30,7 +30,11 @@ impl DataRetriever {
 	}
 
 	fn cache_all(&mut self) -> Result<(), Box<dyn Error>> {
-		let benchmarks = Benchmark::load_all(&self.data_dir, true)?;
+		let benchmarks: Vec<_> = Benchmark::load_all(&self.data_dir, true)?
+			.into_iter()
+			.filter(|b| b.is_valid != Some(false))
+			.collect();
+
 		if !benchmarks.is_empty() {
 			self.all_results = Some(benchmarks);
 		}
