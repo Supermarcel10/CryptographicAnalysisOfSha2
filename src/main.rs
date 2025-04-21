@@ -1,4 +1,7 @@
 use std::error::Error;
+use std::fs;
+use std::fs::File;
+use std::io::Write;
 use std::path::{PathBuf};
 use std::time::{Duration};
 use clap::{Parser, Subcommand};
@@ -8,6 +11,7 @@ use crate::data::data_retriever::DataRetriever;
 use crate::graphing::graph_renderer::GraphRenderer;
 use crate::sha::{MessageBlock, Sha, StartVector};
 use crate::smt_lib::smt_lib::generate_smtlib_files;
+use crate::structs::benchmark::Benchmark;
 use crate::structs::hash_function::HashFunction;
 
 #[cfg(not(unix))]
@@ -81,11 +85,15 @@ enum Commands {
 		// start_vector: Option<StartVector>,
 	},
 
-	// TODO: Add verify
-	//
-	// Verify {
-	//
-	// },
+	/// Load, verify and display result files
+	Load {
+		/// Path to a result file, or a directory
+		result_path: PathBuf,
+
+		/// Should directory scan be recursive. Default true
+		#[arg(short, long)]
+		recursive: Option<bool>,
+	},
 
 	/// Render result graphs
 	Graph {
@@ -172,6 +180,37 @@ fn main() -> Result<(), Box<dyn Error>> {
 			println!("{}", result.hash);
 		},
 
+		Commands::Load {
+			result_path,
+			recursive,
+		} => {
+			let recursive = recursive.unwrap_or(true);
+
+			let benchmarks_with_files = load_mapped(result_path, recursive)?;
+			let show_file_names = benchmarks_with_files.len() > 1;
+			for (mut benchmark, file_path) in benchmarks_with_files {
+				let file_name = file_path
+					.file_name()
+					.unwrap()
+					.to_str()
+					.ok_or("Failed to read file")?;
+
+				if show_file_names {
+					println!("{file_name}");
+				}
+
+				match benchmark.parse_output() {
+					Ok(output) => match output {
+						None => println!("UNSAT\n"),
+						Some(colliding_pair) => println!("{}\n", colliding_pair),
+					}
+					Err(err) => println!("{err}"),
+				}
+
+				println!("---\n")
+			}
+		}
+
 		Commands::Graph {
 			graph_dir,
 			result_dir,
@@ -205,6 +244,31 @@ fn main() -> Result<(), Box<dyn Error>> {
 	}
 
 	Ok(())
+}
+
+fn load_mapped(
+	dir_location: &PathBuf,
+	recursive: bool,
+) -> Result<Vec<(Benchmark, PathBuf)>, Box<dyn Error>> {
+	let mut map = Vec::new();
+
+	if dir_location.is_file() {
+		map.push((Benchmark::load(dir_location)?, dir_location.clone()));
+		return Ok(map);
+	}
+
+	for dir_entry in fs::read_dir(dir_location)? {
+		if let Ok(entry) = dir_entry {
+			let metadata = entry.metadata()?;
+			if recursive && metadata.is_dir() {
+				map.extend(load_mapped(&entry.path(), true)?);
+			} else if metadata.is_file() {
+				map.push((Benchmark::load(&entry.path())?, entry.path()));
+			}
+		}
+	}
+
+	Ok(map)
 }
 
 // TODO: Finish DB migration stuff using rusqlite
