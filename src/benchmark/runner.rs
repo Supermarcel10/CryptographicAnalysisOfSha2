@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::io::{BufReader, Read};
+use std::ops::Range;
 use std::os::unix::prelude::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, ExitStatus, Stdio};
@@ -8,7 +9,7 @@ use chrono::Local;
 use nix::sys::signal::{killpg, Signal};
 use nix::unistd::Pid;
 use wait_timeout::ChildExt;
-use crate::smt_lib::encoding_types::EncodingType;
+use crate::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
@@ -24,70 +25,67 @@ pub enum BenchmarkError {
 pub struct BenchmarkRunner {
 	stop_tolerance: u8,
 	timeout: Duration,
+	smt_retriever: SmtRetriever,
 	benchmark_save_dir: Option<PathBuf>,
 	continue_on_failure: bool,
+	encoding_type: EncodingType,
+	is_rerun: bool,
 }
 
 impl BenchmarkRunner {
 	pub fn new(
 		stop_tolerance: u8,
 		timeout: Duration,
+		smt_retriever: SmtRetriever,
 		benchmark_save_dir: Option<PathBuf>,
 		continue_on_failure: bool,
+		encoding_type: EncodingType,
+		is_rerun: bool,
 	) -> Self {
 		BenchmarkRunner {
 			stop_tolerance,
 			timeout,
+			smt_retriever,
 			benchmark_save_dir,
 			continue_on_failure,
+			encoding_type,
+			is_rerun,
 		}
 	}
 
-	// TODO: Split out somehow
-	pub fn run_benchmarks(&self) -> Result<(), Box<dyn Error>> {
-		let solvers = [SmtSolver::Colibri2];
-		let arguments: Vec<SolverArg> = vec![
-			// "--sat-solver kissat".into()
-		];
-		let hash_functions = [HashFunction::SHA224, HashFunction::SHA256, HashFunction::SHA512];
-		let collision_types = [CollisionType::Standard];
-
+	pub fn run_benchmarks(
+		&self,
+		solvers: Vec<SmtSolver>,
+		hash_functions: Vec<HashFunction>,
+		collision_types: Vec<CollisionType>,
+		round_range: Range<u8>,
+		arguments: Vec<SolverArg>,
+	) -> Result<(), Box<dyn Error>> {
 		for solver in solvers {
-			for hash_function in hash_functions {
-				for collision_type in collision_types {
-					// for arg in arguments.iter() {
-						let mut sequential_fails: u8 = 0;
-						for rounds in 0..=20 {
-							let smt_file = self.retrieve_file(
-								hash_function,
-								collision_type,
-								rounds,
-							);
-
-							let mut result = self.run_solver_with_benchmark(
-								hash_function,
-								rounds,
-								collision_type,
+			for hash_function in &hash_functions {
+				for collision_type in &collision_types {
+					let mut sequential_fails = 0;
+					if arguments.len() == 0 {
+						self.invoke(
+							solver,
+							hash_function,
+							collision_type,
+							round_range.clone(),
+							None,
+							&mut sequential_fails,
+						)?;
+					} else {
+						for arg in arguments.clone() {
+							self.invoke(
 								solver,
-								smt_file,
-								// vec![arg.clone()],
-								vec![],
-							);
-
-							if let Err(err) = self.handle_result(&mut result, &mut sequential_fails) {
-								if !self.continue_on_failure {
-									return Err(err);
-								}
-
-								continue;
-							}
-
-							if self.stop_tolerance != 0 && self.stop_tolerance == sequential_fails {
-								println!("Failed {sequential_fails} in a row!\n");
-								break;
-							}
+								hash_function,
+								collision_type,
+								round_range.clone(),
+								Some(arg),
+								&mut sequential_fails,
+							)?;
 						}
-					// }
+					}
 				}
 			}
 		}
@@ -95,14 +93,49 @@ impl BenchmarkRunner {
 		Ok(())
 	}
 
-	fn retrieve_file(
+	fn invoke(
 		&self,
-		hash_function: HashFunction,
-		collision_type: CollisionType,
-		rounds: u8,
-	) -> String {
-		// TODO: Implement properly to do retrieval
-		format!("smt/{hash_function}_{collision_type}_{rounds}.smt2")
+		solver: SmtSolver,
+		hash_function: &HashFunction,
+		collision_type: &CollisionType,
+		round_range: Range<u8>,
+		arg: Option<SolverArg>,
+		sequential_fails: &mut u8,
+	) -> Result<(), Box<dyn Error>> {
+		for rounds in round_range {
+			let smt_file = self.smt_retriever.retrieve_file(
+				*hash_function,
+				*collision_type,
+				rounds,
+				self.encoding_type.clone(),
+			)?;
+
+			let mut result = self.run_solver_with_benchmark(
+				*hash_function,
+				rounds,
+				*collision_type,
+				solver,
+				self.is_rerun,
+				self.encoding_type.clone(),
+				smt_file,
+				arg.clone(),
+			);
+
+			if let Err(err) = self.handle_result(&mut result, sequential_fails) {
+				if !self.continue_on_failure {
+					return Err(err);
+				}
+
+				continue;
+			}
+
+			if self.stop_tolerance != 0 && self.stop_tolerance == *sequential_fails {
+				println!("Failed {} in a row!\n", sequential_fails);
+				break;
+			}
+		}
+
+		Ok(())
 	}
 
 	fn handle_result(
@@ -156,8 +189,10 @@ impl BenchmarkRunner {
 		rounds: u8,
 		collision_type: CollisionType,
 		solver: SmtSolver,
-		smt_file: String,
-		arguments: Vec<SolverArg>,
+		is_rerun: bool,
+		encoding: EncodingType,
+		smt_file: PathBuf,
+		arguments: Option<SolverArg>,
 	) -> Result<Benchmark, Box<dyn Error>> {
 		if !check_command_present(&solver.command())? {
 			return Err(Box::from(BenchmarkError::SolverNotFound { solver: solver.command() }));
@@ -169,12 +204,15 @@ impl BenchmarkRunner {
 		];
 
 		let mut split_args: Vec<String> = vec![];
-		for arg in arguments.iter() {
-			split_args.extend(arg.split(" ").map(String::from));
+		let mut has_args = false;
+		if let Some(args) = &arguments {
+			split_args.extend(args.split(" ").map(String::from));
+			has_args = true;
 		}
 
+		let file_path = smt_file.to_str().ok_or("Failed to get smt file path")?;
 		full_args.extend(split_args);
-		full_args.push(smt_file.clone());
+		full_args.push(file_path.into());
 
 		let date_time = Local::now().to_utc();
 		let start_time = Instant::now();
@@ -186,9 +224,13 @@ impl BenchmarkRunner {
 			.spawn()?;
 
 		let pid = child.id();
-		let spc = if arguments.len() > 0 { " " } else { "" };
-		let arg_string = arguments.join(" ");
-		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}{spc}{arg_string}; SMT solver PID: {pid}\nFile: {smt_file}");
+		let arg_str = if let Some(args) = &arguments {
+			if args.len() > 0 {
+				&format!(" {args}")
+			} else { "" }
+		} else { "" };
+
+		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}{arg_str}; SMT solver PID: {pid}\nFile: {file_path}");
 
 		// Await process exit
 		let status = child.wait_timeout(self.timeout)?;
@@ -231,7 +273,7 @@ impl BenchmarkRunner {
 			}
 		}
 
-		let is_baseline = arguments.is_empty() && self.timeout == Duration::from_secs(900);
+		let is_baseline = !has_args && self.timeout == Duration::from_secs(900);
 
 		Ok(Benchmark {
 			date_time,
@@ -246,8 +288,8 @@ impl BenchmarkRunner {
 			console_output: (cout, cerr),
 			is_valid: None,
 			is_baseline,
-			is_rerun: false, // TODO
-			encoding: EncodingType::BruteForce, // TODO
+			is_rerun,
+			encoding,
 			stop_tolerance: self.stop_tolerance,
 			timeout: self.timeout,
 		})

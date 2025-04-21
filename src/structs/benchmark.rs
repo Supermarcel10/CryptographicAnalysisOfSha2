@@ -10,7 +10,7 @@ use chrono::{DateTime, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use crate::sha::{MessageBlock, OutputHash, StartVector, Word};
-use crate::smt_lib::encoding_types::EncodingType;
+use crate::smt_lib::smt_retriever::EncodingType;
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
 use crate::structs::sha_state::ShaState;
@@ -242,7 +242,7 @@ impl MutableShaState {
 pub struct Benchmark {
 	pub date_time: DateTime<Utc>,
 	pub solver: SmtSolver,
-	pub arguments: Vec<SolverArg>,
+	pub arguments: Option<SolverArg>,
 	pub hash_function: HashFunction,
 	pub rounds: u8,
 	pub collision_type: CollisionType,
@@ -285,13 +285,13 @@ impl Benchmark {
 		Ok(path)
 	}
 
-	pub fn load(file: &Path) -> Result<Benchmark, Box<dyn Error>> {
+	pub fn load(file: &Path) -> Result<Self, Box<dyn Error>> {
 		let contents = fs::read(file)?;
-		let benchmark: Benchmark = serde_json::from_slice(&contents)?;
+		let benchmark: Self = serde_json::from_slice(&contents)?;
 		Ok(benchmark)
 	}
 
-	pub fn load_all(dir_location: &Path, recursively: bool) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+	pub fn load_all(dir_location: &Path, recursively: bool) -> Result<Vec<Self>, Box<dyn Error>> {
 		let mut benchmarks = vec![];
 
 		if dir_location.is_file() {

@@ -58,7 +58,7 @@ impl DataRetriever {
 			if b.is_baseline
 				&& b.hash_function == hash_function
 				&& b.collision_type == collision_type
-				&& b.arguments.is_empty()
+				&& b.arguments.is_none()
 			{
 				if b.is_rerun {
 					reruns.push(b);
@@ -103,7 +103,7 @@ impl DataRetriever {
 		collision_type: CollisionType,
 		prefer_test_reruns: bool,
 		arg_identifier: &str,
-	) -> Result<BTreeMap<Vec<SolverArg>, Vec<Benchmark>>, Box<dyn Error>> {
+	) -> Result<BTreeMap<SolverArg, Vec<Benchmark>>, Box<dyn Error>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
 		}
@@ -134,7 +134,7 @@ impl DataRetriever {
 
 		let mut map = BTreeMap::new();
 		for benchmark in baselines {
-			let key = benchmark.arguments.clone();
+			let key = benchmark.arguments.clone().unwrap_or("".into());
 			map.entry(key)
 				.or_insert_with(Vec::new)
 				.push(benchmark);

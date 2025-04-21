@@ -9,7 +9,9 @@ use crate::data::data_retriever::DataRetriever;
 use crate::graphing::graph_renderer::GraphRenderer;
 use crate::sha::{MessageBlock, Sha, StartVector, Word};
 use crate::smt_lib::smt_lib::generate_smtlib_files;
-use crate::structs::benchmark::Benchmark;
+use crate::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
+use crate::structs::benchmark::{Benchmark, SmtSolver};
+use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
 
 #[cfg(not(unix))]
@@ -87,8 +89,9 @@ enum Commands {
 
 	/// Load, verify and display result files
 	Load {
-		/// Path to a result file, or a directory
-		result_path: PathBuf,
+		/// Path to a result file, or a directory. Default `results/`
+		#[arg(short = 'R', long)]
+		result_path: Option<PathBuf>,
 
 		/// Should directory scan be recursive. Default true
 		#[arg(short, long)]
@@ -142,11 +145,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 			let runner = BenchmarkRunner::new(
 				stop_tolerance,
 				timeout,
+				SmtRetriever::new(smt_dir)?,
 				save_dir,
 				continue_on_fail,
+				EncodingType::BruteForce, // TODO
+				false, // TODO
 			);
 
-			runner.run_benchmarks()?;
+			// TODO
+			runner.run_benchmarks(
+				vec![SmtSolver::Bitwuzla],
+				vec![HashFunction::SHA256],
+				vec![CollisionType::Standard],
+				1..21,
+				vec![],
+			)?;
 		},
 
 		Commands::Sha2 {
@@ -195,9 +208,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 			result_path,
 			recursive,
 		} => {
+			let result_path = result_path.clone().unwrap_or(PathBuf::from("results/"));
 			let recursive = recursive.unwrap_or(true);
 
-			let benchmarks_with_files = load_mapped(result_path, recursive)?;
+			let benchmarks_with_files = load_mapped(&result_path, recursive)?;
 			let show_file_names = benchmarks_with_files.len() > 1;
 			for (mut benchmark, file_path) in benchmarks_with_files {
 				let file_name = file_path

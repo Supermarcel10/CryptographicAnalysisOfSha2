@@ -137,7 +137,7 @@ impl GraphRenderer {
 	fn create_baseline_graph(
 		&self,
 		baseline_data: Vec<Benchmark>,
-		data: BTreeMap<Vec<SolverArg>, Vec<Benchmark>>,
+		data: BTreeMap<SolverArg, Vec<Benchmark>>,
 		argument_name: &str,
 	) -> Result<PathBuf, Box<dyn Error>> {
 		if baseline_data.len() == 0 {
@@ -256,7 +256,7 @@ impl GraphRenderer {
 				data,
 				true,
 				true,
-				&args.join(" "),
+				&args,
 				Some(self.color_palette[i].to_rgba()),
 			)?
 		}
