@@ -166,7 +166,7 @@ impl SmtBuilder {
 		}
 	}
 
-	pub(super) fn define_starting_vector(&mut self) {
+	pub(super) fn define_initial_vector(&mut self) {
 		self.comment("Define H constants (IV/CV)");
 		use crate::structs::collision_type::CollisionType::*;
 
