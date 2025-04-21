@@ -170,9 +170,7 @@ impl GraphRenderer {
 						filled: false,
 						stroke_width: self.line_thickness,
 					}
-				))?
-				.label(label)
-				.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
+				))?;
 
 			// Define only once
 			if !was_legend_defined {
