@@ -293,6 +293,12 @@ impl Benchmark {
 
 	pub fn load_all(dir_location: &Path, recursively: bool) -> Result<Vec<Benchmark>, Box<dyn Error>> {
 		let mut benchmarks = vec![];
+
+		if dir_location.is_file() {
+			benchmarks.push(Self::load(dir_location)?);
+			return Ok(benchmarks);
+		}
+
 		for dir_entry in fs::read_dir(dir_location)? {
 			if let Ok(entry) = dir_entry {
 				let metadata = entry.metadata()?;
