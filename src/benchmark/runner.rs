@@ -102,7 +102,12 @@ impl BenchmarkRunner {
 		arg: Option<SolverArg>,
 		sequential_fails: &mut u8,
 	) -> Result<(), Box<dyn Error>> {
-		for rounds in round_range {
+		// Ensure range max does not exceed hash function max rounds.
+		let hash_max = hash_function.max_rounds();
+		let min = round_range.clone().min().unwrap_or(1);
+		let max = round_range.clone().max().unwrap_or(hash_max).min(hash_max);
+
+		for rounds in min..max {
 			let smt_file = self.smt_retriever.retrieve_file(
 				*hash_function,
 				*collision_type,
