@@ -100,11 +100,10 @@ impl SmtBuilder {
 		self.title("ASSERTIONS");
 		if self.collision_type == CollisionType::FreeStart {
 			self.assert_initial_vector_different();
-			self.break_line();
 		} else {
 			self.assert_message_difference();
-			self.break_line();
 		}
+		self.break_line();
 
 		self.assert_hash_difference_equal();
 
