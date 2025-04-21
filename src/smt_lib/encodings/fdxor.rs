@@ -66,7 +66,7 @@ impl SmtBuilder {
 
 		self.comment("Input message");
 		let mut message = String::new();
-		for i in 0..=self.rounds.min(7) {
+		for i in 0..=self.rounds.min(8) - 1 {
 			message += &format!("m0_w{i} m1_w{i} ");
 		}
 		self.smt += &format!("(get-value ({}))\n", message.trim());
@@ -128,48 +128,3 @@ impl SmtBuilder {
 		self.get_full_model_differential();
 	}
 }
-
-// // AND
-// (define-fun d2 () BV4 (bvand X_d Y_d))
-// (define-fun b2 () BV4 (bvand (bvand X_f Y_f) (bvnot d2)))
-// (define-fun c2 () BV4 (bvand (bvand X_g Y_g) (bvnot d2)))
-// (define-fun a2 () BV4 (bvnot (bvor d2 (bvor c2 b2))))
-
-// // OR
-// (define-fun a2 () BV4 (bvand X_a Y_a))
-// (define-fun b2 () BV4 (bvnot (bvor X_g Y_g a2)))
-// (define-fun c2 () BV4 (bvnot (bvor X_f Y_f a2)))
-// (define-fun d2 () BV4 (bvnot (bvor a2 b2 c2)))
-
-// // XOR
-// (define-fun a2 () BV4
-// (bvor (bvand X_a Y_a)
-// (bvand X_b Y_b)
-// (bvand X_c Y_c)
-// (bvand X_d Y_d)
-// )
-// )
-//
-// (define-fun b2 () BV4
-// (bvor (bvand X_a Y_b)
-// (bvand X_b Y_a)
-// (bvand X_c Y_d)
-// (bvand X_d Y_c)
-// )
-// )
-//
-// (define-fun c2 () BV4
-// (bvor (bvand X_a Y_c)
-// (bvand X_c Y_a)
-// (bvand X_b Y_d)
-// (bvand X_d Y_b)
-// )
-// )
-//
-// (define-fun d2 () BV4
-// (bvor (bvand X_a Y_d)
-// (bvand X_d Y_a)
-// (bvand X_b Y_c)
-// (bvand X_c Y_b)
-// )
-// )
