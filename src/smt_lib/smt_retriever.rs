@@ -11,6 +11,7 @@ use crate::structs::hash_function::HashFunction;
 pub enum EncodingType {
 	BruteForce,
 	DeltaXOR,
+	FullDeltaXOR,
 	Base4,
 	Base4WithMajOr,
 }
@@ -20,6 +21,7 @@ impl Display for EncodingType {
 		let et = match self {
 			EncodingType::BruteForce => "",
 			EncodingType::DeltaXOR => "DXOR",
+			EncodingType::FullDeltaXOR => "FDXOR",
 			EncodingType::Base4 => "BASE4",
 			EncodingType::Base4WithMajOr => "BASE4+OR",
 		};

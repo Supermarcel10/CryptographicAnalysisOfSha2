@@ -50,6 +50,7 @@ impl SmtBuilder {
 		match encoding_type {
 			EncodingType::BruteForce => self.brute_force_encoding(),
 			EncodingType::DeltaXOR => self.dxor_encoding(),
+			EncodingType::FullDeltaXOR => self.full_dxor_encoding(),
 			EncodingType::Base4 => {},
 			EncodingType::Base4WithMajOr => {},
 		};
@@ -65,7 +66,7 @@ pub fn generate_smtlib_files(
 
 	for hash_function in [SHA256] {
 		for collision_type in [Standard] {
-			for encoding in [BruteForce, DeltaXOR] {
+			for encoding in [FullDeltaXOR] {
 				for rounds in 1..=hash_function.max_rounds() {
 					let mut builder = SmtBuilder::new(hash_function, rounds, collision_type)?;
 					builder.encoding(encoding);
