@@ -1,7 +1,5 @@
 use std::error::Error;
 use std::fs;
-use std::fs::File;
-use std::io::Write;
 use std::path::{PathBuf};
 use std::time::{Duration};
 use clap::{Parser, Subcommand};
