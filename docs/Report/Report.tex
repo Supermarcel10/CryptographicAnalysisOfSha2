@@ -1,0 +1,286 @@
+\documentclass[a4paper]{report}
+
+\usepackage[margin=2.5cm]{geometry} % set margins
+\usepackage{amsmath} % for align
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{natbib} % citation styling
+\usepackage[dvipsnames]{xcolor} % text colors
+\usepackage[utf8]{inputenc}
+\usepackage{multirow} % merged rows for table
+\usepackage[toc]{glossaries}
+\usepackage[toc]{appendix} % appendix
+
+
+
+% TODO: FONT SELECTION
+
+% CODE FORMATTING
+\usepackage{listings}
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{gray},
+    backgroundcolor=\color{white},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black}
+}
+
+% HEADING FORMATTING
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+{\normalfont\bfseries\Large}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-30pt}{20pt}
+
+% PARAGRAPH FORMATTING
+\usepackage{parskip}
+\setlength{\parskip}{0.5em}
+\usepackage{setspace}
+\onehalfspacing
+
+% HYPERREFERENCES
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+}
+
+
+
+%% Glossary
+\makeglossaries
+% SHA-2 Terminology
+\newglossaryentry{sha2}{
+    name={Secure Hashing Algorithm 2 (SHA-2)},
+    description={DEFINE ME!}
+}
+\newglossaryentry{hash function}{
+  name={Hash Function},
+  description={A cryptographic algorithm that deterministically maps arbitrary-length input data to a fixed-size hash digest, ensuring properties like collision resistance, preimage resistance, and computational efficiency for verifying data integrity and authenticity}
+}
+\newglossaryentry{hash digest}{
+  name={Hash Digest},
+  description={Also known as simply "hash", is a fixed-size output produced by a hash function}
+}
+\newglossaryentry{compression}{
+  name={Compression},
+  description={A function that combines the current chaining vector and a message block to produce the next state}
+}
+\newglossaryentry{expansion}{
+  name={Expansion},
+  description={Preprocessing step where the message block is expanded into a schedule of words for use in hash computation rounds}
+}
+\newglossaryentry{truncation}{
+    name={Truncation},
+    description={The process of shortening the final hash digest to a specified bit-length, as defined by the \cite{secure_hash_standard}}
+}
+\newglossaryentry{message}{
+  name={Message},
+  description={Input data processed by the hash function, padded and divided into fixed-size blocks for hashing, as defined by the \cite{secure_hash_standard}}
+}
+
+% Vector Types
+\newglossaryentry{IV}{
+    name={Initial Vector (IV)},
+    description={Predefined initial constants, based on hash function used, to initialize the algorithm's state before processing the input message}
+}
+\newglossaryentry{CV}{
+    name={Chaining Vector (CV)},
+    description={Intermediate state values created during message expansion, and used as input for processing each given block iteratively}
+}
+
+% Collition Types
+\newglossaryentry{FS}{
+    name={Free-start collision (FS)},
+    description={A free-start collision involves finding two messages, either distinct or identical, that produce identical hash digests, where each message utilies its own distinct chosen IV}
+}
+\newglossaryentry{SFS}{
+    name={Semi-free-start collision (SFS)},
+    description={A semi-free-start collision involved finding two distinct messages that produce identical hash digests under a chosen IV}
+}
+\newglossaryentry{STD}{
+    name={Standard collision (STD)},
+    description={A standard collision involves finding two distinct messages that produce identical hash digests under a fixed initial value. This is the classic collision resistance security property required of cryptographic hash functions}
+}
+
+% Cryptanalysis Terms
+\newglossaryentry{collision}{
+  name={Collision},
+  description={A security vulnerability where two distinct inputs produce the same hash digest}
+}
+
+\newglossaryentry{differential}{
+  name={Differential},
+  description={Controlled differences in input messages analyzed to trace propagation through hash rounds}
+}
+
+% SMT Terms
+\newglossaryentry{smt}{
+  name={SMT},
+  description={A Satisfiability Modulo Theory (SMT) solver is a tool that determines the satisfiability of logical formulas with respect to combinations of background theories}
+}
+
+
+
+\title{\textbf{Improving SHA-2 Collisions Using Satisfiability Modulo Theory (SMT) Solvers}}
+\author{Barlik Marcel \\ City St George's University of London \\ marcel.barlik@citystgeorges.ac.uk}
+
+
+
+\begin{document}
+\maketitle
+
+
+\section{Abstract}
+\textcolor{red}{TODO!}
+
+
+\tableofcontents
+\setcounter{tocdepth}{3}
+
+
+\section{Introduction}
+\paragraph{
+    This research paper investigates potential measurable quantifiable performance differences in \gls{smt} solvers and their parameters.
+    Ideally, this helps shape future research with the knowledge and understanding of impacts certain solving lemmas make on \gls{sha2} collisions.
+}
+
+\paragraph{
+    \textcolor{orange}{Utilise unexplored opportunities that have arisen from advances in \cite{y_et_al_2024}. This research will expand on the novel concept of using a \gls{smt} solver for practical \gls{collision}s, using the principles and mathematics described, in addition to their code as a reference.}
+}
+
+\subsection{Research Questions}
+\begin{center}
+  \begin{enumerate}
+      \item Does using a more effective SMT solver yield better SHA-256 collision results?
+    \item Can encodings provided in the research by \cite{y_et_al_2024} be improved upon, aiming for better practical SHA-256 collisions?
+  \end{enumerate}
+\end{center}
+
+
+\section{Codebase}
+\subsection{Information}
+\paragraph{
+    All code is written in Rust (rustc version 1.85.1), compiled with the provided LLVM backend, and linked with mold (version 2.37.1). \cite{rust}, \cite{mold}
+}
+
+\paragraph{
+    The code is licensed under CC BY-NC-SA 4.0, allowing free use with attribution for further research, while limiting any commercial use. \cite{cc_by-nc-sa}
+}
+
+\paragraph{
+    Repository for the code can be found here, with further build information in the README.md file:
+}
+
+\begin{center}
+    \url{https://github.com/Supermarcel10/CSG-IN3007}
+\end{center}
+
+
+\subsection{Functionality}
+\paragraph{
+    The functionality of the software is split into multiple parts, working together to form a working package:
+}
+
+\begin{itemize}
+    \item SMTLIB Generation
+    \item Benchmarking
+    \item Verification
+    \item Graph Plotting
+\end{itemize}
+
+
+\section{Methodology}
+\subsection{Benchmarking}
+In order to obtain quantifiable results, benchmarks were used in order to obtain time and memory information.
+
+
+An X86\_64 machine was set up for this, with no background tasks or workers, and an otherwise fresh installation of linux.
+Each run was ran sequentially, as to ensure no performance degradation, with a 15 minute timeout, and stop tloerance of 3.
+The parameters, hardware and software were used in this specific configuraiton, for all figures presented, unless otherwise specified.
+
+The full runner specification:
+\begin{center}
+    \begin{tabular}{|r|c|}
+        \hline
+        & \textbf{Runner Specification} \\
+        \hline
+        \textbf{CPU} & AMD Ryzen 9 5900X \\
+        \textbf{MEM} & 4 x 32GiB DDR4 3600MHz CL 36 \\
+        \textbf{OS} & NixOS 25.05 (Warbler) x86\_64 \\
+        \textbf{KERNEL} & Linux Realtime 6.6.77-rt50 \\
+        \hline
+    \end{tabular}
+\end{center}
+
+\begin{center}
+    \begin{tabular}{|r|c|}
+        \hline
+        \textbf{Solver} & \textbf{Version} \\
+        \hline
+        Z3 & 4.13.4 \\
+        CVC5 & 1.2.1 \\
+        Yices & 2.6.5 \\
+        Bitwuzla & 0.7.0 \\
+        Boolector & 3.2.3 \\
+        STP & 2.3.4 \\
+        \hline
+    \end{tabular}
+\end{center}
+% TODO: Add footnote about Bitwuzla issue
+% TODO: Add references to all of these tools
+
+
+\section{Findings}
+Summary of collision attacks on SHA-2.
+Time in seconds, memory in MiB.
+
+\begin{center}
+\begin{tabular}{c c c c c c c c}
+    Hash Function & Attack Type & Collision Type & Rounds & Time & Memory & References & Year \\
+    \hline \hline
+    \multirow{3}{*}{SHA-256}
+                  & Differential & STD & 31 & $2^{49.8}$ & $2^{48}$ & \cite{y_et_al_2024} & 2024 \\
+                  & Brute Force & STD & 18 & $2^{5.5}$ & $2^{6.6}$ & - & 2025 \\
+                  & Differential & SFS & 39 & practical & - & \cite{y_et_al_2024} & 2024 \\
+    \hline
+    \multirow{3}{*}{SHA-512}
+        & Differential & STD & 28 & practical & - & \cite{y_et_al_2024} & 2024 \\
+        & Differential & STD & 31 & $2^{115.6}$ & $2^{77.3}$ & \cite{y_et_al_2024} & 2024 \\
+        & Brute Force & STD & 18 & $2^{5.4}$ & $2^{7.4}$ & - & 2025 \\
+\end{tabular}
+\end{center}
+
+
+% Glossary
+\printglossaries
+% \glsaddall
+
+
+% References
+% TODO: Harvard-style formatting
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+
+\begin{appendices}
+\section{Notes}
+This report was written in TeX and compiled to PDF.
+\end{appendices}
+
+\section{Report TODO}
+- Talk about SMT solver choice
+- Talk about how other solvers had other issues.
+- Talk about Bitwuzla issues (3)
+- Talk about figures
+- Talk about settings used to generate figures
+- Talk about results
+- Talk about the code
+- Talk about benchmark methodology
+- Talk about results
+
+\end{document}
