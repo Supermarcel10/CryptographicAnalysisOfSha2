@@ -46,7 +46,6 @@ impl SmtBuilder {
 		&mut self,
 		encoding_type: EncodingType,
 	) {
-		// TODO: Implement!
 		match encoding_type {
 			EncodingType::BruteForce => self.brute_force_encoding(),
 			EncodingType::DeltaXOR => self.dxor_encoding(),
