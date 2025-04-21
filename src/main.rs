@@ -9,7 +9,7 @@ use plotters::prelude::RGBColor;
 use crate::benchmark::runner::BenchmarkRunner;
 use crate::data::data_retriever::DataRetriever;
 use crate::graphing::graph_renderer::GraphRenderer;
-use crate::sha::{MessageBlock, Sha, StartVector};
+use crate::sha::{MessageBlock, Sha, StartVector, Word};
 use crate::smt_lib::smt_lib::generate_smtlib_files;
 use crate::structs::benchmark::Benchmark;
 use crate::structs::hash_function::HashFunction;
@@ -38,7 +38,7 @@ enum Commands {
 	/// Generate SMTLIB 2.6 standard files
 	Generate {
 		/// Directory where smt2 files will be saved. Default `smt/`
-		#[arg(long)]
+		#[arg(short = 'S', long)]
 		smt_dir: Option<PathBuf>,
 	},
 
@@ -53,15 +53,15 @@ enum Commands {
 		timeout_sec: Option<u64>,
 
 		/// Path to directory containing SMT files. Default `smt/`
-		#[arg(long)]
+		#[arg(short = 'S', long)]
 		smt_dir: Option<PathBuf>,
 
 		/// Path to directory where result files will be saved to. `None` to disable output. Default `results/`
-		#[arg(long)]
+		#[arg(short, long)]
 		result_dir: Option<PathBuf>,
 
 		/// Should remaining benchmark runs continue despite error on one. Default false
-		#[arg(long)]
+		#[arg(short = 'C', visible_alias = "cof", long)]
 		continue_on_fail: Option<bool>,
 	},
 
@@ -71,18 +71,20 @@ enum Commands {
 		#[arg(short, long)]
 		msg: Option<String>,
 
-		/// Message digest block to hash (pre-padded and pre-processed digest)
-		#[arg(alias = "mb", long)]
+		/// Message digest block to hash (pre-padded and pre-processed digest), separated word-by-word with spaces
+		#[arg(short = 'M', visible_alias = "mb", long)]
 		msg_block: Option<String>,
 
 		/// Hash function
 		hash_function: HashFunction,
 
 		/// Number of compression rounds. Default hash function max
-		#[arg(short, long, default_value = None)]
+		#[arg(short, long)]
 		rounds: Option<u8>,
 
-		// start_vector: Option<StartVector>,
+		/// Starting vector for hash function, separated word-by-word with spaces. Default Initial Vector (IV)
+		#[arg(long, visible_alias = "sv")]
+		start_vector: Option<String>,
 	},
 
 	/// Load, verify and display result files
@@ -153,11 +155,22 @@ fn main() -> Result<(), Box<dyn Error>> {
 			msg,
 			msg_block,
 			hash_function,
-			rounds
+			rounds,
+			start_vector,
 		} => {
 			let rounds = rounds.unwrap_or(hash_function.max_rounds());
-			// TODO: Use provided start vector or IV by default
-			let start_vector = StartVector::IV;
+
+			let start_vector = match start_vector {
+				None => StartVector::IV,
+				Some(start_vector) => {
+					let mut words= Vec::with_capacity(8);
+					for word in start_vector.split_whitespace() {
+						 words.push(Word::from_str_radix(word, 16, *hash_function)?);
+					}
+
+					StartVector::CV(<[Word; 8]>::try_from(words).unwrap())
+				}
+			};
 
 			let result = if let Some(msg) = msg {
 				Sha::from_string(
