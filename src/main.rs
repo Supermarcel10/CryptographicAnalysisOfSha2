@@ -149,7 +149,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 	match &cli.command {
 		Commands::Generate { smt_dir } => {
 			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
-			generate_smtlib_files(smt_dir)?;
+			generate_smtlib_files(
+				SmtRetriever::new(smt_dir)?
+			)?;
 		},
 
 		Commands::Benchmark {
@@ -171,7 +173,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			let stop_tolerance = (*stop_tolerance).unwrap_or(3);
 			let timeout = Duration::from_secs((*timeout_sec).unwrap_or(15 * 60));
 			let continue_on_fail = (*continue_on_fail).unwrap_or(false);
-			let encoding_type = encoding_type.clone().unwrap_or(EncodingType::BruteForce);
+			let encoding_type = encoding_type.unwrap_or(EncodingType::BruteForce);
 			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
 			let is_rerun = is_rerun.unwrap_or(false);
 

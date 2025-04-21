@@ -108,12 +108,12 @@ impl BenchmarkRunner {
 		let max = round_range.clone().max().unwrap_or(hash_max).min(hash_max) + 1;
 
 		for rounds in min..max {
-			let smt_file = self.smt_retriever.retrieve_file(
+			let smt_path = self.smt_retriever.get_file(
 				*hash_function,
 				*collision_type,
 				rounds,
 				self.encoding_type.clone(),
-			)?;
+			);
 
 			let mut result = self.run_solver_with_benchmark(
 				*hash_function,
@@ -122,7 +122,7 @@ impl BenchmarkRunner {
 				solver,
 				self.is_rerun,
 				self.encoding_type.clone(),
-				smt_file,
+				smt_path,
 				arg.clone(),
 			);
 
