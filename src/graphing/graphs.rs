@@ -340,40 +340,6 @@ impl GraphRenderer {
 			Some(&|y: &f64| format!("2^{}", y.log2())),
 		)?;
 
-		// // Draw background
-		// let col = RGBAColor(60, 60, 60, 0.25).filled();
-		// chart
-		// 	.draw_series(std::iter::once(
-		// 		Rectangle::new(
-		// 			[(x_range.start, y_range.end), (x_range.end, y_range.end - 125.0)],
-		// 			col,
-		// 		)
-		// 	))?
-		// 	.label("TIMEOUT")
-		// 	.legend(move |(x, y)| Rectangle::new([(x + 5, y - 5), (x + 15, y + 5)], col));
-		//
-		// let col = RGBAColor(255, 0, 0, 0.125).filled();
-		// chart
-		// 	.draw_series(std::iter::once(
-		// 		Rectangle::new(
-		// 			[(0, y_range.start), (8, y_range.end - 125.0)],
-		// 			col,
-		// 		)
-		// 	))?
-		// 	.label("UNSAT")
-		// 	.legend(move |(x, y)| Rectangle::new([(x + 5, y - 5), (x + 15, y + 5)], col));
-		//
-		// let col = RGBAColor(0, 255, 0, 0.125).filled();
-		// chart
-		// 	.draw_series(std::iter::once(
-		// 		Rectangle::new(
-		// 			[(8, y_range.start), (x_range.end, y_range.end - 125.0)],
-		// 			col,
-		// 		)
-		// 	))?
-		// 	.label("SAT")
-		// 	.legend(move |(x, y)| Rectangle::new([(x + 5, y - 5), (x + 15, y + 5)], col));
-
 		// Draw data
 		let mut split_data = BTreeMap::new();
 		for b in sorted_data {
