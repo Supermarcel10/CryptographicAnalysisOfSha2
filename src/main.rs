@@ -42,8 +42,24 @@ enum Commands {
 		smt_dir: Option<PathBuf>,
 	},
 
-	/// Run all benchmarks
+	/// Run an exhaustive benchmark over all solvers, hash functions, collision types and arguments
 	Benchmark {
+		/// Argument to select solver. Use multiple `--solver <SOLVER>` statements for multiple solvers
+		#[arg(required = true, long)]
+		solver: Vec<SmtSolver>,
+
+		/// Argument to select hash function. Use separate `--hash-function <HASH_FUNCTION>` statements for multiple
+		#[arg(required = true, long)]
+		hash_function: Vec<HashFunction>,
+
+		/// Argument to select collision type. Use separate `--collision-type <COLLISION_TYPE>` statements for multiple
+		#[arg(required = true, long)]
+		collision_type: Vec<CollisionType>,
+
+		// /// Argument to set range of compression rounds. Default 1..max
+		// #[arg(long)]
+		// round_range: Range<u8>,
+
 		/// The number of required sequential failures to stop. Default 3
 		#[arg(short, long)]
 		stop_tolerance:  Option<u8>,
@@ -63,6 +79,14 @@ enum Commands {
 		/// Should remaining benchmark runs continue despite error on one. Default false
 		#[arg(short = 'C', visible_alias = "cof", long)]
 		continue_on_fail: Option<bool>,
+
+		/// Type of encoding to benchmark. Default bruteforce
+		#[arg(short = 'E', long)]
+		encoding_type: Option<EncodingType>,
+
+		/// Should the benchmark be marked as a rerun. Useful for flagging up anomalies. Default false
+		#[arg(short = 'R', long)]
+		is_rerun: Option<bool>,
 	},
 
 	/// Run the underlying sha2 function
@@ -120,16 +144,25 @@ fn main() -> Result<(), Box<dyn Error>> {
 		},
 
 		Commands::Benchmark {
+			solver: solvers,
+			hash_function: hash_functions,
+			collision_type: collision_types,
+			// round_range,
 			stop_tolerance,
 			timeout_sec,
 			smt_dir,
 			result_dir,
 			continue_on_fail,
+			encoding_type,
+			is_rerun,
 		} => {
+			// let round_range = round_range.unwrap_or(1..80);
 			let stop_tolerance = (*stop_tolerance).unwrap_or(3);
 			let timeout = Duration::from_secs((*timeout_sec).unwrap_or(15 * 60));
 			let continue_on_fail = (*continue_on_fail).unwrap_or(false);
+			let encoding_type = encoding_type.clone().unwrap_or(EncodingType::BruteForce);
 			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
+			let is_rerun = is_rerun.unwrap_or(false);
 
 			let save_dir = if result_dir
 				.clone()
@@ -148,19 +181,18 @@ fn main() -> Result<(), Box<dyn Error>> {
 				SmtRetriever::new(smt_dir)?,
 				save_dir,
 				continue_on_fail,
-				EncodingType::BruteForce, // TODO
-				false, // TODO
+				encoding_type,
+				is_rerun,
 			);
 
-			// TODO
 			runner.run_benchmarks(
-				vec![SmtSolver::Bitwuzla],
-				vec![HashFunction::SHA256],
-				vec![CollisionType::Standard],
-				1..21,
-				vec![],
+				solvers.clone(),
+				hash_functions.clone(),
+				collision_types.clone(),
+				1..21, // TODO
+				vec![], // TODO
 			)?;
-		},
+		}
 
 		Commands::Sha2 {
 			msg,

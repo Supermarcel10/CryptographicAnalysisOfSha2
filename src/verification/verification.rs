@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::sha::{Sha, StartVector, Word};
+	use crate::sha::{Sha, StartVector};
 	use crate::sha::StartVector::IV;
 	use crate::structs::hash_function::HashFunction::*;
 	use crate::verification::bit_differential::BitDifferential;

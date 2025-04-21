@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize, clap::ValueEnum)]
 pub enum CollisionType {
 	/// Use the fixed iv for both m0 and m1, where m0 != m1
 	Standard,

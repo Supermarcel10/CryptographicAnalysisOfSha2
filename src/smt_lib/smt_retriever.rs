@@ -7,7 +7,7 @@ use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, clap::ValueEnum)]
 pub enum EncodingType {
 	BruteForce,
 	DeltaXOR,
