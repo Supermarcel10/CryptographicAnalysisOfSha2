@@ -59,7 +59,7 @@ impl SmtBuilder {
 		let word_size = self.hash_function.word_size().bits();
 		let mut s = String::new();
 		for var in 'a'..='h' {
-			s += &format!("(distinct delta_{var}0 #b{})", "0".repeat(word_size));
+			s += &format!("\t(distinct delta_{var}0 #b{})\n", "0".repeat(word_size));
 		}
 
 		self.smt += &format!("(assert (or\n{s}))\n");
