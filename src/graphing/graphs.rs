@@ -354,7 +354,7 @@ impl GraphRenderer {
 				&mut chart,
 				data,
 				true,
-				false,
+				true,
 				&solver.to_string(),
 				Some(self.color_palette[i].to_rgba())
 			)?;
