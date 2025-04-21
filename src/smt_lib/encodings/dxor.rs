@@ -3,6 +3,18 @@ use crate::structs::collision_type::CollisionType;
 
 
 impl SmtBuilder {
+	fn define_differential_initial_vector(&mut self) {
+		if self.collision_type != CollisionType::FreeStart {
+			return;
+		}
+
+		self.comment("Initial Vector difference");
+
+		for var in 'a'..='h' {
+			self.smt += &format!("(define-fun delta_{var}0 () Word (bvxor m0_{var}0 m1_{var}0))");
+		}
+	}
+
 	fn define_final_state_difference(&mut self) {
 		self.comment("Final state difference");
 
@@ -10,6 +22,18 @@ impl SmtBuilder {
 		for i in 0..final_size {
 			self.smt += &format!("(define-fun delta_hash{i} () Word (bvxor m0_hash{i} m1_hash{i}))\n");
 		}
+	}
+
+	fn assert_initial_vector_different(&mut self) {
+		self.comment("Assert starting vector different");
+
+		let word_size = self.hash_function.word_size().bits();
+		let mut s = String::new();
+		for var in 'a'..='h' {
+			s += &format!("(distinct delta_{var}0 #b{})", "0".repeat(word_size));
+		}
+
+		self.smt += &format!("(assert (or\n{s}))\n");
 	}
 
 	fn assert_message_difference(&mut self) {
@@ -54,7 +78,9 @@ impl SmtBuilder {
 		self.title("CONSTANTS");
 		self.define_constants();
 		self.break_line();
-		self.define_starting_vector();
+		self.define_initial_vector();
+		self.break_line();
+		self.define_differential_initial_vector();
 
 		self.title("MESSAGE EXPANSION");
 		self.define_differential_expansion();
@@ -73,7 +99,7 @@ impl SmtBuilder {
 
 		self.title("ASSERTIONS");
 		if self.collision_type == CollisionType::FreeStart {
-			// self.assert_starting_vector_not_same(); // TODO!
+			self.assert_initial_vector_different();
 			self.break_line();
 		} else {
 			self.assert_message_difference();

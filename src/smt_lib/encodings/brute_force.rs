@@ -3,7 +3,7 @@ use crate::structs::collision_type::CollisionType;
 
 
 impl SmtBuilder {
-	fn assert_starting_vector_not_same(&mut self) {
+	fn assert_initial_vector_not_same(&mut self) {
 		self.comment("Assert starting vectors (CV) not the same");
 
 		let mut s = String::new();
@@ -54,7 +54,7 @@ impl SmtBuilder {
 		self.title("CONSTANTS");
 		self.define_constants();
 		self.break_line();
-		self.define_starting_vector();
+		self.define_initial_vector();
 
 		self.title("MESSAGE EXPANSION");
 		self.define_expansion_for_message(0);
@@ -70,7 +70,7 @@ impl SmtBuilder {
 
 		self.title("ASSERTIONS");
 		if self.collision_type == CollisionType::FreeStart {
-			self.assert_starting_vector_not_same();
+			self.assert_initial_vector_not_same();
 			self.break_line();
 		} else {
 			self.assert_messages_not_same();
