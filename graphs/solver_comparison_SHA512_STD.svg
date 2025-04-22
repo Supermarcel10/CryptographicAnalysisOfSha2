@@ -189,7 +189,7 @@ Time (s)
 <circle cx="922" cy="44" r="3" opacity="1" fill="#9C36B5" stroke="none" stroke-width="1"/>
 <circle cx="970" cy="44" r="3" opacity="1" fill="#9C36B5" stroke="none" stroke-width="1"/>
 <circle cx="1018" cy="44" r="3" opacity="1" fill="#9C36B5" stroke="none" stroke-width="1"/>
-<rect x="907" y="612" width="107" height="101" opacity="0.5" fill="#B4B4B4" stroke="none"/>
+<rect x="907" y="612" width="107" height="101" opacity="0.8" fill="#C8C8C8" stroke="none"/>
 <text x="947" y="622" dy="0.76em" text-anchor="start" font-family="noto sans" font-size="11.290322580645162" opacity="1" fill="#000000">
 Z3
 </text>
