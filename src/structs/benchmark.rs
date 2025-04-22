@@ -322,7 +322,7 @@ impl Benchmark {
 		let number_format = output_format.output_string();
 		let re = Regex::new(
 			&format!(
-				r"\((?:m([01])_|)([a-hw]|hash)([0-9]+) (?:\(_ bv{number_format} (?:32|64)\)|{number_format})\)",
+				r"\((?:m([01])_|)(delta_[aew]|[a-hw]|hash)([0-9]+) (?:\(_ bv{number_format} (?:32|64)\)|{number_format})\)",
 			)
 		)?;
 
@@ -348,9 +348,11 @@ impl Benchmark {
 			};
 			let val = output_format.get_base_size(val.into(), self.hash_function)?;
 
+			let is_differential = var.contains("delta");
+
 			match msg {
 				Some(msg) => {
-					Self::parse_update_for_msg(
+					self.parse_update_for_msg(
 						msg.as_str().parse()?,
 						var,
 						round,
@@ -359,10 +361,11 @@ impl Benchmark {
 						&mut start_blocks,
 						&mut start_vectors,
 						&mut states,
+						is_differential,
 					)?;
 				}
 				None => {
-					Self::parse_update_for_msg(
+					self.parse_update_for_msg(
 						0,
 						var,
 						round,
@@ -371,8 +374,9 @@ impl Benchmark {
 						&mut start_blocks,
 						&mut start_vectors,
 						&mut states,
+						is_differential,
 					)?;
-					Self::parse_update_for_msg(
+					self.parse_update_for_msg(
 						1,
 						var,
 						round,
@@ -381,6 +385,7 @@ impl Benchmark {
 						&mut start_blocks,
 						&mut start_vectors,
 						&mut states,
+						is_differential,
 					)?;
 				}
 			}
@@ -436,6 +441,7 @@ impl Benchmark {
 	}
 
 	fn parse_update_for_msg(
+		&self,
 		msg: usize,
 		var: &str,
 		round: usize,
@@ -444,20 +450,34 @@ impl Benchmark {
 		start_blocks: &mut [[Word; 16]; 2],
 		start_vectors: &mut [[Word; 8]; 2],
 		states: &mut [BTreeMap<usize, MutableShaState>; 2],
+		differential: bool,
 	) -> Result<(), Box<dyn Error>> {
+		// Special handling if differential
+		let (var, val) = if differential {
+			let var = var.split("_").collect::<Vec<_>>()[1];
+			let val = if msg == 0 {
+				val
+			} else {
+				self.hash_function.default_word()
+			};
+
+			(var, val)
+		} else { (var, val) };
+
+		// Parse
 		if var == "hash" {
 			hash[round] = Some(val);
 		} else {
 			let var_char: char = var.parse()?;
 
 			// Parse H constants (CV/IV)
-			if round == 0 && var_char != 'w' {
+			if !differential && round == 0 && var_char != 'w' {
 				let i = (var_char as u8) - ('a' as u8);
 				start_vectors[msg][i as usize] = val;
 			}
 
 			// Parse start blocks
-			if var_char == 'w' && round < 16 {
+			if !differential && var_char == 'w' && round < 16 {
 				start_blocks[msg][round] = val;
 			}
 
