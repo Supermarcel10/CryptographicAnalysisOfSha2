@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::ops::Range;
 use std::path::PathBuf;
+use num_traits::Float;
 use plotters::prelude::*;
 use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
@@ -189,7 +190,7 @@ impl GraphRenderer {
 		for (label, run) in data.clone() {
 			let mut data = vec![];
 			for b in run {
-				if let Some(&base_time) = baseline.get(&(b.rounds as u32)) {
+				let dev_percent = if let Some(&base_time) = baseline.get(&(b.rounds as u32)) {
 					let dev_time = b.execution_time.as_secs_f64();
 					let dev_percent = ((dev_time / base_time) - 1.0) * 100.0;
 
@@ -201,8 +202,12 @@ impl GraphRenderer {
 						deviation_range.end = dev_percent;
 					}
 
-					data.push((b.rounds as u32, dev_percent))
-				}
+					dev_percent
+				} else {
+					f64::neg_infinity()
+				};
+
+				data.push((b.rounds as u32, dev_percent))
 			}
 
 			data.sort_by_key(|b| b.0);
@@ -449,12 +454,16 @@ impl GraphRenderer {
 			("Solver Engine", "--bv-solver"),
 		]);
 
-		let bitwuzla_baseline = self.data_retriever.retrieve_baseline(
+		let bitwuzla_baseline: Vec<_> = self.data_retriever.retrieve_baseline(
 			SmtSolver::Bitwuzla,
 			SHA256,
 			Standard,
 			false,
-		)?;
+		)?
+			.into_iter()
+			.filter(|b| b.result != BenchmarkResult::CPUOut)
+			.collect()
+			;
 
 		for (category, identifier) in arg_categories {
 			let deviation_data = self.data_retriever.retrieve_with_args(
@@ -464,6 +473,16 @@ impl GraphRenderer {
 				false,
 				identifier,
 			)?;
+
+			let deviation_data = deviation_data
+				.into_iter()
+				.map(|(a, runs)|{
+					let runs = runs.into_iter()
+						.filter(|b| b.result != BenchmarkResult::CPUOut)
+						.collect();
+					(a, runs)
+				})
+				.collect();
 
 			self.create_baseline_graph(
 				bitwuzla_baseline.clone(),
