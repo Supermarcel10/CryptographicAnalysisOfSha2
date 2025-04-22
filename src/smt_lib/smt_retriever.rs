@@ -10,18 +10,21 @@ use crate::structs::hash_function::HashFunction;
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, clap::ValueEnum)]
 pub enum EncodingType {
 	BruteForce,
+	BruteForceWithSimpifiedFuns,
 	DeltaXOR,
+	DeltaXORWithSimplifiedFuns,
 	DeltaSub,
+	DeltaSubWithSimplifiedFuns,
 	Base4,
-	Base4WithMajOr,
+	Base4WithSimplifiedFuns,
 }
 
 impl EncodingType {
 	pub fn get_diff(&self) -> Result<&str, Box<dyn Error>> {
 		use EncodingType::*;
 		match self {
-			DeltaXOR => Ok("bvxor"),
-			DeltaSub => Ok("bvsub"),
+			DeltaXOR | DeltaXORWithSimplifiedFuns => Ok("bvxor"),
+			DeltaSub | DeltaSubWithSimplifiedFuns => Ok("bvsub"),
 			_ => Err(Box::from("get_diff not supported for encoding type")),
 		}
 	}
@@ -29,12 +32,17 @@ impl EncodingType {
 
 impl Display for EncodingType {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		use EncodingType::*;
+
 		let et = match self {
-			EncodingType::BruteForce => "",
-			EncodingType::DeltaXOR => "DXOR",
-			EncodingType::DeltaSub => "DSUB",
-			EncodingType::Base4 => "BASE4",
-			EncodingType::Base4WithMajOr => "BASE4+OR",
+			BruteForce => "",
+			BruteForceWithSimpifiedFuns => "BRUTE_SIMP",
+			DeltaXOR => "DXOR",
+			DeltaXORWithSimplifiedFuns => "DXOR_SIMP",
+			DeltaSub => "DSUB",
+			DeltaSubWithSimplifiedFuns => "DSUB_SIMP",
+			Base4 => "BASE4",
+			Base4WithSimplifiedFuns => "BASE4_SIMP",
 		};
 		write!(f, "{et}")
 	}

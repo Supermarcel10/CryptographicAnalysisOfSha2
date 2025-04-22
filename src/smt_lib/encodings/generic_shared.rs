@@ -27,11 +27,25 @@ impl SmtBuilder {
 		self.smt += &format!("(define-sort Word () (_ BitVec {bit_size}))\n");
 	}
 
-	pub(super) fn define_functions(&mut self) {
+	pub(super) fn define_functions(
+		&mut self,
+		ch_simplified: bool,
+		maj_simplified: bool,
+	) {
 		let word_size = self.hash_function.word_size().bits();
 
-		let ch = "(define-fun ch ((e Word) (f Word) (g Word)) Word\n\t(bvxor (bvand e f) (bvand (bvnot e) g))\n)";
-		let maj = "(define-fun maj ((a Word) (b Word) (c Word)) Word\n\t(bvxor (bvand a b) (bvand a c) (bvand b c))\n)";
+		let ch = if ch_simplified {
+			"(define-fun ch ((e Word) (f Word) (g Word)) Word\n\t(bvor (bvand e f) (bvand (bvnot e) g))\n)"
+		} else {
+			"(define-fun ch ((e Word) (f Word) (g Word)) Word\n\t(bvxor (bvand e f) (bvand (bvnot e) g))\n)"
+		};
+
+		let maj = if maj_simplified {
+			"(define-fun maj ((a Word) (b Word) (c Word)) Word\n\t(bvor (bvand a b) (bvand a c) (bvand b c))\n)"
+		} else {
+			"(define-fun maj ((a Word) (b Word) (c Word)) Word\n\t(bvxor (bvand a b) (bvand a c) (bvand b c))\n)"
+		};
+
 		let sigma0 = "(define-fun sigma0 ((a Word)) Word\n\t(bvxor ((_ rotate_right 2) a) ((_ rotate_right 13) a) ((_ rotate_right 22) a))\n)";
 		let sigma1 = "(define-fun sigma1 ((e Word)) Word\n\t(bvxor ((_ rotate_right 6) e) ((_ rotate_right 11) e) ((_ rotate_right 25) e))\n)";
 		let gamma0 = format!("(define-fun gamma0 ((x Word)) Word\n\t(bvxor ((_ rotate_right 7) x) ((_ rotate_right 18) x) (bvlshr x (_ bv3 {word_size})))\n)");

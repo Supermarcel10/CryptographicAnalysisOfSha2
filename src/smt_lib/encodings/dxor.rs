@@ -5,7 +5,10 @@ use crate::structs::collision_type::CollisionType;
 
 
 impl SmtBuilder {
-	pub fn dxor_encoding(&mut self) -> Result<(), Box<dyn Error>> {
+	pub fn dxor_encoding(
+		&mut self,
+		simplified: bool,
+	) -> Result<(), Box<dyn Error>> {
 		use EncodingType::DeltaXOR;
 
 		self.title("SETUP");
@@ -15,7 +18,7 @@ impl SmtBuilder {
 		self.define_word_type();
 
 		self.title("FUNCTIONS");
-		self.define_functions();
+		self.define_functions(simplified, simplified);
 
 		self.title("CONSTANTS");
 		self.define_constants();
