@@ -289,7 +289,7 @@ impl GraphRenderer {
 		chart
 			.configure_series_labels()
 			.label_font(self.text_style.with_color(BLACK))
-			.background_style(RGBAColor(180, 180, 180, 0.5))
+			.background_style(RGBAColor(200, 200, 200, 0.8))
 			.position(SeriesLabelPosition::LowerRight)
 			.draw()?;
 		Ok(())
