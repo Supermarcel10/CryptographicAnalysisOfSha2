@@ -53,8 +53,9 @@ impl SmtBuilder {
 			EncodingType::DeltaXORWithSimplifiedFuns => self.dxor_encoding(true)?,
 			EncodingType::DeltaSub => self.dsub_encoding(false)?,
 			EncodingType::DeltaSubWithSimplifiedFuns => self.dxor_encoding(true)?,
-			EncodingType::Base4 => self.base4_encoding(false)?,
-			EncodingType::Base4WithSimplifiedFuns => self.base4_encoding(true)?,
+			// EncodingType::Base4 => self.base4_encoding(false)?,
+			// EncodingType::Base4WithSimplifiedFuns => self.base4_encoding(true)?,
+			_ => {}, // TODO: Implement
 		};
 
 		Ok(())
@@ -70,7 +71,16 @@ pub fn generate_smtlib_files(
 
 	for hash_function in [SHA224, SHA256, SHA512] {
 		for collision_type in [Standard, SemiFreeStart, FreeStart] {
-			for encoding in [BruteForce, DeltaSub, DeltaXOR, Base4] {
+			for encoding in [
+				BruteForce,
+				BruteForceWithSimpifiedFuns,
+				DeltaXOR,
+				DeltaXORWithSimplifiedFuns,
+				DeltaSub,
+				DeltaSubWithSimplifiedFuns,
+				// Base4,
+				// Base4WithSimplifiedFuns,
+			] {
 				for rounds in 1..=hash_function.max_rounds() {
 					let mut builder = SmtBuilder::new(hash_function, rounds, collision_type)?;
 					builder.encoding(encoding)?;
