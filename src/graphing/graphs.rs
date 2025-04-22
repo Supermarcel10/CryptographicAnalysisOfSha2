@@ -6,7 +6,7 @@ use plotters::prelude::*;
 use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
 use crate::graphing::utils::get_range;
-use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
+use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
 
 
 /// Implementation of graph types
@@ -137,14 +137,18 @@ impl GraphRenderer {
 	/// `Result<PathBuf, Box<dyn Error>>`
 	///
 	/// Returns path of saved graph file, or error.
-	fn create_baseline_graph(
+	fn create_baseline_graph<L>(
 		&self,
 		baseline_data: Vec<Benchmark>,
-		data: BTreeMap<SolverArg, Vec<Benchmark>>,
+		data: BTreeMap<L, Vec<Benchmark>>,
 		title_str: &str,
 		buffer: bool,
 		enforce: bool,
-	) -> Result<PathBuf, Box<dyn Error>> {
+		draw_background: bool,
+	) -> Result<PathBuf, Box<dyn Error>>
+	where
+		L: Clone + Ord + Into<String>,
+	{
 		if baseline_data.len() == 0 {
 			return Err(MissingData { graph_name: "baseline", dataset_name: "baseline" }.into());
 		}
@@ -177,10 +181,12 @@ impl GraphRenderer {
 			baseline.insert(b.rounds as u32, b.execution_time.as_secs_f64());
 		}
 
+		// Convert generic to str
+
 		// Get range & calculate deviation from baseline
 		let mut deviation_range: Range<f64> = f64::MAX..f64::MIN;
-		let mut deviation_data = BTreeMap::new();
-		for (args, run) in data.clone() {
+		let mut deviation_data: BTreeMap<String, Vec<(u32, f64)>> = BTreeMap::new();
+		for (label, run) in data.clone() {
 			let mut data = vec![];
 			for b in run {
 				if let Some(&base_time) = baseline.get(&(b.rounds as u32)) {
@@ -200,7 +206,7 @@ impl GraphRenderer {
 			}
 
 			data.sort_by_key(|b| b.0);
-			deviation_data.insert(args, data);
+			deviation_data.insert(label.into(), data);
 		}
 
 		if buffer {
@@ -232,29 +238,31 @@ impl GraphRenderer {
 			.build_cartesian_2d(x_range.clone(), y_range.clone())?;
 
 		// Draw background
-		chart
-			.draw_series(std::iter::once(
-				Rectangle::new(
-					[(x_range.start, -2.0), (x_range.end, y_range.start)],
-					RGBAColor(182, 255, 182, 0.4).filled(),
-				)
-			))?;
+		if draw_background {
+			chart
+				.draw_series(std::iter::once(
+					Rectangle::new(
+						[(x_range.start, -2.0), (x_range.end, y_range.start)],
+						RGBAColor(182, 255, 182, 0.4).filled(),
+					)
+				))?;
 
-		chart
-			.draw_series(std::iter::once(
-				Rectangle::new(
-					[(x_range.start, 2.0), (x_range.end, -2.0)],
-					RGBAColor(182, 182, 182, 0.2).filled(),
-				)
-			))?;
+			chart
+				.draw_series(std::iter::once(
+					Rectangle::new(
+						[(x_range.start, 2.0), (x_range.end, -2.0)],
+						RGBAColor(182, 182, 182, 0.2).filled(),
+					)
+				))?;
 
-		chart
-			.draw_series(std::iter::once(
-				Rectangle::new(
-					[(x_range.start, 2.0), (x_range.end, y_range.end)],
-					RGBAColor(255, 182, 182, 0.4).filled(),
-				)
-			))?;
+			chart
+				.draw_series(std::iter::once(
+					Rectangle::new(
+						[(x_range.start, 2.0), (x_range.end, y_range.end)],
+						RGBAColor(255, 182, 182, 0.4).filled(),
+					)
+				))?;
+		}
 
 		// Draw axis
 		self.set_x_axis_as_rounds(&mut chart)?;
@@ -266,21 +274,19 @@ impl GraphRenderer {
 		)?;
 
 		// Draw deviation data
-		for (i, (args, run)) in data.iter().enumerate() {
+		for (i, (label, run)) in deviation_data.into_iter().enumerate() {
 			if run.len() <= 0 {
 				continue;
 			}
 
-			if let Some(data) = deviation_data.get(args) {
-				self.draw_series(
-					&mut chart,
-					data.clone(),
-					true,
-					true,
-					&args,
-					Some(self.color_palette[i].to_rgba()),
-				)?
-			}
+			self.draw_series(
+				&mut chart,
+				run.clone(),
+				true,
+				true,
+				&label,
+				Some(self.color_palette[i].to_rgba()),
+			)?
 		}
 
 		// Draw baseline data
@@ -463,6 +469,7 @@ impl GraphRenderer {
 				bitwuzla_baseline.clone(),
 				deviation_data,
 				&format!("{category} Args"),
+				true,
 				true,
 				true,
 			)?;
