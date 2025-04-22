@@ -87,10 +87,17 @@ In order to run these tests invoke `cargo test`.
   - UNSAT implies no contradictions were found, and the encodings are sound.
 - `reference/`: Reference documentation, which the project bases on.
 - `results/`: Output directory containing deserialized json Benchmark objects, representing each run.
-- `smt/`: Output directory containing produced SMTLIB 2.6 format encoding.
+- `smt/`: (Auto-Generated) Output directory containing produced SMTLIB 2.6 format encoding.
 - `solvers/`: Helper binaries which were patched, or otherwise modified in some manner.
   - For more details, see the solver version notes.
-- `src/`: Source code.
+- `src/`: Source code. The code is split into different modules handling each subcommand. Some of these have some overlap, or functions that they share with eachother, but are otherwise independent.
+  - `benchmark/`: Handles running and parsing benchmarks.
+  - `data/`: A shared utility module for retrieving data in a unified manner.
+  - `graphing/`: Handles generation of graphs and any graph components.
+  - `sha/`: A custom sha2 implementation, shadowing the standard, but also exposing compression rounds, initial vectors and such. Primarily used for verification purposes.
+  - `smt_lib/`: Handles everything for generating smt2 files with various encodings. Also exposes a utility to load smt files.
+  - `structs/`: Handles binding structs and traits between modules.
+  - `verification/`: Handles verification and display outputs.
 
 ## 🔄 Dependencies
 All dependencies and feature flags are defined in `Cargo.toml`.
