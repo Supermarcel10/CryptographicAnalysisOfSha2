@@ -167,34 +167,48 @@ impl GraphRenderer {
 		let mut baseline_data = baseline_data;
 		baseline_data.sort_by_key(|b| b.rounds);
 
-		// Get range for baseline
-		let baseline_range = get_range(&baseline_data, &|b| b.execution_time.as_nanos())
-			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range baseline" })?;
+		let mut baseline = BTreeMap::new();
+		for b in &baseline_data {
+			baseline.insert(b.rounds as u32, b.execution_time.as_secs_f64());
+		}
 
-		// Get range for all plots
-		let mut deviation_range: Range<u128> = u128::MAX..u128::MIN;
-		for (_, benchmarks) in data.clone() {
-			for benchmark in benchmarks {
-				let time = benchmark.execution_time.as_nanos();
-				if time < deviation_range.start {
-					deviation_range.start = time;
-				}
+		// Get range & calculate deviation from baseline
+		let mut deviation_range: Range<f64> = f64::MAX..f64::MIN;
+		let mut deviation_data = BTreeMap::new();
+		for (args, run) in data.clone() {
+			let mut data = vec![];
+			for b in run {
+				if let Some(&base_time) = baseline.get(&(b.rounds as u32)) {
+					let dev_time = b.execution_time.as_secs_f64();
+					let dev_percent = ((dev_time / base_time) - 1.0) * 100.0;
 
-				if time > deviation_range.end {
-					deviation_range.end = time;
+					if deviation_range.start > dev_percent {
+						deviation_range.start = dev_percent;
+					}
+
+					if deviation_range.end < dev_percent {
+						deviation_range.end = dev_percent;
+					}
+
+					data.push((b.rounds as u32, dev_percent))
 				}
 			}
+
+			data.sort_by_key(|b| b.0);
+			deviation_data.insert(args, data);
 		}
+
+		// Buffer
+		deviation_range.start = deviation_range.start - 5.0;
+		deviation_range.end = deviation_range.end + 5.0;
+
+		// Truncate max range
+		deviation_range.end = deviation_range.end.min(100.0);
 
 		// Define ranges
 		let x_range = get_range(&baseline_data, &|b| b.rounds as u32)
 			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range" })?;
-		let y_range = self.calculate_percent_dev(baseline_range, deviation_range, 10.0);
-
-		let mut baseline = BTreeMap::new();
-		for b in baseline_data {
-			baseline.insert(b.rounds as u32, b.execution_time.as_secs_f64());
-		}
+		let y_range = deviation_range;
 
 		let path_clone_bind = path.clone();
 		let root = SVGBackend::new(&path_clone_bind, self.output_size)
@@ -212,7 +226,7 @@ impl GraphRenderer {
 		chart
 			.draw_series(std::iter::once(
 				Rectangle::new(
-					[(x_range.start, 0.0), (x_range.end, y_range.start)],
+					[(x_range.start, -2.0), (x_range.end, y_range.start)],
 					RGBAColor(182, 255, 182, 0.4).filled(),
 				)
 			))?;
@@ -220,7 +234,15 @@ impl GraphRenderer {
 		chart
 			.draw_series(std::iter::once(
 				Rectangle::new(
-					[(x_range.start, 0.0), (x_range.end, y_range.end)],
+					[(x_range.start, 2.0), (x_range.end, -2.0)],
+					RGBAColor(182, 182, 182, 0.2).filled(),
+				)
+			))?;
+
+		chart
+			.draw_series(std::iter::once(
+				Rectangle::new(
+					[(x_range.start, 2.0), (x_range.end, y_range.end)],
 					RGBAColor(255, 182, 182, 0.4).filled(),
 				)
 			))?;
@@ -240,25 +262,16 @@ impl GraphRenderer {
 				continue;
 			}
 
-			// Calculate deviation from baseline
-			let mut data = vec![];
-			for b in run {
-				if let Some(&base_time) = baseline.get(&(b.rounds as u32)) {
-					let dev_time = b.execution_time.as_secs_f64();
-					data.push((b.rounds as u32, ((dev_time / base_time) - 1.0) * 100.0))
-				}
+			if let Some(data) = deviation_data.get(args) {
+				self.draw_series(
+					&mut chart,
+					data.clone(),
+					true,
+					true,
+					&args,
+					Some(self.color_palette[i].to_rgba()),
+				)?
 			}
-
-			data.sort_by_key(|b| b.0);
-
-			self.draw_series(
-				&mut chart,
-				data,
-				true,
-				true,
-				&args,
-				Some(self.color_palette[i].to_rgba()),
-			)?
 		}
 
 		// Draw baseline data
