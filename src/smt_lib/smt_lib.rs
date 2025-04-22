@@ -45,14 +45,16 @@ impl SmtBuilder {
 	fn encoding(
 		&mut self,
 		encoding_type: EncodingType,
-	) {
+	)  -> Result<(), Box<dyn Error>> {
 		match encoding_type {
 			EncodingType::BruteForce => self.brute_force_encoding(),
-			EncodingType::DeltaXOR => self.dxor_encoding(),
-			EncodingType::FullDeltaXOR => self.full_dxor_encoding(),
+			EncodingType::DeltaXOR => self.dxor_encoding()?,
+			EncodingType::DeltaSub => self.dsub_encoding()?,
 			EncodingType::Base4 => {},
 			EncodingType::Base4WithMajOr => {},
 		};
+
+		Ok(())
 	}
 }
 
@@ -64,11 +66,11 @@ pub fn generate_smtlib_files(
 	use EncodingType::*;
 
 	for hash_function in [SHA256] {
-		for collision_type in [Standard] {
-			for encoding in [FullDeltaXOR] {
+		for collision_type in [Standard, FreeStart] {
+			for encoding in [DeltaSub] {
 				for rounds in 1..=hash_function.max_rounds() {
 					let mut builder = SmtBuilder::new(hash_function, rounds, collision_type)?;
-					builder.encoding(encoding);
+					builder.encoding(encoding)?;
 
 					let file_path = smt_retriever.get_file(
 						hash_function,

@@ -11,9 +11,20 @@ use crate::structs::hash_function::HashFunction;
 pub enum EncodingType {
 	BruteForce,
 	DeltaXOR,
-	FullDeltaXOR,
+	DeltaSub,
 	Base4,
 	Base4WithMajOr,
+}
+
+impl EncodingType {
+	pub fn get_diff(&self) -> Result<&str, Box<dyn Error>> {
+		use EncodingType::*;
+		match self {
+			DeltaXOR => Ok("bvxor"),
+			DeltaSub => Ok("bvsub"),
+			_ => Err(Box::from("get_diff not supported for encoding type")),
+		}
+	}
 }
 
 impl Display for EncodingType {
@@ -21,7 +32,7 @@ impl Display for EncodingType {
 		let et = match self {
 			EncodingType::BruteForce => "",
 			EncodingType::DeltaXOR => "DXOR",
-			EncodingType::FullDeltaXOR => "FDXOR",
+			EncodingType::DeltaSub => "DSUB",
 			EncodingType::Base4 => "BASE4",
 			EncodingType::Base4WithMajOr => "BASE4+OR",
 		};

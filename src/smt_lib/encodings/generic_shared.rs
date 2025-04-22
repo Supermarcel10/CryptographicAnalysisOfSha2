@@ -125,18 +125,6 @@ impl SmtBuilder {
 		self.smt += &s;
 	}
 
-	pub(super) fn define_differential_for_working_variables(&mut self) {
-		self.comment("Variable Differential");
-
-		for i in 1..=self.rounds {
-			for var in 'a'..='h' {
-				self.smt += &format!(
-					"(define-fun delta_{var}{i} () Word (bvxor m0_{var}{i} m1_{var}{i}))\n"
-				);
-			}
-		}
-	}
-
 	pub(super) fn define_initial_vector(&mut self) {
 		self.comment("Define H constants (IV/CV)");
 		use crate::structs::collision_type::CollisionType::*;

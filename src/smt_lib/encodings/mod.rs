@@ -1,5 +1,5 @@
 mod brute_force;
 mod generic_shared;
 mod dxor;
-mod fdxor;
+mod dsub;
 mod differential_shared;
