@@ -129,6 +129,9 @@ impl GraphRenderer {
 	///
 	/// * `baseline`: Single run benchmark data, used as a baseline.
 	/// * `data`: Vector of benchmark runs, used as deviation.
+	/// * `argument_name`: String outputted to the title.
+	/// * `buffer`: Should the graph be buffered on each end? Default true.
+	/// * `enforce`: Should minimums and a max range be respected? Default true.
 	///
 	/// # Returns
 	/// `Result<PathBuf, Box<dyn Error>>`
@@ -139,6 +142,8 @@ impl GraphRenderer {
 		baseline_data: Vec<Benchmark>,
 		data: BTreeMap<SolverArg, Vec<Benchmark>>,
 		argument_name: &str,
+		buffer: Option<bool>,
+		enforce: Option<bool>,
 	) -> Result<PathBuf, Box<dyn Error>> {
 		if baseline_data.len() == 0 {
 			return Err(MissingData { graph_name: "baseline", dataset_name: "baseline" }.into());
@@ -147,6 +152,9 @@ impl GraphRenderer {
 		if data.len() == 0 {
 			println!("{}", MissingData { graph_name: "baseline", dataset_name: "data" });
 		}
+
+		let buffer = buffer.unwrap_or(true);
+		let enforce = enforce.unwrap_or(true);
 
 		let title = format!(
 			"{} {} {}: {} Args",
@@ -198,12 +206,16 @@ impl GraphRenderer {
 			deviation_data.insert(args, data);
 		}
 
-		// Buffer
-		deviation_range.start = deviation_range.start - 5.0;
-		deviation_range.end = deviation_range.end + 5.0;
+		if buffer {
+			deviation_range.start = deviation_range.start - 5.0;
+			deviation_range.end = deviation_range.end + 5.0;
+		}
 
-		// Truncate max range
-		deviation_range.end = deviation_range.end.min(100.0);
+		// Truncate max range & enforce a minimum
+		if enforce {
+			deviation_range.end = deviation_range.end.min(100.0);
+			deviation_range.start = deviation_range.start.min(-5.0);
+		}
 
 		// Define ranges
 		let x_range = get_range(&baseline_data, &|b| b.rounds as u32)
