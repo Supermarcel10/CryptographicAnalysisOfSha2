@@ -376,7 +376,7 @@ Time (%dev)
 --pp-variable-subst-norm-diseq
 </text>
 <text x="800" y="692" dy="0.76em" text-anchor="start" font-family="noto sans" font-size="11.290322580645162" opacity="1" fill="#000000">
-Baseline (No Args)
+Baseline
 </text>
 <polyline fill="none" opacity="1" stroke="#A61E4D" stroke-width="1" points="770,522 790,522 "/>
 <polyline fill="none" opacity="1" stroke="#1864AB" stroke-width="1" points="770,540 790,540 "/>
