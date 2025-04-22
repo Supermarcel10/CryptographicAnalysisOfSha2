@@ -130,8 +130,8 @@ impl GraphRenderer {
 	/// * `baseline`: Single run benchmark data, used as a baseline.
 	/// * `data`: Vector of benchmark runs, used as deviation.
 	/// * `argument_name`: String outputted to the title.
-	/// * `buffer`: Should the graph be buffered on each end? Default true.
-	/// * `enforce`: Should minimums and a max range be respected? Default true.
+	/// * `buffer`: Should the graph be buffered on each end?
+	/// * `enforce`: Should minimums and a max range be respected?
 	///
 	/// # Returns
 	/// `Result<PathBuf, Box<dyn Error>>`
@@ -141,9 +141,9 @@ impl GraphRenderer {
 		&self,
 		baseline_data: Vec<Benchmark>,
 		data: BTreeMap<SolverArg, Vec<Benchmark>>,
-		argument_name: &str,
-		buffer: Option<bool>,
-		enforce: Option<bool>,
+		title_str: &str,
+		buffer: bool,
+		enforce: bool,
 	) -> Result<PathBuf, Box<dyn Error>> {
 		if baseline_data.len() == 0 {
 			return Err(MissingData { graph_name: "baseline", dataset_name: "baseline" }.into());
@@ -153,21 +153,18 @@ impl GraphRenderer {
 			println!("{}", MissingData { graph_name: "baseline", dataset_name: "data" });
 		}
 
-		let buffer = buffer.unwrap_or(true);
-		let enforce = enforce.unwrap_or(true);
-
 		let title = format!(
-			"{} {} {}: {} Args",
+			"{} {} {}: {}",
 			baseline_data[0].solver,
 			baseline_data[0].hash_function,
 			baseline_data[0].collision_type,
-			argument_name,
+			title_str,
 		);
 
 		let file_name = format!(
 			"{}_{}.svg",
 			baseline_data[0].solver.to_string().to_lowercase(),
-			argument_name.to_lowercase().replace(" ", "_"),
+			title_str.to_lowercase().replace(" ", "_"),
 		);
 
 		let path = self.output_dir.join(file_name);
@@ -292,7 +289,7 @@ impl GraphRenderer {
 			baseline.keys().map(|&x| (x, 0.0)).collect(),
 			true,
 			true,
-			"Baseline (No Args)",
+			"Baseline",
 			Some(RGBAColor(0, 0, 0, 0.3)),
 		)?;
 
@@ -465,7 +462,9 @@ impl GraphRenderer {
 			self.create_baseline_graph(
 				bitwuzla_baseline.clone(),
 				deviation_data,
-				category,
+				&format!("{category} Args"),
+				true,
+				true,
 			)?;
 		}
 
