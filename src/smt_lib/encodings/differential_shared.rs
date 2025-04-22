@@ -14,7 +14,7 @@ impl SmtBuilder {
 		let word_size = self.hash_function.word_size().bits();
 		for var in 'a'..='h' {
 			if self.collision_type == CollisionType::FreeStart {
-				self.smt += &format!("(define-fun delta_{var}0 () Word (bvxor m0_{var}0 m1_{var}0))\n");
+				self.smt += &format!("(define-fun delta_{var}0 () Word ({diff} m0_{var}0 m1_{var}0))\n");
 			} else {
 				self.smt += &format!("(define-fun delta_{var}0 () Word #b{})\n", "0".repeat(word_size));
 			}
