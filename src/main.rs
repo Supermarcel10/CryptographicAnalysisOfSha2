@@ -1,8 +1,8 @@
 use std::error::Error;
 use std::fs;
 use std::ops::Range;
-use std::path::{PathBuf};
-use std::time::{Duration};
+use std::path::PathBuf;
+use std::time::Duration;
 use clap::{Parser, Subcommand};
 use plotters::prelude::RGBColor;
 use crate::benchmark::runner::BenchmarkRunner;
@@ -89,9 +89,16 @@ enum Commands {
 		#[arg(short = 'C', visible_alias = "cof", long)]
 		continue_on_fail: Option<bool>,
 
-		/// Type of encoding to benchmark. Default bruteforce
+		/// Type of encoding to benchmark.
+		/// Format `<encoding_type>:[simplified_maj_and_ch_functions]:[alternative_add]`,
+		/// where simplified_maj_and_ch_functions and alternative_add are bool with default false.
+		///
+		/// Valid examples: `bruteforce:true:true`, `dxor::true`, `base4:true`, `dsub`.
+		/// Default bruteforce:false:false
+		///
+		/// [encoding_type possible values: bruteforce, dxor, dsub, base4]
 		#[arg(short = 'E', long)]
-		encoding_type: Option<EncodingType>,
+		encoding_type: Option<String>,
 
 		/// Should the benchmark be marked as a rerun. Useful for flagging up anomalies. Default false
 		#[arg(short = 'R', long)]
@@ -173,7 +180,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 			let stop_tolerance = (*stop_tolerance).unwrap_or(3);
 			let timeout = Duration::from_secs((*timeout_sec).unwrap_or(15 * 60));
 			let continue_on_fail = (*continue_on_fail).unwrap_or(false);
-			let encoding_type = encoding_type.unwrap_or(EncodingType::BruteForce);
+			let encoding_type: EncodingType = encoding_type.as_deref().map_or(
+				EncodingType::BruteForce {
+					simplified_maj_and_ch_functions: false,
+					alternative_add: false,
+				},
+				|s| s.parse().expect("Failed to parse encoding type")
+			);
 			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
 			let is_rerun = is_rerun.unwrap_or(false);
 

@@ -1,14 +1,14 @@
 use std::error::Error;
 use crate::smt_lib::smt_lib::SmtBuilder;
-use crate::smt_lib::smt_retriever::EncodingType;
 use crate::structs::collision_type::CollisionType;
+
 
 impl SmtBuilder {
 	pub(super) fn define_calculated_differential_initial_vector(
-		&mut self,
-		encoding_type: EncodingType,
+		&mut self
 	) -> Result<(), Box<dyn Error>> {
-		let diff = encoding_type.get_diff()?;
+		let encoding = self.encoding.clone();
+		let diff = encoding.get_diff()?;
 		self.comment("Initial Vector difference");
 
 		let word_size = self.hash_function.word_size().bits();
@@ -23,11 +23,9 @@ impl SmtBuilder {
 		Ok(())
 	}
 
-	pub(super) fn define_differential_words(
-		&mut self,
-		encoding_type: EncodingType,
-	) -> Result<(), Box<dyn Error>> {
-		let diff = encoding_type.get_diff()?;
+	pub(super) fn define_differential_words(&mut self) -> Result<(), Box<dyn Error>> {
+		let encoding = self.encoding.clone();
+		let diff = encoding.get_diff()?;
 
 		self.define_expansion_for_message(0);
 		self.break_line();
@@ -56,10 +54,10 @@ impl SmtBuilder {
 	}
 
 	pub(super) fn define_differential_for_working_variables(
-		&mut self,
-		encoding_type: EncodingType,
+		&mut self
 	) -> Result<(), Box<dyn Error>> {
-		let diff = encoding_type.get_diff()?;
+		let encoding = self.encoding.clone();
+		let diff = encoding.get_diff()?;
 		self.comment("Variable Differential");
 
 		for i in 1..=self.rounds {
@@ -73,12 +71,9 @@ impl SmtBuilder {
 		Ok(())
 	}
 
-	pub(super) fn define_differential_final_state(
-		&mut self,
-		encoding_type: EncodingType,
-	) -> Result<(), Box<dyn Error>> {
-		let diff = encoding_type.get_diff()?;
-
+	pub(super) fn define_differential_final_state(&mut self) -> Result<(), Box<dyn Error>> {
+		let encoding = self.encoding.clone();
+		let diff = encoding.get_diff()?;
 		self.comment("Final state difference");
 
 		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);

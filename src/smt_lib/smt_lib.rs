@@ -16,6 +16,8 @@ pub struct SmtBuilder {
 	pub(super) rounds: u8,
 	/// The target collision type
 	pub(super) collision_type: CollisionType,
+	/// The target encoding type
+	pub(super) encoding: EncodingType,
 }
 
 impl SmtBuilder {
@@ -23,6 +25,7 @@ impl SmtBuilder {
 		hash_function: HashFunction,
 		rounds: u8,
 		collision_type: CollisionType,
+		encoding: EncodingType
 	) -> Result<Self, HashError> {
 		hash_function.validate_rounds(rounds)?;
 
@@ -31,6 +34,7 @@ impl SmtBuilder {
 			hash_function,
 			rounds,
 			collision_type,
+			encoding,
 		})
 	}
 
@@ -42,19 +46,14 @@ impl SmtBuilder {
 		Ok(file)
 	}
 
-	fn encoding(
-		&mut self,
-		encoding_type: EncodingType,
-	)  -> Result<(), Box<dyn Error>> {
-		match encoding_type {
-			EncodingType::BruteForce => self.brute_force_encoding(false),
-			EncodingType::BruteForceWithSimpifiedFuns => self.brute_force_encoding(true),
-			EncodingType::DeltaXOR => self.dxor_encoding(false)?,
-			EncodingType::DeltaXORWithSimplifiedFuns => self.dxor_encoding(true)?,
-			EncodingType::DeltaSub => self.dsub_encoding(false)?,
-			EncodingType::DeltaSubWithSimplifiedFuns => self.dxor_encoding(true)?,
-			// EncodingType::Base4 => self.base4_encoding(false)?,
-			// EncodingType::Base4WithSimplifiedFuns => self.base4_encoding(true)?,
+	fn write_encoding(&mut self)  -> Result<(), Box<dyn Error>> {
+		use EncodingType::*;
+
+		match self.encoding {
+			BruteForce { .. } => self.brute_force_encoding(),
+			DeltaXOR { .. } => self.dxor_encoding()?,
+			DeltaSub { .. } => self.dsub_encoding()?,
+			// Base4 { .. } => self.base4_encoding()?,
 			_ => {}, // TODO: Implement
 		};
 
@@ -67,23 +66,19 @@ pub fn generate_smtlib_files(
 ) -> Result<(), Box<dyn Error>> {
 	use HashFunction::*;
 	use CollisionType::*;
-	use EncodingType::*;
 
 	for hash_function in [SHA224, SHA256, SHA512] {
 		for collision_type in [Standard, SemiFreeStart, FreeStart] {
-			for encoding in [
-				BruteForce,
-				BruteForceWithSimpifiedFuns,
-				DeltaXOR,
-				DeltaXORWithSimplifiedFuns,
-				DeltaSub,
-				DeltaSubWithSimplifiedFuns,
-				// Base4,
-				// Base4WithSimplifiedFuns,
-			] {
+			for encoding in EncodingType::get_all_permutations() {
 				for rounds in 1..=hash_function.max_rounds() {
-					let mut builder = SmtBuilder::new(hash_function, rounds, collision_type)?;
-					builder.encoding(encoding)?;
+					let mut builder = SmtBuilder::new(
+						hash_function,
+						rounds,
+						collision_type,
+						encoding,
+					)?;
+
+					builder.write_encoding()?;
 
 					let file_path = smt_retriever.get_file(
 						hash_function,

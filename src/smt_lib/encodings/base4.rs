@@ -114,10 +114,7 @@ impl SmtBuilder {
 	// 	self.smt += &format!("(get-value ({}))\n", s.trim());
 	// }
 
-	pub fn base4_encoding(
-		&mut self,
-		simplified: bool,
-	) -> Result<(), Box<dyn Error>> {
+	pub fn base4_encoding(&mut self) -> Result<(), Box<dyn Error>> {
 		// TODO: Implement
 		self.title("SETUP");
 		self.set_logic();
@@ -126,7 +123,7 @@ impl SmtBuilder {
 		self.define_word_type();
 
 		self.title("FUNCTIONS");
-		self.define_functions(simplified, simplified);
+		self.define_functions();
 
 		self.title("CONSTANTS");
 		self.define_base4_differential_constants();

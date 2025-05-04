@@ -27,20 +27,17 @@ impl SmtBuilder {
 		self.smt += &format!("(define-sort Word () (_ BitVec {bit_size}))\n");
 	}
 
-	pub(super) fn define_functions(
-		&mut self,
-		ch_simplified: bool,
-		maj_simplified: bool,
-	) {
+	pub(super) fn define_functions(&mut self) {
 		let word_size = self.hash_function.word_size().bits();
+		let simplified = self.encoding.simplified_maj_and_ch_functions();
 
-		let ch = if ch_simplified {
+		let ch = if simplified {
 			"(define-fun ch ((e Word) (f Word) (g Word)) Word\n\t(bvor (bvand e f) (bvand (bvnot e) g))\n)"
 		} else {
 			"(define-fun ch ((e Word) (f Word) (g Word)) Word\n\t(bvxor (bvand e f) (bvand (bvnot e) g))\n)"
 		};
 
-		let maj = if maj_simplified {
+		let maj = if simplified {
 			"(define-fun maj ((a Word) (b Word) (c Word)) Word\n\t(bvor (bvand a b) (bvand a c) (bvand b c))\n)"
 		} else {
 			"(define-fun maj ((a Word) (b Word) (c Word)) Word\n\t(bvxor (bvand a b) (bvand a c) (bvand b c))\n)"

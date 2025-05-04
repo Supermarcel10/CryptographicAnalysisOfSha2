@@ -41,10 +41,7 @@ impl SmtBuilder {
 		self.smt += format!("(assert (and\n{s}))\n").as_str();
 	}
 
-	pub fn brute_force_encoding(
-		&mut self,
-		simplified: bool,
-	) {
+	pub fn brute_force_encoding(&mut self) {
 		self.title("SETUP");
 		self.set_logic();
 
@@ -52,7 +49,7 @@ impl SmtBuilder {
 		self.define_word_type();
 
 		self.title("FUNCTIONS");
-		self.define_functions(simplified, simplified);
+		self.define_functions();
 
 		self.title("CONSTANTS");
 		self.define_constants();
