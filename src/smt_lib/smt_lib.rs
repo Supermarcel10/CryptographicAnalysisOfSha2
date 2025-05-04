@@ -53,8 +53,7 @@ impl SmtBuilder {
 			BruteForce { .. } => self.brute_force_encoding(),
 			DeltaXOR { .. } => self.dxor_encoding()?,
 			DeltaSub { .. } => self.dsub_encoding()?,
-			// Base4 { .. } => self.base4_encoding()?,
-			_ => {}, // TODO: Implement
+			Base4 { .. } => self.base4_encoding()?,
 		};
 
 		Ok(())

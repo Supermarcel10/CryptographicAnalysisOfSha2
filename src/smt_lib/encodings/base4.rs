@@ -115,7 +115,7 @@ impl SmtBuilder {
 	// }
 
 	pub fn base4_encoding(&mut self) -> Result<(), Box<dyn Error>> {
-		// TODO: Implement
+		todo!(); //TODO: Implement
 		self.title("SETUP");
 		self.set_logic();
 
