@@ -76,10 +76,11 @@ impl EncodingType {
 					simplified_maj_and_ch_functions,
 					alternative_add,
 				});
-				vec.push(Base4 {
-					simplified_maj_and_ch_functions,
-					alternative_add,
-				});
+				// TODO: Uncomment once implemented
+				// vec.push(Base4 {
+				// 	simplified_maj_and_ch_functions,
+				// 	alternative_add,
+				// });
 			}
 		}
 
