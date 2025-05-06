@@ -7,6 +7,7 @@
 ### Project Specific
 /graphs/test*.*
 *.smt2
+!/proofs/*.smt2
 
 ### https://github.com/github/gitignore/blob/main/TeX.gitignore
 ### TeX .gitignore
