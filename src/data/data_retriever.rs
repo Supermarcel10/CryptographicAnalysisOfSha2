@@ -2,6 +2,8 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
+use crate::smt_lib::smt_retriever::EncodingType;
+use crate::smt_lib::smt_retriever::EncodingType::BruteForce;
 use crate::structs::benchmark::{Benchmark, SmtSolver, SolverArg};
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
@@ -75,23 +77,60 @@ impl DataRetriever {
 		Ok(baselines)
 	}
 
+	pub fn retrieve_all_baselines_with_encoding(
+		&mut self,
+		hash_function: HashFunction,
+		collision_type: CollisionType,
+		encoding_type: EncodingType,
+		prefer_test_reruns: bool,
+	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+		if self.all_results.is_none() {
+			self.cache_all()?;
+		}
+
+		let mut baselines = Vec::new();
+		let mut reruns = Vec::new();
+		for b in self.all_results.clone().unwrap() {
+			if b.is_baseline
+				&& b.hash_function == hash_function
+				&& b.collision_type == collision_type
+				&& b.arguments.is_none()
+				&& b.encoding == encoding_type
+			{
+				if b.is_rerun {
+					reruns.push(b);
+				} else {
+					baselines.push(b);
+				}
+			}
+		}
+
+		if prefer_test_reruns {
+			substitute_reruns(&mut baselines, reruns);
+		}
+
+		Ok(baselines)
+	}
+
 	pub fn retrieve_baseline(
 		&mut self,
 		solver: SmtSolver,
 		hash_function: HashFunction,
 		collision_type: CollisionType,
-		prefer_anomalnies: bool,
+		encoding_type: EncodingType,
+		prefer_test_reruns: bool,
 	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
 		let all_baselines = self.retrieve_all_baselines(
 			hash_function,
 			collision_type,
-			prefer_anomalnies
+			prefer_test_reruns
 		)?;
 
 		Ok(
 			all_baselines
 				.into_iter()
 				.filter(|b| b.solver == solver)
+				.filter(|b| b.encoding == encoding_type)
 				.collect()
 		)
 	}
@@ -135,6 +174,48 @@ impl DataRetriever {
 		let mut map = BTreeMap::new();
 		for benchmark in baselines {
 			let key = benchmark.arguments.clone().unwrap_or("".into());
+			map.entry(key)
+				.or_insert_with(Vec::new)
+				.push(benchmark);
+		}
+
+		Ok(map)
+	}
+
+	pub fn retrieve_non_bruteforce_encodings(
+		&mut self,
+		solver: SmtSolver,
+		hash_function: HashFunction,
+		collision_type: CollisionType,
+		prefer_test_reruns: bool,
+	) -> Result<BTreeMap<EncodingType, Vec<Benchmark>>, Box<dyn Error>> {
+		if self.all_results.is_none() {
+			self.cache_all()?;
+		}
+
+		let mut baselines = Vec::new();
+		let mut reruns = Vec::new();
+		for b in self.all_results.clone().unwrap() {
+			if b.solver == solver
+				&& b.hash_function == hash_function
+				&& b.collision_type == collision_type
+				&& !matches!(b.encoding, BruteForce {..})
+			{
+				if b.is_rerun {
+					reruns.push(b);
+				} else {
+					baselines.push(b);
+				}
+			}
+		}
+
+		if prefer_test_reruns {
+			substitute_reruns(&mut baselines, reruns);
+		}
+
+		let mut map = BTreeMap::new();
+		for benchmark in baselines {
+			let key = benchmark.encoding.clone();
 			map.entry(key)
 				.or_insert_with(Vec::new)
 				.push(benchmark);

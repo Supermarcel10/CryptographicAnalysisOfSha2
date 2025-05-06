@@ -7,6 +7,7 @@ use plotters::prelude::*;
 use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
 use crate::graphing::utils::get_range;
+use crate::smt_lib::smt_retriever::EncodingType;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
 
 
@@ -404,14 +405,19 @@ impl GraphRenderer {
 	pub fn generate_all_graphs(&mut self) -> Result<(), Box<dyn Error>> {
 		use crate::structs::hash_function::HashFunction::*;
 		use crate::structs::collision_type::CollisionType::*;
+		use crate::smt_lib::smt_retriever::EncodingType::*;
 
 
 		// Generate all solver comparisons for each HashFunction and CollisionType
 		for hash_function in [SHA224, SHA256, SHA512] {
 			for collision_type in [Standard, SemiFreeStart, FreeStart] {
-				let baselines = self.data_retriever.retrieve_all_baselines(
+				let baselines = self.data_retriever.retrieve_all_baselines_with_encoding(
 					hash_function,
 					collision_type,
+					BruteForce {
+						simplified_maj_and_ch_functions: false,
+						alternative_add: false,
+					},
 					false,
 				)?;
 
@@ -439,6 +445,10 @@ impl GraphRenderer {
 			SmtSolver::Bitwuzla,
 			SHA256,
 			Standard,
+			BruteForce {
+				simplified_maj_and_ch_functions: false,
+				alternative_add: false
+			},
 			true,
 		)?;
 		self.create_time_and_memory_chart(bitwuzla_baseline_with_anomalies.clone())?;
@@ -458,6 +468,10 @@ impl GraphRenderer {
 			SmtSolver::Bitwuzla,
 			SHA256,
 			Standard,
+			BruteForce {
+				simplified_maj_and_ch_functions: false,
+				alternative_add: false
+			},
 			false,
 		)?
 			.into_iter()
@@ -493,6 +507,90 @@ impl GraphRenderer {
 				true,
 			)?;
 		}
+
+
+		// Generate Bitwuzla encoding graphs
+		let encoding_data = self.data_retriever.retrieve_non_bruteforce_encodings(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			false,
+		)?;
+
+		// DXOR
+		let dxor_encoding_data: BTreeMap<_, _> = encoding_data
+			.clone()
+			.into_iter()
+			.filter(|(e, _)| matches!(e, DeltaXOR { .. }))
+			.collect();
+
+		let dxor_baseline = dxor_encoding_data.get(&DeltaXOR {
+			simplified_maj_and_ch_functions: false,
+			alternative_add: false,
+		}).expect("Could not find baseline for dsub encoding!").clone();
+
+		self.create_baseline_graph(
+			dxor_baseline.clone(),
+			dxor_encoding_data,
+			"Delta XOR Encoding Comparison",
+			true,
+			true,
+			true,
+		)?;
+
+		let dxor_baseline = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			DeltaXOR {
+				simplified_maj_and_ch_functions: false,
+				alternative_add: false,
+			},
+			false
+		)?;
+
+		// DSUB
+		let dsub_encoding_data: BTreeMap<_, _> = encoding_data
+			.clone()
+			.into_iter()
+			.filter(|(e, _)| matches!(e, DeltaSub { .. }))
+			.collect();
+
+		let dsub_baseline = dsub_encoding_data.get(&DeltaSub {
+			simplified_maj_and_ch_functions: false,
+			alternative_add: false,
+		}).expect("Could not find baseline for dsub encoding!").clone();
+
+		self.create_baseline_graph(
+			dsub_baseline.clone(),
+			dsub_encoding_data,
+			"Delta Sub Encoding Comparison",
+			true,
+			true,
+			true,
+		)?;
+
+		// Pure encoding comparison graph
+		let mut all_encodings: BTreeMap<EncodingType, Vec<Benchmark>> = BTreeMap::new();
+
+		// Insert baselines
+		all_encodings.insert(DeltaXOR {
+			simplified_maj_and_ch_functions: false,
+			alternative_add: false,
+		}, dxor_baseline);
+		all_encodings.insert(DeltaSub {
+			simplified_maj_and_ch_functions: false,
+			alternative_add: false,
+		}, dsub_baseline);
+
+		self.create_baseline_graph(
+			bitwuzla_baseline.clone(),
+			all_encodings,
+			"Encoding Comparison",
+			true,
+			true,
+			true,
+		)?;
 
 		Ok(())
 	}

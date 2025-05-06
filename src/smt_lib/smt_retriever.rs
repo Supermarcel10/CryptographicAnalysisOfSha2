@@ -4,12 +4,11 @@ use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
-use crate::smt_lib::smt_retriever::EncodingType::{BruteForce, DeltaSub, DeltaXOR};
+use crate::smt_lib::smt_retriever::EncodingType::{BruteForce, DeltaSub, DeltaXOR, Base4};
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
 
-
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, )]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, PartialOrd, Ord)]
 pub enum EncodingType {
 	BruteForce {
 		simplified_maj_and_ch_functions: bool,
@@ -27,6 +26,27 @@ pub enum EncodingType {
 		simplified_maj_and_ch_functions: bool,
 		alternative_add: bool,
 	},
+}
+
+impl Into<String> for EncodingType {
+	fn into(self) -> String {
+		let mut encoding_str = match self {
+			BruteForce { .. } => "bruteforce",
+			DeltaXOR { .. } => "delta-xor",
+			DeltaSub { .. } => "delta-sub",
+			Base4 { .. } => "base-4",
+		}.to_string();
+
+		if self.alternative_add() {
+			encoding_str.push_str(" bitwise add");
+		}
+
+		if self.simplified_maj_and_ch_functions() {
+			encoding_str.push_str(" simplified MAJ & CH fn");
+		}
+
+		encoding_str
+	}
 }
 
 impl EncodingType {
