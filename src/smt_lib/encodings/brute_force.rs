@@ -1,3 +1,4 @@
+use std::error::Error;
 use crate::smt_lib::smt_lib::SmtBuilder;
 use crate::structs::collision_type::CollisionType;
 
@@ -41,7 +42,7 @@ impl SmtBuilder {
 		self.smt += format!("(assert (and\n{s}))\n").as_str();
 	}
 
-	pub fn brute_force_encoding(&mut self) {
+	pub fn brute_force_encoding(&mut self) -> Result<(), Box<dyn Error>>{
 		self.title("SETUP");
 		self.set_logic();
 
@@ -49,7 +50,7 @@ impl SmtBuilder {
 		self.define_word_type();
 
 		self.title("FUNCTIONS");
-		self.define_functions();
+		self.define_functions()?;
 
 		self.title("CONSTANTS");
 		self.define_constants();
@@ -62,11 +63,11 @@ impl SmtBuilder {
 		self.define_expansion_for_message(1);
 
 		self.title("MESSAGE COMPRESSION");
-		self.define_compression_for_message(0);
+		self.define_compression_for_message(0)?;
 		self.break_line();
-		self.define_compression_for_message(1);
+		self.define_compression_for_message(1)?;
 		self.break_line();
-		self.final_state_update();
+		self.final_state_update()?;
 
 		self.title("ASSERTIONS");
 		if self.collision_type == CollisionType::FreeStart {
@@ -80,5 +81,6 @@ impl SmtBuilder {
 
 		self.check_sat();
 		self.get_full_model();
+		Ok(())
 	}
 }

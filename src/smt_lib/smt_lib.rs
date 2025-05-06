@@ -50,7 +50,7 @@ impl SmtBuilder {
 		use EncodingType::*;
 
 		match self.encoding {
-			BruteForce { .. } => self.brute_force_encoding(),
+			BruteForce { .. } => self.brute_force_encoding()?,
 			DeltaXOR { .. } => self.dxor_encoding()?,
 			DeltaSub { .. } => self.dsub_encoding()?,
 			Base4 { .. } => self.base4_encoding()?,

@@ -2,7 +2,8 @@ use std::error::Error;
 use crate::smt_lib::smt_lib::SmtBuilder;
 use crate::structs::collision_type::CollisionType;
 
-
+#[allow(unreachable_code)]
+#[allow(dead_code)]
 impl SmtBuilder {
 	fn define_base4_differential_constants(&mut self) {
 		self.comment("Define K constant differential");
@@ -123,7 +124,7 @@ impl SmtBuilder {
 		self.define_word_type();
 
 		self.title("FUNCTIONS");
-		self.define_functions();
+		self.define_functions()?;
 
 		self.title("CONSTANTS");
 		self.define_base4_differential_constants();

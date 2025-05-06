@@ -4,3 +4,4 @@ mod dxor;
 mod dsub;
 mod differential_shared;
 mod base4;
+mod bitwise_adder;

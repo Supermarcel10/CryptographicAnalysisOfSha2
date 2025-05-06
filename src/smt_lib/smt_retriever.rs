@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
-use crate::smt_lib::smt_retriever::EncodingType::{Base4, BruteForce, DeltaSub, DeltaXOR};
+use crate::smt_lib::smt_retriever::EncodingType::{BruteForce, DeltaSub, DeltaXOR};
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
 

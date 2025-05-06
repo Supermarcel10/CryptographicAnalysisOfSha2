@@ -12,7 +12,7 @@ impl SmtBuilder {
 		self.define_word_type();
 
 		self.title("FUNCTIONS");
-		self.define_functions();
+		self.define_functions()?;
 
 		self.title("CONSTANTS");
 		self.define_constants();
@@ -24,14 +24,14 @@ impl SmtBuilder {
 		self.define_differential_words()?;
 
 		self.title("MESSAGE COMPRESSION");
-		self.define_compression_for_message(0);
+		self.define_compression_for_message(0)?;
 		self.break_line();
-		self.define_compression_for_message(1);
+		self.define_compression_for_message(1)?;
 		self.break_line();
 		self.define_differential_for_working_variables()?;
 
 		self.break_line();
-		self.final_state_update();
+		self.final_state_update()?;
 		self.break_line();
 		self.define_differential_final_state()?;
 
