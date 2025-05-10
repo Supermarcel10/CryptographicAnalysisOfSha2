@@ -159,6 +159,20 @@ impl GraphRenderer {
 			println!("{}", MissingData { graph_name: "baseline", dataset_name: "data" });
 		}
 
+		// Define x range
+		let x_range = get_range(&baseline_data, &|b| b.rounds as u32)
+			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range" })?;
+
+		// Trim data
+		let mut trimmed_data: BTreeMap<L, Vec<Benchmark>> = BTreeMap::new();
+		for (encoding, mut benchmarks) in data.clone().into_iter() {
+			if benchmarks.len() > x_range.end as usize {
+				benchmarks.retain(|b| b.rounds <= x_range.end as u8);
+			}
+
+			trimmed_data.insert(encoding, benchmarks);
+		}
+
 		let title = format!(
 			"{} {} {}: {}",
 			baseline_data[0].solver,
@@ -188,7 +202,7 @@ impl GraphRenderer {
 		// Get range & calculate deviation from baseline
 		let mut deviation_range: Range<f64> = f64::MAX..f64::MIN;
 		let mut deviation_data: BTreeMap<String, Vec<(u32, f64)>> = BTreeMap::new();
-		for (label, run) in data.clone() {
+		for (label, run) in trimmed_data.clone() {
 			let mut data = vec![];
 			for b in run {
 				let dev_percent = if let Some(&base_time) = baseline.get(&(b.rounds as u32)) {
@@ -226,9 +240,7 @@ impl GraphRenderer {
 			deviation_range.start = deviation_range.start.min(-5.0);
 		}
 
-		// Define ranges
-		let x_range = get_range(&baseline_data, &|b| b.rounds as u32)
-			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range" })?;
+		// Define y range
 		let y_range = deviation_range;
 
 		let path_clone_bind = path.clone();
@@ -524,29 +536,13 @@ impl GraphRenderer {
 			.filter(|(e, _)| matches!(e, DeltaXOR { .. }))
 			.collect();
 
-		let dxor_baseline = dxor_encoding_data.get(&DeltaXOR {
-			simplified_maj_and_ch_functions: false,
-			alternative_add: false,
-		}).expect("Could not find baseline for dsub encoding!").clone();
-
 		self.create_baseline_graph(
-			dxor_baseline.clone(),
+			bitwuzla_baseline.clone(),
 			dxor_encoding_data,
 			"Delta XOR Encoding Comparison",
 			true,
 			true,
 			true,
-		)?;
-
-		let dxor_baseline = self.data_retriever.retrieve_baseline(
-			SmtSolver::Bitwuzla,
-			SHA256,
-			Standard,
-			DeltaXOR {
-				simplified_maj_and_ch_functions: false,
-				alternative_add: false,
-			},
-			false
 		)?;
 
 		// DSUB
@@ -556,13 +552,8 @@ impl GraphRenderer {
 			.filter(|(e, _)| matches!(e, DeltaSub { .. }))
 			.collect();
 
-		let dsub_baseline = dsub_encoding_data.get(&DeltaSub {
-			simplified_maj_and_ch_functions: false,
-			alternative_add: false,
-		}).expect("Could not find baseline for dsub encoding!").clone();
-
 		self.create_baseline_graph(
-			dsub_baseline.clone(),
+			bitwuzla_baseline.clone(),
 			dsub_encoding_data,
 			"Delta Sub Encoding Comparison",
 			true,
@@ -573,20 +564,58 @@ impl GraphRenderer {
 		// Pure encoding comparison graph
 		let mut all_encodings: BTreeMap<EncodingType, Vec<Benchmark>> = BTreeMap::new();
 
+		// Retrieve remaining results
+		let bruteforce_simpl = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			BruteForce {
+				simplified_maj_and_ch_functions: true,
+				alternative_add: false,
+			},
+			false
+		).expect("Failed to retrieve bruteforce simplified baseline");
+
+		let bruteforce_alt_add = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			BruteForce {
+				simplified_maj_and_ch_functions: false,
+				alternative_add: true,
+			},
+			false
+		).expect("Failed to retrieve bruteforce alt add baseline");
+
+		let bruteforce_alt_add_simpl = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			BruteForce {
+				simplified_maj_and_ch_functions: true,
+				alternative_add: true,
+			},
+			false
+		).expect("Failed to retrieve bruteforce alt add simplified baseline");
+
 		// Insert baselines
-		all_encodings.insert(DeltaXOR {
-			simplified_maj_and_ch_functions: false,
+		all_encodings.insert(BruteForce {
+			simplified_maj_and_ch_functions: true,
 			alternative_add: false,
-		}, dxor_baseline);
-		all_encodings.insert(DeltaSub {
+		}, bruteforce_simpl);
+		all_encodings.insert(BruteForce {
 			simplified_maj_and_ch_functions: false,
-			alternative_add: false,
-		}, dsub_baseline);
+			alternative_add: true,
+		}, bruteforce_alt_add);
+		all_encodings.insert(BruteForce {
+			simplified_maj_and_ch_functions: true,
+			alternative_add: true,
+		}, bruteforce_alt_add_simpl);
 
 		self.create_baseline_graph(
 			bitwuzla_baseline.clone(),
 			all_encodings,
-			"Encoding Comparison",
+			"Bruteforce Encoding Comparison",
 			true,
 			true,
 			true,
