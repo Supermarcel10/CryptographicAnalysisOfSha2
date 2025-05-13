@@ -1,0 +1,5790 @@
+\section{Notes}
+This tex document makes use of the lstlisting-rust provided under the BSD-3 licence. \cite{lstlisting-rust}
+
+\section{Proofs}
+\subsection{Bitwise Adder}
+\begin{lstlisting}[language=Lisp, caption={Core adder in SMTLIB2 for 32-bit BV}, label=lst:bitadd]
+(define-fun bitadd-2 ((a (_ BitVec 32)) (b (_ BitVec 32))) (_ BitVec 32)
+	(let (
+		(p0 (bvxor a b))
+		(g0 (bvand a b))
+	)
+	(
+		let (
+			(g1 (bvor g0 (bvand p0 (bvshl g0 #x00000001))))
+			(p1 (bvand p0 (bvshl p0 #x00000001)))
+		)
+		(
+			let (
+				(g2 (bvor g1 (bvand p1 (bvshl g1 #x00000002))))
+				(p2 (bvand p1 (bvshl p1 #x00000002)))
+			)
+			(
+				let (
+					(g3 (bvor g2 (bvand p2 (bvshl g2 #x00000004))))
+					(p3 (bvand p2 (bvshl p2 #x00000004)))
+				)
+				(
+					let (
+						(g4 (bvor g3 (bvand p3 (bvshl g3 #x00000008))))
+						(p4 (bvand p3 (bvshl p3 #x00000008)))
+					)
+					(
+						let (
+							(g5 (bvor g4 (bvand p4 (bvshl g4 #x00000010))))
+							(p5 (bvand p4 (bvshl p4 #x00000010)))
+						)
+						(
+							let (
+								(g6 (bvor g5 (bvand p5 (bvshl g5 #x00000020))))
+								(p6 (bvand p5 (bvshl p5 #x00000020))) ; Redundant
+							)
+							(
+								bvxor p0 (bvshl g6 #x00000001)
+							)
+						)
+					)
+				)
+			)
+		)
+	))
+)
+\end{lstlisting}
+
+\begin{lstlisting}[language=lisp, caption={multiple operand adder in smtlib2 for 32-bit bv}, label=lst:bitadd-multi]
+(define-fun bitadd-3 ((a (_ bitvec 32)) (b (_ bitvec 32)) (c (_ bitvec 32))) (_ bitvec 32)
+	(let (
+		(sum (bvxor a b c))
+		(carry (bvshl (bvor (bvand a b) (bvand a c) (bvand b c)) #x00000001))
+	)
+	(
+		bitadd-2 sum carry
+	))
+)
+(define-fun bitadd-4 ((a (_ bitvec 32)) (b (_ bitvec 32)) (c (_ bitvec 32)) (d (_ bitvec 32))) (_ bitvec 32)
+	(let (
+		(sum (bvxor a b c))
+		(carry (bvshl (bvor (bvand a b) (bvand a c) (bvand b c)) #x00000001))
+	)
+	(
+		bitadd-3 sum carry d
+	))
+)
+(define-fun bitadd-5 ((a (_ bitvec 32)) (b (_ bitvec 32)) (c (_ bitvec 32)) (d (_ bitvec 32)) (e (_ bitvec 32))) (_ bitvec 32)
+	(let (
+		(sum1 (bvxor a b c))
+		(carry1 (bvshl (bvor (bvand a b) (bvand a c) (bvand b c)) #x00000001))
+		(sum2 (bvxor d e))
+		(carry2 (bvshl (bvand d e) #x00000001))
+	)
+	(
+		bitadd-4 sum1 carry1 sum2 carry2
+	))
+)
+(define-fun bitadd-6 ((a (_ bitvec 32)) (b (_ bitvec 32)) (c (_ bitvec 32)) (d (_ bitvec 32)) (e (_ bitvec 32)) (f (_ bitvec 32))) (_ bitvec 32)
+	(let (
+		(sum1 (bvxor a b c))
+		(carry1 (bvshl (bvor (bvand a b) (bvand a c) (bvand b c)) #x00000001))
+		(sum2 (bvxor d e f))
+		(carry2 (bvshl (bvor (bvand d e) (bvand d f) (bvand e f)) #x00000001))
+	)
+	(
+		bitadd-4 sum1 carry1 sum2 carry2
+	))
+)
+\end{lstlisting}
+
+\subsection{BASE4 Proofs}
+\begin{lstlisting}[language=lisp, caption={AND logic proof}, label=lst:and-proof]
+(set-option :produce-models true)
+(set-logic QF_BV)
+
+(define-sort BV4 () (_ BitVec 4))
+
+
+; Input Variables
+(declare-fun LEFT_X () BV4)
+(declare-fun RIGHT_X () BV4)
+(declare-fun LEFT_Y () BV4)
+(declare-fun RIGHT_Y () BV4)
+
+
+; Differential variables for X
+(define-fun X_a () BV4 (bvand (bvnot LEFT_X) (bvnot RIGHT_X)))
+(define-fun X_b () BV4 (bvand (bvnot LEFT_X) RIGHT_X))
+(define-fun X_c () BV4 (bvand LEFT_X (bvnot RIGHT_X)))
+(define-fun X_d () BV4 (bvand LEFT_X RIGHT_X))
+(define-fun X_f () BV4 (bvor X_b X_d))  ; f = b OR d
+(define-fun X_g () BV4 (bvor X_c X_d))  ; g = c OR d
+
+
+; Differential variables for Y
+(define-fun Y_a () BV4 (bvand (bvnot LEFT_Y) (bvnot RIGHT_Y)))
+(define-fun Y_b () BV4 (bvand (bvnot LEFT_Y) RIGHT_Y))
+(define-fun Y_c () BV4 (bvand LEFT_Y (bvnot RIGHT_Y)))
+(define-fun Y_d () BV4 (bvand LEFT_Y RIGHT_Y))
+(define-fun Y_f () BV4 (bvor Y_b Y_d))  ; f = b OR d
+(define-fun Y_g () BV4 (bvor Y_c Y_d))  ; g = c OR d
+
+
+; Theory Diff
+(define-fun LEFT_XY () BV4 (bvand LEFT_X LEFT_Y))
+(define-fun RIGHT_XY () BV4 (bvand RIGHT_X RIGHT_Y))
+
+
+; Actual
+(define-fun a_XY () BV4 (bvand (bvnot LEFT_XY) (bvnot RIGHT_XY)))
+(define-fun b_XY () BV4 (bvand (bvnot LEFT_XY) RIGHT_XY))
+(define-fun c_XY () BV4 (bvand LEFT_XY (bvnot RIGHT_XY)))
+(define-fun d_XY () BV4 (bvand LEFT_XY RIGHT_XY))
+
+
+; Logic
+(define-fun d2 () BV4 (bvand X_d Y_d))
+(define-fun b2 () BV4 (bvand (bvand X_f Y_f) (bvnot d2)))
+(define-fun c2 () BV4 (bvand (bvand X_g Y_g) (bvnot d2)))
+(define-fun a2 () BV4 (bvnot (bvor d2 (bvor c2 b2))))
+
+
+; Assert mismatch
+(assert (not (and
+		(= a2 a_XY)
+		(= b2 b_XY)
+		(= c2 c_XY)
+		(= d2 d_XY)
+)))
+
+
+(check-sat)
+\end{lstlisting}
+
+\begin{lstlisting}[language=lisp, caption={OR logic proof}, label=lst:or-proof]
+(set-option :produce-models true)
+(set-logic QF_BV)
+
+(define-sort BV4 () (_ BitVec 4))
+
+
+; Input Variables
+(declare-fun LEFT_X () BV4)
+(declare-fun RIGHT_X () BV4)
+(declare-fun LEFT_Y () BV4)
+(declare-fun RIGHT_Y () BV4)
+
+
+; Differential variables for X
+(define-fun X_a () BV4 (bvand (bvnot LEFT_X) (bvnot RIGHT_X)))
+(define-fun X_b () BV4 (bvand (bvnot LEFT_X) RIGHT_X))
+(define-fun X_c () BV4 (bvand LEFT_X (bvnot RIGHT_X)))
+(define-fun X_d () BV4 (bvand LEFT_X RIGHT_X))
+(define-fun X_f () BV4 (bvor X_b X_d))  ; f = b OR d
+(define-fun X_g () BV4 (bvor X_c X_d))  ; g = c OR d
+
+
+; Differential variables for Y
+(define-fun Y_a () BV4 (bvand (bvnot LEFT_Y) (bvnot RIGHT_Y)))
+(define-fun Y_b () BV4 (bvand (bvnot LEFT_Y) RIGHT_Y))
+(define-fun Y_c () BV4 (bvand LEFT_Y (bvnot RIGHT_Y)))
+(define-fun Y_d () BV4 (bvand LEFT_Y RIGHT_Y))
+(define-fun Y_f () BV4 (bvor Y_b Y_d))  ; f = b OR d
+(define-fun Y_g () BV4 (bvor Y_c Y_d))  ; g = c OR d
+
+
+; Theory Diff
+(define-fun LEFT_XY () BV4 (bvor LEFT_X LEFT_Y))
+(define-fun RIGHT_XY () BV4 (bvor RIGHT_X RIGHT_Y))
+
+
+; Actual
+(define-fun a_XY () BV4 (bvand (bvnot LEFT_XY) (bvnot RIGHT_XY)))
+(define-fun b_XY () BV4 (bvand (bvnot LEFT_XY) RIGHT_XY))
+(define-fun c_XY () BV4 (bvand LEFT_XY (bvnot RIGHT_XY)))
+(define-fun d_XY () BV4 (bvand LEFT_XY RIGHT_XY))
+
+
+; Logic
+(define-fun a2 () BV4 (bvand X_a Y_a))
+(define-fun b2 () BV4 (bvnot (bvor X_g Y_g a2)))
+(define-fun c2 () BV4 (bvnot (bvor X_f Y_f a2)))
+(define-fun d2 () BV4 (bvnot (bvor a2 b2 c2)))
+
+
+; Assert mismatch
+(assert (not (and
+		(= a2 a_XY)
+		(= b2 b_XY)
+		(= c2 c_XY)
+		(= d2 d_XY)
+)))
+
+
+(check-sat)
+\end{lstlisting}
+
+\begin{lstlisting}[language=lisp, caption={XOR logic proof}, label=lst:xor-proof]
+(set-option :produce-models true)
+(set-logic QF_BV)
+
+(define-sort BV4 () (_ BitVec 4))
+
+
+; Input variables
+(declare-fun LEFT_X () BV4)
+(declare-fun RIGHT_X () BV4)
+(declare-fun LEFT_Y () BV4)
+(declare-fun RIGHT_Y () BV4)
+
+
+; Differential variables for X
+(define-fun X_a () BV4 (bvand (bvnot LEFT_X) (bvnot RIGHT_X)))
+(define-fun X_b () BV4 (bvand (bvnot LEFT_X) RIGHT_X))
+(define-fun X_c () BV4 (bvand LEFT_X (bvnot RIGHT_X)))
+(define-fun X_d () BV4 (bvand LEFT_X RIGHT_X))
+
+
+; Differential variables for Y
+(define-fun Y_a () BV4 (bvand (bvnot LEFT_Y) (bvnot RIGHT_Y)))
+(define-fun Y_b () BV4 (bvand (bvnot LEFT_Y) RIGHT_Y))
+(define-fun Y_c () BV4 (bvand LEFT_Y (bvnot RIGHT_Y)))
+(define-fun Y_d () BV4 (bvand LEFT_Y RIGHT_Y))
+
+
+; Theory Diff
+(define-fun LEFT_XY () BV4 (bvxor LEFT_X LEFT_Y))
+(define-fun RIGHT_XY () BV4 (bvxor RIGHT_X RIGHT_Y))
+
+
+; Actual
+(define-fun a_XY () BV4 (bvand (bvnot LEFT_XY) (bvnot RIGHT_XY)))
+(define-fun b_XY () BV4 (bvand (bvnot LEFT_XY) RIGHT_XY))
+(define-fun c_XY () BV4 (bvand LEFT_XY (bvnot RIGHT_XY)))
+(define-fun d_XY () BV4 (bvand LEFT_XY RIGHT_XY))
+
+
+; Logic
+(define-fun a2 () BV4
+		(bvor (bvand X_a Y_a)
+					(bvand X_b Y_b)
+					(bvand X_c Y_c)
+					(bvand X_d Y_d)
+		)
+)
+
+(define-fun b2 () BV4
+		(bvor (bvand X_a Y_b)
+					(bvand X_b Y_a)
+					(bvand X_c Y_d)
+					(bvand X_d Y_c)
+		)
+)
+
+(define-fun c2 () BV4
+		(bvor (bvand X_a Y_c)
+					(bvand X_c Y_a)
+					(bvand X_b Y_d)
+					(bvand X_d Y_b)
+		)
+)
+
+(define-fun d2 () BV4
+		(bvor (bvand X_a Y_d)
+					(bvand X_d Y_a)
+					(bvand X_b Y_c)
+					(bvand X_c Y_b)
+		)
+)
+
+
+; Assert mismatch
+(assert (not (and
+		(= a2 a_XY)
+		(= b2 b_XY)
+		(= c2 c_XY)
+		(= d2 d_XY)
+)))
+
+(check-sat)
+\end{lstlisting}
+
+\section{Rust Codebase}
+\label{sec:codebase}
+\begin{lstlisting}[language=rust, caption={main.rs}]
+use std::error::Error;
+use std::fs;
+use std::ops::Range;
+use std::path::PathBuf;
+use std::time::Duration;
+use clap::{Parser, Subcommand};
+use plotters::prelude::RGBColor;
+use crate::benchmark::runner::BenchmarkRunner;
+use crate::data::data_retriever::DataRetriever;
+use crate::graphing::graph_renderer::GraphRenderer;
+use crate::sha::{MessageBlock, Sha, StartVector, Word};
+use crate::smt_lib::smt_lib::generate_smtlib_files;
+use crate::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
+use crate::structs::benchmark::{Benchmark, SmtSolver};
+use crate::structs::collision_type::CollisionType;
+use crate::structs::hash_function::HashFunction;
+
+#[cfg(not(unix))]
+compile_error!("This crate supports only Unix-like operating systems");
+
+mod smt_lib;
+mod sha;
+mod verification;
+mod structs;
+mod graphing;
+mod data;
+mod benchmark;
+
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+	#[command(subcommand)]
+	command: Commands,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+	/// Generate SMTLIB 2.6 standard files
+	Generate {
+		/// Directory where smt2 files will be saved. Default `smt/`
+		#[arg(short = 'S', long)]
+		smt_dir: Option<PathBuf>,
+	},
+
+	/// Run an exhaustive benchmark over all solvers, hash functions, collision types and arguments
+	Benchmark {
+		/// Argument to select solver. Use multiple `--solver <SOLVER>` statements for multiple solvers
+		#[arg(required = true, long)]
+		solver: Vec<SmtSolver>,
+
+		/// Argument to select hash function. Use separate `--hash-function <HASH_FUNCTION>` statements for multiple hash functions
+		#[arg(required = true, long)]
+		hash_function: Vec<HashFunction>,
+
+		/// Argument to select collision type. Use separate `--collision-type <COLLISION_TYPE>` statements for multiple collision types
+		#[arg(required = true, long)]
+		collision_type: Vec<CollisionType>,
+
+		/// Argument to set (non-inclusive) range of compression rounds. Input with `--round-range <MIN>..<MAX>`. Default 1..hash function max
+		#[arg(long, value_parser = parse_range)]
+		round_range: Option<Range<u8>>,
+
+		/// Argument to set the solver argument sets (combinations of solver arguments).
+		/// An arugment set can contain multiple arguments which will all be executed on the solver.
+		/// To test each argument separately, set each solver argument as a separate --arg-set.
+		/// Use separate `--arg-set "<ARG_SET>"` statements for multiple argument sets.
+		/// Default <No Args>
+		#[arg(long, allow_hyphen_values = true)]
+		arg_set: Option<Vec<String>>,
+
+		/// The number of required sequential failures to stop. Default 3
+		#[arg(short, long)]
+		stop_tolerance:  Option<u8>,
+
+		/// Duration after which run is marked as timed out. Default 15 mins
+		#[arg(short, long)]
+		timeout_sec: Option<u64>,
+
+		/// Path to directory containing SMT files. Default `smt/`
+		#[arg(short = 'S', long)]
+		smt_dir: Option<PathBuf>,
+
+		/// Path to directory where result files will be saved to. `None` to disable output. Default `results/`
+		#[arg(short, long)]
+		result_dir: Option<PathBuf>,
+
+		/// Should remaining benchmark runs continue despite error on one. Default false
+		#[arg(short = 'C', visible_alias = "cof", long)]
+		continue_on_fail: Option<bool>,
+
+		/// Type of encoding to benchmark.
+		/// Format `<encoding_type>:[simplified_maj_and_ch_functions]:[alternative_add]`,
+		/// where simplified_maj_and_ch_functions and alternative_add are bool with default false.
+		///
+		/// Valid examples: `bruteforce:true:true`, `dxor::true`, `base4:true`, `dsub`.
+		/// Default bruteforce:false:false
+		///
+		/// [encoding_type possible values: bruteforce, dxor, dsub, base4]
+		#[arg(short = 'E', long)]
+		encoding_type: Option<String>,
+
+		/// Should the benchmark be marked as a rerun. Useful for flagging up anomalies. Default false
+		#[arg(short = 'R', long)]
+		is_rerun: Option<bool>,
+	},
+
+	/// Run the underlying sha2 function
+	Sha2 {
+		/// Message to hash
+		#[arg(short, long)]
+		msg: Option<String>,
+
+		/// Message digest block to hash (pre-padded and pre-processed digest), separated word-by-word with spaces
+		#[arg(short = 'M', visible_alias = "mb", long)]
+		msg_block: Option<String>,
+
+		/// Hash function
+		hash_function: HashFunction,
+
+		/// Number of compression rounds. Default hash function max
+		#[arg(short, long)]
+		rounds: Option<u8>,
+
+		/// Starting vector for hash function, separated word-by-word with spaces. Default Initial Vector (IV)
+		#[arg(long, visible_alias = "sv")]
+		start_vector: Option<String>,
+	},
+
+	/// Load, verify and display result files
+	Load {
+		/// Path to a result file, or a directory. Default `results/`
+		#[arg(short = 'R', long)]
+		result_path: Option<PathBuf>,
+
+		/// Should directory scan be recursive. Default true
+		#[arg(short, long)]
+		recursive: Option<bool>,
+	},
+
+	/// Render result graphs
+	Graph {
+		/// Directory where graphs will be saved. Default `graphs/`
+		#[arg(long)]
+		graph_dir: Option<PathBuf>,
+
+		/// Directory where all benchmark results are stored. Default `results/`
+		#[arg(long)]
+		result_dir: Option<PathBuf>,
+	}
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+	let cli = Cli::parse();
+
+	match &cli.command {
+		Commands::Generate { smt_dir } => {
+			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
+			generate_smtlib_files(
+				SmtRetriever::new(smt_dir)?
+			)?;
+		},
+
+		Commands::Benchmark {
+			solver: solvers,
+			hash_function: hash_functions,
+			collision_type: collision_types,
+			round_range,
+			arg_set,
+			stop_tolerance,
+			timeout_sec,
+			smt_dir,
+			result_dir,
+			continue_on_fail,
+			encoding_type,
+			is_rerun,
+		} => {
+			let round_range = round_range.clone().unwrap_or(1..80);
+			let arg_set = arg_set.clone().unwrap_or(Vec::with_capacity(0));
+			let stop_tolerance = (*stop_tolerance).unwrap_or(3);
+			let timeout = Duration::from_secs((*timeout_sec).unwrap_or(15 * 60));
+			let continue_on_fail = (*continue_on_fail).unwrap_or(false);
+			let encoding_type: EncodingType = encoding_type.as_deref().map_or(
+				EncodingType::BruteForce {
+					simplified_maj_and_ch_functions: false,
+					alternative_add: false,
+				},
+				|s| s.parse().expect("Failed to parse encoding type")
+			);
+			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
+			let is_rerun = is_rerun.unwrap_or(false);
+
+			let save_dir = if result_dir
+				.clone()
+				.is_some_and(|path| path.to_str().unwrap().to_lowercase() == "none")
+			{
+				None
+			} else if let Some(path) = result_dir.clone() {
+				Some(path)
+			} else {
+				Some(PathBuf::from("results/"))
+			};
+
+			let runner = BenchmarkRunner::new(
+				stop_tolerance,
+				timeout,
+				SmtRetriever::new(smt_dir)?,
+				save_dir,
+				continue_on_fail,
+				encoding_type,
+				is_rerun,
+			);
+
+			runner.run_benchmarks(
+				solvers.clone(),
+				hash_functions.clone(),
+				collision_types.clone(),
+				round_range,
+				arg_set,
+			)?;
+		}
+
+		Commands::Sha2 {
+			msg,
+			msg_block,
+			hash_function,
+			rounds,
+			start_vector,
+		} => {
+			let rounds = rounds.unwrap_or(hash_function.max_rounds());
+
+			let start_vector = match start_vector {
+				None => StartVector::IV,
+				Some(start_vector) => {
+					let mut words= Vec::with_capacity(8);
+					for word in start_vector.split_whitespace() {
+						words.push(Word::from_str_radix(word, 16, *hash_function)?);
+					}
+
+					StartVector::CV(<[Word; 8]>::try_from(words).unwrap())
+				}
+			};
+
+			let result = if let Some(msg) = msg {
+				Sha::from_string(
+					msg,
+					*hash_function,
+					rounds,
+					start_vector,
+				)?.execute()?
+			} else if let Some(msg_block) = msg_block {
+				Sha::from_message_block(
+					MessageBlock::from_str_radix(msg_block, 16, *hash_function)?,
+					*hash_function,
+					rounds,
+					start_vector,
+				)?.execute()?
+			} else {
+				return Err(Box::from("Either msg or msg_block must be provided"));
+			};
+
+			println!("{}", result.hash);
+		},
+
+		Commands::Load {
+			result_path,
+			recursive,
+		} => {
+			let result_path = result_path.clone().unwrap_or(PathBuf::from("results/"));
+			let recursive = recursive.unwrap_or(true);
+
+			let benchmarks_with_files = load_mapped(&result_path, recursive)?;
+			let show_file_names = benchmarks_with_files.len() > 1;
+			for (mut benchmark, file_path) in benchmarks_with_files {
+				let file_name = file_path
+					.file_name()
+					.unwrap()
+					.to_str()
+					.ok_or("Failed to read file")?;
+
+				if show_file_names {
+					println!("{file_name}");
+				}
+
+				match benchmark.parse_output() {
+					Ok(output) => match output {
+						None => println!("UNSAT\n"),
+						Some(colliding_pair) => println!("{}\n", colliding_pair),
+					}
+					Err(err) => println!("{err}"),
+				}
+
+				println!("---\n")
+			}
+		}
+
+		Commands::Graph {
+			graph_dir,
+			result_dir,
+		} => {
+			let graph_dir = graph_dir.clone().unwrap_or(PathBuf::from("graphs/"));
+			let result_dir = result_dir.clone().unwrap_or(PathBuf::from("results/"));
+
+			let mut graph_renderer = GraphRenderer::new(
+				graph_dir.clone(),
+				(1024, 768),
+				("noto sans", 36),
+				("noto sans", 14),
+				Box::from([
+					RGBColor(166, 30, 77), // Maroon
+					RGBColor(24, 100, 171), // Dark Blue
+					RGBColor(8, 127, 91), // Green
+					RGBColor(250, 176, 5), // Yellow
+					RGBColor(156, 54, 181), // Purple
+					RGBColor(12, 133, 153), // Cyan
+					RGBColor(95, 61, 196), // Light Purple
+					RGBColor(70, 210, 94), // Light Green
+					RGBColor(116, 143, 252), // Light Blue
+					RGBColor(0, 0, 0),
+				]),
+				2,
+				DataRetriever::new(result_dir.clone())?,
+			)?;
+
+			graph_renderer.generate_all_graphs()?;
+		},
+	}
+
+	Ok(())
+}
+
+fn load_mapped(
+	dir_location: &PathBuf,
+	recursive: bool,
+) -> Result<Vec<(Benchmark, PathBuf)>, Box<dyn Error>> {
+	let mut map = Vec::new();
+
+	if dir_location.is_file() {
+		map.push((Benchmark::load(dir_location)?, dir_location.clone()));
+		return Ok(map);
+	}
+
+	for dir_entry in fs::read_dir(dir_location)? {
+		if let Ok(entry) = dir_entry {
+			let metadata = entry.metadata()?;
+			if recursive && metadata.is_dir() {
+				map.extend(load_mapped(&entry.path(), true)?);
+			} else if metadata.is_file() {
+				map.push((Benchmark::load(&entry.path())?, entry.path()));
+			}
+		}
+	}
+
+	Ok(map)
+}
+
+fn parse_range(s: &str) -> Result<Range<u8>, String> {
+	let (start, end) = s.split_once("..")
+		.ok_or_else(|| format!("Invalid range format: '{}'", s))?;
+
+	Ok(Range {
+		start: start.parse().map_err(|e| format!("Start: {}", e))?,
+		end: end.parse().map_err(|e| format!("End: {}", e))?
+	})
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={sha/structs.rs}]
+use std::fmt::{Display, Formatter, LowerHex};
+use std::num::ParseIntError;
+use crate::structs::hash_function::HashFunction;
+use crate::verification::bit_differential::BitDifferential;
+
+#[derive(thiserror::Error, Debug, PartialEq, Clone)]
+pub enum HashError {
+	#[error("requested rounds {requested} exceeds maximum rounds {maximum} for hash function")]
+	TooManyRounds {
+		requested: u8,
+		maximum: u8,
+	},
+	#[error("failed to convert bytes into valid word")]
+	FailedToConvertBytes,
+	#[error("attempted to {operation} on two different word sizes")]
+	WordMismatch {
+		operation: String,
+	}
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
+pub enum Word {
+	W32(u32),
+	W64(u64)
+}
+
+impl Display for Word {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Word::W32(w) => f.write_str(&format!("{w:08x}")),
+			Word::W64(w) => f.write_str(&format!("{w:016x}"))
+		}
+	}
+}
+
+impl From<u32> for Word {
+	fn from(value: u32) -> Self {
+		Word::W32(value)
+	}
+}
+
+impl From<u64> for Word {
+	fn from(value: u64) -> Self {
+		Word::W64(value)
+	}
+}
+
+impl PartialEq<u32> for Word {
+	fn eq(&self, other: &u32) -> bool {
+		match self {
+			Word::W32(s) => s == other,
+			Word::W64(_) => false,
+		}
+	}
+
+	fn ne(&self, other: &u32) -> bool {
+		!self.eq(other)
+	}
+}
+
+impl PartialEq<u64> for Word {
+	fn eq(&self, other: &u64) -> bool {
+		match self {
+			Word::W32(_) => false,
+			Word::W64(s) => s == other,
+		}
+	}
+
+	fn ne(&self, other: &u64) -> bool {
+		!self.eq(other)
+	}
+}
+
+impl LowerHex for Word {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Word::W32(w) => f.write_str(&format!("{w:08x}")),
+			Word::W64(w) => f.write_str(&format!("{w:016x}")),
+		}?;
+
+		Ok(())
+	}
+}
+
+impl BitDifferential for Word {
+	fn bit_diff(self, rhs: Self) -> String {
+		use Word::*;
+		match (self, rhs) {
+			(W32(l), W32(r)) => l.bit_diff(r),
+			(W64(l), W64(r)) => l.bit_diff(r),
+			(_, _) => HashError::WordMismatch { operation: String::from("bit diff") }.to_string(),
+		}
+	}
+}
+
+impl Word {
+	pub(super) fn ch(e: Self, f: Self, g: Self) -> Result<Self, HashError> {
+		use Word::*;
+		match (e, f, g) {
+			(W32(e), W32(f), W32(g)) => Ok(W32((e & f) ^ (!e & g))),
+			(W64(e), W64(f), W64(g)) => Ok(W64((e & f) ^ (!e & g))),
+			(_, _, _) => Err(HashError::WordMismatch { operation: String::from("ch")}),
+		}
+	}
+
+	pub(super) fn maj(a: Self, b: Self, c: Self) -> Result<Self, HashError> {
+		use Word::*;
+		match (a, b, c) {
+			(W32(a), W32(b), W32(c)) => Ok(W32((a & b) ^ (a & c) ^ (b & c))),
+			(W64(a), W64(b), W64(c)) => Ok(W64((a & b) ^ (a & c) ^ (b & c))),
+			(_, _, _) => Err(HashError::WordMismatch { operation: String::from("maj")}),
+		}
+	}
+
+	pub(super) fn sigma0(a: Self) -> Self {
+		use Word::*;
+		match a {
+			W32(a) => W32(a.rotate_right(2) ^ a.rotate_right(13) ^ a.rotate_right(22)),
+			W64(a) => W64(a.rotate_right(28) ^ a.rotate_right(34) ^ a.rotate_right(39)),
+		}
+	}
+
+	pub(super) fn sigma1(e: Self) -> Self {
+		use Word::*;
+		match e {
+			W32(e) => W32(e.rotate_right(6) ^ e.rotate_right(11) ^ e.rotate_right(25)),
+			W64(e) => W64(e.rotate_right(14) ^ e.rotate_right(18) ^ e.rotate_right(41)),
+		}
+	}
+
+	pub(super) fn gamma0(x: Self) -> Self {
+		use Word::*;
+		match x {
+			W32(x) => W32(x.rotate_right(7) ^ x.rotate_right(18) ^ (x >> 3)),
+			W64(x) => W64(x.rotate_right(1) ^ x.rotate_right(8) ^ (x >> 7)),
+		}
+	}
+
+	pub(super) fn gamma1(x: Self) -> Self {
+		use Word::*;
+		match x {
+			W32(x) => W32(x.rotate_right(17) ^ x.rotate_right(19) ^ (x >> 10)),
+			W64(x) => W64(x.rotate_right(19) ^ x.rotate_right(61) ^ (x >> 6)),
+		}
+	}
+
+	pub fn from_u32_vec(slice: Vec<u32>) -> Vec<Self> {
+		slice.into_iter().map(|x| Word::W32(x)).collect()
+	}
+
+	pub fn from_u64_vec(slice: Vec<u64>) -> Vec<Self> {
+		slice.into_iter().map(|x| Word::W64(x)).collect()
+	}
+
+	pub fn from_str_radix(
+		src: &str,
+		radix: u32,
+		hash_function: HashFunction,
+	) -> Result<Word, ParseIntError> {
+		use HashFunction::*;
+		match hash_function {
+			SHA224 | SHA256 => Ok(Word::W32(u32::from_str_radix(src, radix)?)),
+			SHA512 => Ok(Word::W64(u64::from_str_radix(src, radix)?)),
+		}
+	}
+
+	pub(super) fn wrapping_add(self, rhs: Word) -> Result<Self, HashError> {
+		match (self, rhs) {
+			(Word::W32(l), Word::W32(r)) => Ok(Word::W32(l.wrapping_add(r))),
+			(Word::W64(l), Word::W64(r)) => Ok(Word::W64(l.wrapping_add(r))),
+			(_, _) => Err(HashError::WordMismatch { operation: String::from("wrapping add")})
+		}
+	}
+
+	pub(super) fn from_be_bytes(bytes: &[u8]) -> Result<Self, HashError> {
+		match bytes.len() {
+			4 => Ok(Word::W32(u32::from_be_bytes(bytes.try_into().unwrap()))),
+			8 => Ok(Word::W64(u64::from_be_bytes(bytes.try_into().unwrap()))),
+			_ => Err(HashError::FailedToConvertBytes),
+		}
+	}
+
+	#[allow(dead_code)]
+	pub fn to_be_bytes(self) -> Box<[u8]> {
+		match self {
+			Word::W32(w) => Box::from(w.to_be_bytes()),
+			Word::W64(w) => Box::from(w.to_be_bytes()),
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::Word;
+
+	#[test]
+	fn test_word_ch() {
+		use Word::*;
+
+		let e = W32(20);
+		let f = W32(40);
+		let g = W32(60);
+
+		assert_eq!(Word::ch(e, f, g), Ok(W32(40)));
+
+		let e = W64(20);
+		let f = W64(40);
+		let g = W64(60);
+
+		assert_eq!(Word::ch(e, f, g), Ok(W64(40)));
+	}
+
+	#[test]
+	fn test_word_maj() {
+		use Word::*;
+
+		let a = W32(20);
+		let b = W32(40);
+		let c = W32(60);
+
+		assert_eq!(Word::maj(a, b, c).unwrap(), W32(60));
+
+		let a = W64(20);
+		let b = W64(40);
+		let c = W64(60);
+
+		assert_eq!(Word::maj(a, b, c).unwrap(), W64(60));
+	}
+
+	#[test]
+	fn test_word_sigma0() {
+		use Word::*;
+		assert_eq!(Word::sigma0(W32(1)), W32(1074267136));
+		assert_eq!(Word::sigma0(W64(1)), W64(69826772992));
+	}
+
+	#[test]
+	fn test_word_sigma1() {
+		use Word::*;
+		assert_eq!(Word::sigma1(W32(1)), W32(69206144));
+		assert_eq!(Word::sigma1(W64(1)), W64(1196268659408896));
+	}
+
+	#[test]
+	fn test_word_gamma0() {
+		use Word::*;
+		assert_eq!(Word::gamma0(W32(1)), W32(33570816));
+		assert_eq!(Word::gamma0(W64(1)), W64(9295429630892703744));
+	}
+
+	#[test]
+	fn test_word_gamma1() {
+		use Word::*;
+		assert_eq!(Word::gamma1(W32(1)), W32(40960));
+		assert_eq!(Word::gamma1(W64(1)), W64(35184372088840));
+	}
+
+	#[test]
+	fn test_word_from_be_bytes() {
+		use Word::*;
+
+		assert_eq!(Word::from_be_bytes(&8u32.to_be_bytes()).unwrap(), W32(8));
+		assert_eq!(Word::from_be_bytes(&8u64.to_be_bytes()).unwrap(), W64(8));
+	}
+
+	#[test]
+	fn test_word_wrapping_add() {
+		use Word::*;
+		assert_eq!(Word::wrapping_add(W32(1), W32(2)).unwrap(), W32(3));
+		assert_eq!(Word::wrapping_add(W64(1), W64(2)).unwrap(), W64(3));
+
+		assert_eq!(Word::wrapping_add(W32(u32::MAX), W32(2)).unwrap(), W32(1));
+		assert_eq!(Word::wrapping_add(W64(u64::MAX), W64(2)).unwrap(), W64(1));
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={sha/sha.rs}]
+use std::cmp::PartialEq;
+use std::error::Error;
+use std::fmt::{Debug, Display, Formatter};
+use crate::sha::structs::{HashError, Word};
+use crate::structs::hash_function::HashFunction;
+use crate::structs::hash_result::HashResult;
+use crate::structs::sha_state::ShaState;
+
+macro_rules! impl_word_display {
+    ($type:ty, $closure:expr) => {
+        impl Display for $type {
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                for (i, word) in $closure(self).iter().enumerate() {
+                    if i > 0 {
+                        write!(f, " ")?;
+                    }
+                    write!(f, "{word}")?;
+                }
+
+                Ok(())
+            }
+        }
+    };
+}
+
+macro_rules! impl_from_word_array {
+    ($array_type:ty, $array_size:expr, $for_type:ty, $constructor:expr) => {
+        impl From<[$array_type; $array_size]> for $for_type {
+            fn from(arr: [$array_type; $array_size]) -> Self {
+                $constructor(arr.map(Word::from))
+            }
+        }
+    };
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
+pub enum StartVector {
+	/// Initial Vector
+	IV,
+	/// Chaining Vector
+	CV([Word; 8])
+}
+
+impl_from_word_array!(u32, 8, StartVector, StartVector::CV);
+impl_from_word_array!(u64, 8, StartVector, StartVector::CV);
+
+impl Display for StartVector {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			StartVector::IV => write!(f, "IV Start Vector")?,
+			StartVector::CV(vec) => {
+				for (i, word) in vec.iter().enumerate() {
+					if i > 0 {
+						write!(f, " ")?;
+					}
+					write!(f, "{word}")?;
+				}
+			}
+		}
+
+		Ok(())
+	}
+}
+
+impl StartVector {
+	/// Retrieves initial vector (IV), often referred to as H variables
+	pub fn get_vector(self, hash_function: HashFunction) -> [Word; 8] {
+		let vec = match (self, hash_function) {
+			(StartVector::IV, HashFunction::SHA224) => Word::from_u32_vec(vec![
+				0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
+				0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4,
+			]),
+			(StartVector::IV, HashFunction::SHA256) => Word::from_u32_vec(vec![
+				0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+				0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+			]),
+			(StartVector::IV, HashFunction::SHA512) => Word::from_u64_vec(vec![
+				0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
+				0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179,
+			]),
+			(StartVector::CV(vec), _) => return vec,
+		};
+
+		vec.try_into().expect("Failed to convert initial vector; vector size mismatch!")
+	}
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct MessageBlock(pub [Word; 16]);
+
+impl_word_display!(MessageBlock, |mb: &MessageBlock| mb.0);
+impl_from_word_array!(u32, 16, MessageBlock, MessageBlock);
+impl_from_word_array!(u64, 16, MessageBlock, MessageBlock);
+
+impl MessageBlock {
+	pub fn from_str_radix(
+		src: &str,
+		radix: u32,
+		hash_function: HashFunction,
+	) -> Result<MessageBlock, Box<dyn Error>> {
+		let mut words = Vec::with_capacity(16);
+		for word_str in src.split_whitespace() {
+			words.push(Word::from_str_radix(word_str, radix, hash_function)?);
+		}
+
+		if words.len() != 16 {
+			return Err(Box::from(format!("Message digest should be 16 words in length, parsed {} instead", words.len())));
+		}
+
+		// Ensure all words are same size
+		let base_discriminant = std::mem::discriminant(&words[0]);
+		for word in words.iter() {
+			if base_discriminant != std::mem::discriminant(word) {
+				return Err(Box::from("Words length must be of the same size, parsed both u32 and u64"));
+			}
+		}
+
+		Ok(MessageBlock(<[Word; 16]>::try_from(words).expect("Failed to word Vec convert to array")))
+	}
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OutputHash(pub Box<[Word]>);
+
+impl_word_display!(OutputHash, |oh: &OutputHash| oh.0.clone());
+
+#[derive(Debug)]
+pub struct Sha {
+	/// Message blocks
+	block: MessageBlock,
+	/// Current state of sha function
+	state: [Word; 8],
+	/// Hash function to use
+	hash_function: HashFunction,
+	/// Number of compression rounds
+	rounds: u8,
+}
+
+impl Sha {
+	/// Construct an SHA digest from a string message.
+	///
+	/// # Arguments
+	///
+	/// * `message`: Message to hash
+	/// * `hash_function`: Hash function to use
+	/// * `rounds`: Number of compression rounds
+	/// * `start_vector`: Vector to start with
+	///
+	/// # Returns
+	/// `Result<Sha<W>, HashError>`
+	///
+	/// Returns SHA digest or HashError.
+	///
+	/// # Examples
+	///
+	/// ```
+	/// let sha_digest = Sha::from_string("abc", SHA256, 64, IV);
+	/// ```
+	pub fn from_string(
+		message: &str,
+		hash_function: HashFunction,
+		rounds: u8,
+		start_vector: StartVector
+	) -> Result<Self, HashError> {
+		hash_function.validate_rounds(rounds)?;
+
+		let bytes = Self::pad_message(message.as_bytes(), hash_function);
+		let block = Self::bytes_to_block(&bytes, hash_function)?;
+
+		let state = start_vector.get_vector(hash_function);
+
+		Ok(Sha {
+			block,
+			state,
+			hash_function,
+			rounds,
+		})
+	}
+
+	/// Construct an SHA digest from a prepared padded message block.
+	///
+	/// # Arguments
+	///
+	/// * `blocks`: Message blocks to hash
+	/// * `hash_function`: Hash function to use
+	/// * `rounds`: Number of compression rounds
+	/// * `start_vector`: Vector to start with
+	///
+	/// # Returns
+	/// `Result<Sha<W>, HashError>`
+	///
+	/// Returns SHA digest or HashError.
+	///
+	/// # Examples
+	///
+	/// ```
+	/// let message: [u32; 16] = [
+	/// 	0xc61d6de7, 0x755336e8, 0x5e61d618, 0x18036de6,
+	/// 	0xa79f2f1d, 0xf2b44c7b, 0x4c0ef36b, 0xa85d45cf,
+	/// 	0xf72b8c2f, 0x0def947c, 0xa0eab159, 0x8021370c,
+	/// 	0x4b0d8011, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
+	/// ];
+	///
+	/// let sha_digest = Sha::from_hash(message, SHA256, 64, IV);
+	/// ```
+	pub fn from_message_block(
+		block: MessageBlock,
+		hash_function: HashFunction,
+		rounds: u8,
+		start_vector: StartVector,
+	) -> Result<Self, HashError> {
+		hash_function.validate_rounds(rounds)?;
+
+		let state = start_vector.get_vector(hash_function);
+
+		Ok(Sha {
+			block,
+			state,
+			hash_function,
+			rounds,
+		})
+	}
+
+	/// Executes the hashing and compression algorithm.
+	///
+	/// # Returns
+	/// `HashResult<W>`
+	///
+	/// Returns HashResult of words.
+	///
+	/// # Examples
+	///
+	/// ```
+	/// let sha_digest = Sha::from_hash(message, SHA256, 64, IV)?;
+	///
+	/// let hash = sha_digest.execute();
+	/// ```
+	pub fn execute(mut self) -> Result<HashResult, HashError> {
+		let k = self.hash_function.get_constant();
+		let mut w = vec![self.hash_function.default_word(); k.len()];
+		let mut states = Vec::<ShaState>::with_capacity(self.rounds as usize);
+
+		// Initialization of first 16 words with current block
+		w[..16].copy_from_slice(&self.block.0);
+
+		// Message schedule expansion
+		for i in 16..self.rounds as usize {
+			w[i] = w[i-16]
+				.wrapping_add(Word::gamma0(w[i-15]))?
+				.wrapping_add(w[i-7])?
+				.wrapping_add(Word::gamma1(w[i-2]))?;
+		}
+
+		// Initialize working variables
+		let mut working_vars = self.state.clone();
+
+		// Compression loop
+		for i in 0..self.rounds as usize {
+			let t1 = working_vars[7]
+				.wrapping_add(Word::sigma1(working_vars[4]))?
+				.wrapping_add(Word::ch(working_vars[4], working_vars[5], working_vars[6])?)?
+				.wrapping_add(k[i])?
+				.wrapping_add(w[i])?;
+
+			let t2 = Word::sigma0(working_vars[0])
+				.wrapping_add(Word::maj(working_vars[0], working_vars[1], working_vars[2])?)?;
+
+			// Rotate working variables
+			working_vars.rotate_right(1);
+			working_vars[0] = t1.wrapping_add(t2)?;
+			working_vars[4] = working_vars[4].wrapping_add(t1)?;
+
+			states.push(ShaState {
+				i: i as u8,
+				w: w[i].clone(),
+				a: working_vars[0],
+				e: working_vars[4],
+			});
+		}
+
+		// Update state
+		for i in 0..8 {
+			self.state[i] = self.state[i].wrapping_add(working_vars[i])?;
+		}
+
+		// Truncate
+		let truncate_to_length = self.hash_function
+			.truncate_to_length()
+			.or(Some(self.state.len()))
+			.unwrap();
+
+		let hash = OutputHash(Box::from(&self.state[..truncate_to_length]));
+
+		Ok(HashResult {
+			hash,
+			states,
+		})
+	}
+
+	/// Pads the given message with SHA2 rules.
+	/// Returns vector of padded message, with block size length of given hash function.
+	///
+	/// # Arguments
+	///
+	/// * `message`: Message to pad
+	/// * `hash_function`: Hash function to pad for
+	///
+	/// # Returns
+	/// `Vec<u8, Global>`
+	///
+	/// # Examples
+	///
+	/// ```
+	/// let message = b"abc";
+	/// let padded_message = Self::pad_message(message, HashFunction::SHA256);
+	/// ```
+	fn pad_message(message: &[u8], hash_function: HashFunction) -> Vec<u8> {
+		// Example message "ABC" (3 char, 24b) for SHA 256
+		// | Original Message | Single 1 | Padding (0's)             | Length (64b)          |
+		// |------------------|----------|---------------------------|-----------------------|
+		// | 24b              |    1b    | 423b of zero-padding      | 64b representing "24" |
+
+		let block_size_bytes = hash_function.block_size().bytes();
+		let length_size_bytes = hash_function.length_size().bytes();
+
+		let mut padded = message.to_vec();
+		padded.push(0x80);  // '1' bit
+
+		// Calculate padding zeros
+		let needed = block_size_bytes - ((padded.len() + length_size_bytes) % block_size_bytes);
+		padded.extend(vec![0u8; needed]);
+
+		// Append original bit length
+		let bit_len = (message.len() as u128) * 8;
+		padded.extend(&bit_len.to_be_bytes()[16 - length_size_bytes..]);
+
+		padded
+	}
+
+	/// Converts padded byte message to blocks.
+	///
+	/// # Arguments
+	///
+	/// * `bytes`: padded byte message
+	///
+	/// # Returns
+	/// `Result<[W; 16], HashError>` 16 blocks of words
+	fn bytes_to_block(bytes: &[u8], hash_function: HashFunction) -> Result<MessageBlock, HashError> {
+		let mut words = [hash_function.default_word(); 16];
+		let size = hash_function.word_size().bytes();
+
+		for (i, chunk) in bytes.chunks_exact(size).enumerate() {
+			words[i] = Word::from_be_bytes(chunk)?;
+		}
+
+		Ok(MessageBlock(words))
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::HashFunction::{SHA224, SHA256, SHA512};
+	use super::StartVector::*;
+	use super::*;
+
+	const MESSAGE: &str = "abc";
+
+	#[test]
+	fn test_padding() {
+		// MESSAGE "abc" (3 char, 24b) for SHA 256
+		// | Original Message | Single 1 | Padding (0's)             | Length (64b)          |
+		// |------------------|----------|---------------------------|-----------------------|
+		// | 24b              |    1b    | 423b of zero-padding      | 64b representing "24" |
+
+		let expected = vec![
+			// Original message characters
+			97, 98, 99,
+			// Single 1 as Big Endian
+			128, // Binary 1000 0000
+			// Padding of 0s
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0,
+			// Lenth of message in bits
+			24
+		];
+
+		assert_eq!(Sha::pad_message(MESSAGE.as_bytes(), SHA256), expected);
+	}
+
+	#[test]
+	/// Using 64 rounds should match the standard SHA-224 for "abc".
+	fn test_sha224_correctness() {
+		let result = Sha::from_string(MESSAGE, SHA224, 64, IV)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		let expected: [u32; 7] = [
+			0x23097d22, 0x3405d822, 0x8642a477, 0xbda255b3,
+			0x2aadbce4, 0xbda0b3f7, 0xe36c9da7,
+		];
+
+		assert_eq!(*result.hash.0, expected);
+	}
+
+	#[test]
+	/// Using 64 rounds should match the standard SHA-256 for "abc".
+	fn test_sha256_correctness() {
+		let result = Sha::from_string(MESSAGE, SHA256, 64, IV)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		let expected: [u32; 8] = [
+			0xba7816bf, 0x8f01cfea, 0x414140de, 0x5dae2223,
+			0xb00361a3, 0x96177a9c, 0xb410ff61, 0xf20015ad,
+		];
+
+		assert_eq!(*result.hash.0, expected);
+	}
+
+	#[test]
+	/// Using 80 rounds should match the standard SHA-512 for "abc".
+	fn test_sha512_correctness() {
+		let result = Sha::from_string(MESSAGE, SHA512, 80, IV)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		let expected: [u64; 8] = [
+			0xddaf35a193617aba, 0xcc417349ae204131, 0x12e6fa4e89a97ea2, 0x0a9eeee64b55d39a,
+			0x2192992a274fc1a8, 0x36ba3c23a3feebbd, 0x454d4423643ce80e, 0x2a9ac94fa54ca49f,
+		];
+
+		assert_eq!(*result.hash.0, expected);
+	}
+
+	#[test]
+	fn test_sha256_round_difference() {
+		let result_32r = Sha::from_string(MESSAGE, SHA256, 32, IV)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		let result_64r = Sha::from_string(MESSAGE, SHA256, 64, IV)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		assert_ne!(result_32r, result_64r);
+	}
+
+	#[test]
+	fn test_sha512_round_difference() {
+		let result_40r = Sha::from_string(MESSAGE, SHA512, 40, IV)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		let result_80r = Sha::from_string(MESSAGE, SHA512, 80, IV)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		assert_ne!(result_40r, result_80r);
+	}
+
+	#[test]
+	/// Example in Li et al. (p.17, Table 5)
+	fn test_single_cv_collision_sha256() {
+		let cv = StartVector::from([
+			0x02b19d5a, 0x88e1df04, 0x5ea3c7b7, 0xf2f7d1a4,
+			0x86cb1b1f, 0xc8ee51a5, 0x1b4d0541, 0x651b92e7_u32,
+		]);
+
+		let m: [u32; 16] = [
+			0xc61d6de7, 0x755336e8, 0x5e61d618, 0x18036de6,
+			0xa79f2f1d, 0xf2b44c7b, 0x4c0ef36b, 0xa85d45cf,
+			0xf72b8c2f, 0x0def947c, 0xa0eab159, 0x8021370c,
+			0x4b0d8011, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
+		].into();
+
+		let m_prime: [u32; 16] = [
+			0xc61d6de7, 0x755336e8, 0x5e61d618, 0x18036de6,
+			0xa79f2f1d, 0xf2b44c7b, 0x4c0ef36b, 0xa85d45cf,
+			0xe72b8c2f, 0x0fcf907c, 0xb0eab159, 0x81a1bfc1,
+			0x4b098611, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
+		];
+
+		let expected: [u32; 8] = [
+			0x431cadcd, 0xce6893bb, 0xd6c9689a, 0x334854e8,
+			0x3baae1ab, 0x038a195a, 0xccf54a19, 0x1c40606d,
+		];
+
+		let result_m = Sha::from_message_block(m.into(), SHA256, 39, cv)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA256, 39, cv)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
+	}
+
+	#[test]
+	/// Example in Li et al. (p.26, Table 9)
+	fn test_single_cv_collision_sha512() {
+		let m: [u64; 16] = [
+			0x1f736d69a0368ef6, 0x7277e5081ad1c198, 0xe953a3cdc4cbe577, 0xbd05f6a203b2f75f,
+			0xdd18b3e39f563fca, 0xcad0a5bb69049fcd, 0x4d0dd2a06e2efdc0, 0x86db19c26fc2e1cf,
+			0x0184949e92cdd314, 0x82fb3c1420112000, 0xe4930d9b8295ab26, 0x5500d3a2f30a3402,
+			0x26f0aa8790cb1813, 0xa9c09c5c5015bc0d, 0x53892c5a64e94edb, 0x8e60d500013a1932,
+		];
+
+		let m_prime: [u64; 16] = [
+			0x1f736d69a0368ef6, 0x7277e5081ad1c198, 0xe953a3cdc4cbe577, 0xbd05f6a203b2f75f,
+			0xdd18b3e39f563fca, 0xcad0a5bb69049fcd, 0x4d0dd2a06e2efdc0, 0x86db19c26fc2e1cf,
+			0x037a8f464c0bb995, 0x83033bd41e111fff, 0xe4930d9b8295ab26, 0x5500d3a2f30a3402,
+			0x26f0aa8790cb1813, 0xa9809e5c4015bc45, 0x53892c5a64e94edb, 0x8e60d500013a1932,
+		];
+
+		let expected: [u64; 8] = [
+			0xdceb3d88adf54bd2, 0x966c4cb1ab0cf400, 0x01e701fdf10ab603, 0x796d6e5028a5e89a,
+			0xf29a7517b216c09f, 0x46dbae73b1db8cce, 0x8ea44d45041010ea, 0x26a7a6b902f2632f,
+		];
+
+		let result_m = Sha::from_message_block(m.into(), SHA512, 28, IV)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA512, 28, IV)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
+	}
+
+	#[test]
+	/// Example in Li et al. (p.27, Table 10)
+	fn test_dual_cv_collision_sha224() {
+		let cv = StartVector::from([
+			0x791c9c6b_u32, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
+			0xc90690c5_u32, 0x5591553c, 0x43a5d984, 0xaf92402d,
+		]);
+
+		let cv_prime = StartVector::from([
+			0x791c9c6b_u32, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
+			0xc90690c5_u32, 0x5591553c, 0x43a5d984, 0xbf92402d,
+		]);
+
+		let m: [u32; 16] = [
+			0xf41d61b4, 0xce033ba2, 0xdd1bc208, 0xa268189b,
+			0xee6bda2c, 0x5ddbe94d, 0x9675bbd3, 0x32c1ba8a,
+			0x7eba797d, 0x88b06a8f, 0x3bc3015c, 0xd36f38cc,
+			0xcfcb88e0, 0x3c70f7f3, 0xfaa0c1fe, 0x35c62535,
+		];
+
+		let m_prime: [u32; 16] = [
+			0xe41d61b4, 0xce033ba2, 0xdd1bc208, 0xa268189b,
+			0xee6bda2c, 0x5ddbe94d, 0x9675bbd3, 0x32c1ba8a,
+			0x7eba797d, 0x98b06a8f, 0x39e3055c, 0xc36f38cc,
+			0xce4b002d, 0x3c74f1f3, 0xfaa0c1fe, 0x35c62535,
+		];
+
+		let expected: [u32; 7] = [
+			0x9af50cac, 0xc165a72f, 0xb6f1c9f3, 0xef54bad9,
+			0xaf0cfb1f, 0x57d357c9, 0xc6462616,
+		];
+
+		let result_m = Sha::from_message_block(m.into(), SHA224, 40, cv)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA224, 40, cv_prime)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
+	}
+
+	#[test]
+	fn test_too_many_rounds() {
+		let result = Sha::from_string(MESSAGE, SHA224, 65, IV);
+		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
+
+		let result = Sha::from_string(MESSAGE, SHA256, 65, IV);
+		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
+
+		let result = Sha::from_string(MESSAGE, SHA512, 81, IV);
+		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={sha/mod.rs}]
+mod sha;
+mod structs;
+
+#[allow(unused_imports)] pub use sha::{Sha, StartVector, MessageBlock, OutputHash};
+#[allow(unused_imports)] pub use structs::{Word, HashError};
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={benchmark/mod.rs}]
+pub mod runner;
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={benchmark/runner.rs}]
+use std::error::Error;
+use std::io::{BufReader, Read};
+use std::ops::Range;
+use std::os::unix::prelude::CommandExt;
+use std::path::PathBuf;
+use std::process::{Command, ExitStatus, Stdio};
+use std::time::{Duration, Instant};
+use chrono::Local;
+use nix::sys::signal::{killpg, Signal};
+use nix::unistd::Pid;
+use wait_timeout::ChildExt;
+use crate::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
+use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
+use crate::structs::collision_type::CollisionType;
+use crate::structs::hash_function::HashFunction;
+
+#[derive(thiserror::Error, Debug, PartialEq, Clone)]
+pub enum BenchmarkError {
+	#[error("solver {solver} was not found on the host system")]
+	SolverNotFound {
+		solver: String,
+	},
+}
+
+pub struct BenchmarkRunner {
+	stop_tolerance: u8,
+	timeout: Duration,
+	smt_retriever: SmtRetriever,
+	benchmark_save_dir: Option<PathBuf>,
+	continue_on_failure: bool,
+	encoding_type: EncodingType,
+	is_rerun: bool,
+}
+
+impl BenchmarkRunner {
+	pub fn new(
+		stop_tolerance: u8,
+		timeout: Duration,
+		smt_retriever: SmtRetriever,
+		benchmark_save_dir: Option<PathBuf>,
+		continue_on_failure: bool,
+		encoding_type: EncodingType,
+		is_rerun: bool,
+	) -> Self {
+		BenchmarkRunner {
+			stop_tolerance,
+			timeout,
+			smt_retriever,
+			benchmark_save_dir,
+			continue_on_failure,
+			encoding_type,
+			is_rerun,
+		}
+	}
+
+	pub fn run_benchmarks(
+		&self,
+		solvers: Vec<SmtSolver>,
+		hash_functions: Vec<HashFunction>,
+		collision_types: Vec<CollisionType>,
+		round_range: Range<u8>,
+		arguments: Vec<SolverArg>,
+	) -> Result<(), Box<dyn Error>> {
+		for solver in solvers {
+			for hash_function in &hash_functions {
+				for collision_type in &collision_types {
+					let mut sequential_fails = 0;
+					if arguments.len() == 0 {
+						self.invoke(
+							solver,
+							hash_function,
+							collision_type,
+							round_range.clone(),
+							None,
+							&mut sequential_fails,
+						)?;
+					} else {
+						for arg in arguments.clone() {
+							self.invoke(
+								solver,
+								hash_function,
+								collision_type,
+								round_range.clone(),
+								Some(arg),
+								&mut sequential_fails,
+							)?;
+						}
+					}
+				}
+			}
+		}
+
+		Ok(())
+	}
+
+	fn invoke(
+		&self,
+		solver: SmtSolver,
+		hash_function: &HashFunction,
+		collision_type: &CollisionType,
+		round_range: Range<u8>,
+		arg: Option<SolverArg>,
+		sequential_fails: &mut u8,
+	) -> Result<(), Box<dyn Error>> {
+		// Ensure range max does not exceed hash function max rounds.
+		let hash_max = hash_function.max_rounds();
+		let min = round_range.clone().min().unwrap_or(1).max(1);
+		let max = round_range.clone().max().unwrap_or(hash_max).min(hash_max) + 1;
+
+		for rounds in min..max {
+			let smt_path = self.smt_retriever.get_file(
+				*hash_function,
+				*collision_type,
+				rounds,
+				self.encoding_type.clone(),
+			);
+
+			let mut result = self.run_solver_with_benchmark(
+				*hash_function,
+				rounds,
+				*collision_type,
+				solver,
+				self.is_rerun,
+				self.encoding_type.clone(),
+				smt_path,
+				arg.clone(),
+			);
+
+			if let Err(err) = self.handle_result(&mut result, sequential_fails) {
+				if !self.continue_on_failure {
+					return Err(err);
+				}
+
+				continue;
+			}
+
+			if self.stop_tolerance != 0 && self.stop_tolerance == *sequential_fails {
+				println!("Failed {} in a row!\n", sequential_fails);
+				break;
+			}
+		}
+
+		Ok(())
+	}
+
+	fn handle_result(
+		&self,
+		result: &mut Result<Benchmark, Box<dyn Error>>,
+		sequential_fails: &mut u8,
+	) -> Result<(), Box<dyn Error>> {
+		match result {
+			Ok(benchmark) => {
+				if let Some(path) = &self.benchmark_save_dir {
+					benchmark
+						.save(path)
+						.expect("Failed to save benchmark!");
+				}
+
+				match benchmark.result {
+					BenchmarkResult::SMTError => {
+						println!("Received SMT Error: {:?}\n", benchmark.console_output);
+						*sequential_fails += 1;
+					}
+					BenchmarkResult::Sat | BenchmarkResult::Unsat => {
+						match benchmark.parse_output()? {
+							None => println!("UNSAT\n"),
+							Some(colliding_pair) => println!("{}\n", colliding_pair),
+						}
+
+						*sequential_fails = 0;
+					}
+					_ => {
+						println!("{}\n", benchmark.result);
+						*sequential_fails += 1;
+					}
+				}
+				Ok(())
+			}
+			Err(err) => {
+				println!("{}\n", err);
+				if !self.continue_on_failure {
+					Err(Box::from("Aborting benchmarks!"))
+				} else {
+					println!("Continuing!\n\n");
+					Ok(())
+				}
+			}
+		}
+	}
+
+	fn run_solver_with_benchmark(
+		&self,
+		hash_function: HashFunction,
+		rounds: u8,
+		collision_type: CollisionType,
+		solver: SmtSolver,
+		is_rerun: bool,
+		encoding: EncodingType,
+		smt_file: PathBuf,
+		arguments: Option<SolverArg>,
+	) -> Result<Benchmark, Box<dyn Error>> {
+		if !check_command_present(&solver.command())? {
+			return Err(Box::from(BenchmarkError::SolverNotFound { solver: solver.command() }));
+		}
+
+		let mut full_args: Vec<SolverArg> = vec![
+			"-v".into(),
+			solver.command(),
+		];
+
+		let mut split_args: Vec<String> = vec![];
+		let mut has_args = false;
+		if let Some(args) = &arguments {
+			split_args.extend(args.split(" ").map(String::from));
+			has_args = true;
+		}
+
+		let file_path = smt_file.to_str().ok_or("Failed to get smt file path")?;
+		full_args.extend(split_args);
+		full_args.push(file_path.into());
+
+		let date_time = Local::now().to_utc();
+		let start_time = Instant::now();
+		let mut child = Command::new("time")
+			.args(full_args)
+			.process_group(0)
+			.stdout(Stdio::piped())
+			.stderr(Stdio::piped())
+			.spawn()?;
+
+		let pid = child.id();
+		let arg_str = if let Some(args) = &arguments {
+			if args.len() > 0 {
+				&format!(" {args}")
+			} else { "" }
+		} else { "" };
+
+		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}{arg_str}; SMT solver PID: {pid}\nFile: {file_path}");
+
+		// Await process exit
+		let status = child.wait_timeout(self.timeout)?;
+		let execution_time = start_time.elapsed();
+
+		// Read output
+		let (cout, cerr) = match status {
+			None => {
+				killpg(Pid::from_raw(pid as i32), Signal::SIGKILL)?;
+				child.wait()?;
+				(String::new(), String::new())
+			},
+			Some(_) => {
+				let cout = if let Some(stdout) = child.stdout.take() {
+					let mut cout = String::new();
+					BufReader::new(stdout).read_to_string(&mut cout)?;
+					cout
+				} else { String::new() };
+
+				let cerr = if let Some(stderr) = child.stderr.take() {
+					let mut cerr = String::new();
+					BufReader::new(stderr).read_to_string(&mut cerr)?;
+					cerr
+				} else { String::new() };
+
+				(cout, cerr)
+			}
+		};
+
+		// Extract memory information
+		let mut bytes_rss = 0;
+		if let Some(line) = cerr
+			.lines()
+			.find(|line| line.contains("Maximum resident set size")) {
+			if let Some(val_str) = line.split(':').nth(1) {
+				if let Ok(value) = val_str.trim().parse::<u64>() {
+					// Convert kB to bytes
+					bytes_rss = value * 1024;
+				}
+			}
+		}
+
+		let is_baseline = !has_args && self.timeout == Duration::from_secs(900);
+
+		Ok(Benchmark {
+			date_time,
+			solver,
+			arguments,
+			hash_function,
+			rounds,
+			collision_type,
+			execution_time,
+			memory_bytes: bytes_rss,
+			result: Self::categorize_status(status, &cout)?,
+			console_output: (cout, cerr),
+			is_valid: None,
+			is_baseline,
+			is_rerun,
+			encoding,
+			stop_tolerance: self.stop_tolerance,
+			timeout: self.timeout,
+		})
+	}
+
+	fn categorize_status(exit_status: Option<ExitStatus>, cout: &String) -> Result<BenchmarkResult, Box<dyn Error>> {
+		use Signal::*;
+		use BenchmarkResult::*;
+
+		Ok(match exit_status {
+			None => CPUOut,
+			Some(status) => {
+				let code = status.code().ok_or("Failed to retrieve status code!")?;
+				let outcome = cout
+					.lines()
+					.next()
+					.unwrap_or("unknown")
+					.to_lowercase();
+
+				if outcome.contains("unsat") {
+					Unsat
+				} else if outcome.contains("sat") {
+					Sat
+				} else {
+					let signal = Signal::try_from(code)?;
+
+					match signal {
+						SIGABRT | SIGKILL | SIGSEGV => MemOut,
+						SIGALRM | SIGTERM | SIGXCPU => CPUOut,
+						SIGHUP | SIGILL | SIGSYS => SMTError,
+						_ => Unknown,
+					}
+				}
+			}
+		})
+	}
+}
+
+fn check_command_present(command: &str) -> Result<bool, Box<dyn Error>> {
+	let output = Command::new("sh")
+		.arg("-c")
+		.arg(format!("command -v {}", command))
+		.output()?;
+
+	Ok(output.status.success())
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={data/mod.rs}]
+// mod result_store;
+pub mod data_retriever;
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={data/data\_retriever.rs}]
+use std::collections::BTreeMap;
+use std::error::Error;
+use std::fs;
+use std::path::PathBuf;
+use crate::smt_lib::smt_retriever::EncodingType;
+use crate::smt_lib::smt_retriever::EncodingType::BruteForce;
+use crate::structs::benchmark::{Benchmark, SmtSolver, SolverArg};
+use crate::structs::collision_type::CollisionType;
+use crate::structs::hash_function::HashFunction;
+
+
+pub struct DataRetriever {
+	data_dir: PathBuf,
+	all_results: Option<Vec<Benchmark>>,
+}
+
+impl DataRetriever {
+	pub fn new(data_dir: PathBuf) -> Result<Self, Box<dyn Error>> {
+		if !data_dir.exists() {
+			fs::create_dir_all(data_dir.clone())?;
+		}
+
+		Ok(DataRetriever {
+			data_dir,
+			all_results: None,
+		})
+	}
+
+	#[allow(dead_code)]
+	pub fn default() -> Result<Self, Box<dyn Error>> {
+		DataRetriever::new(PathBuf::from("results/"))
+	}
+
+	fn cache_all(&mut self) -> Result<(), Box<dyn Error>> {
+		let benchmarks: Vec<_> = Benchmark::load_all(&self.data_dir, true)?
+			.into_iter()
+			.filter(|b| b.is_valid != Some(false))
+			.collect();
+
+		if !benchmarks.is_empty() {
+			self.all_results = Some(benchmarks);
+		}
+
+		Ok(())
+	}
+
+	pub fn retrieve_all_baselines(
+		&mut self,
+		hash_function: HashFunction,
+		collision_type: CollisionType,
+		prefer_test_reruns: bool,
+	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+		if self.all_results.is_none() {
+			self.cache_all()?;
+		}
+
+		let mut baselines = Vec::new();
+		let mut reruns = Vec::new();
+		for b in self.all_results.clone().unwrap() {
+			if b.is_baseline
+				&& b.hash_function == hash_function
+				&& b.collision_type == collision_type
+				&& b.arguments.is_none()
+			{
+				if b.is_rerun {
+					reruns.push(b);
+				} else {
+					baselines.push(b);
+				}
+			}
+		}
+
+		if prefer_test_reruns {
+			substitute_reruns(&mut baselines, reruns);
+		}
+
+		Ok(baselines)
+	}
+
+	pub fn retrieve_all_baselines_with_encoding(
+		&mut self,
+		hash_function: HashFunction,
+		collision_type: CollisionType,
+		encoding_type: EncodingType,
+		prefer_test_reruns: bool,
+	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+		if self.all_results.is_none() {
+			self.cache_all()?;
+		}
+
+		let mut baselines = Vec::new();
+		let mut reruns = Vec::new();
+		for b in self.all_results.clone().unwrap() {
+			if b.is_baseline
+				&& b.hash_function == hash_function
+				&& b.collision_type == collision_type
+				&& b.arguments.is_none()
+				&& b.encoding == encoding_type
+			{
+				if b.is_rerun {
+					reruns.push(b);
+				} else {
+					baselines.push(b);
+				}
+			}
+		}
+
+		if prefer_test_reruns {
+			substitute_reruns(&mut baselines, reruns);
+		}
+
+		Ok(baselines)
+	}
+
+	pub fn retrieve_baseline(
+		&mut self,
+		solver: SmtSolver,
+		hash_function: HashFunction,
+		collision_type: CollisionType,
+		encoding_type: EncodingType,
+		prefer_test_reruns: bool,
+	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+		let all_baselines = self.retrieve_all_baselines(
+			hash_function,
+			collision_type,
+			prefer_test_reruns
+		)?;
+
+		Ok(
+			all_baselines
+				.into_iter()
+				.filter(|b| b.solver == solver)
+				.filter(|b| b.encoding == encoding_type)
+				.collect()
+		)
+	}
+
+	pub fn retrieve_with_args(
+		&mut self,
+		solver: SmtSolver,
+		hash_function: HashFunction,
+		collision_type: CollisionType,
+		prefer_test_reruns: bool,
+		arg_identifier: &str,
+	) -> Result<BTreeMap<SolverArg, Vec<Benchmark>>, Box<dyn Error>> {
+		if self.all_results.is_none() {
+			self.cache_all()?;
+		}
+
+		fn has_similar_arg(benchmark: &Benchmark, identifier: &str) -> bool {
+			benchmark.arguments.iter().any(|arg| arg.contains(identifier))
+		}
+
+		let mut baselines = Vec::new();
+		let mut reruns = Vec::new();
+		for b in self.all_results.clone().unwrap() {
+			if b.solver == solver
+				&& b.hash_function == hash_function
+				&& b.collision_type == collision_type
+				&& has_similar_arg(&b, arg_identifier)
+			{
+				if b.is_rerun {
+					reruns.push(b);
+				} else {
+					baselines.push(b);
+				}
+			}
+		}
+
+		if prefer_test_reruns {
+			substitute_reruns(&mut baselines, reruns);
+		}
+
+		let mut map = BTreeMap::new();
+		for benchmark in baselines {
+			let key = benchmark.arguments.clone().unwrap_or("".into());
+			map.entry(key)
+				.or_insert_with(Vec::new)
+				.push(benchmark);
+		}
+
+		Ok(map)
+	}
+
+	pub fn retrieve_non_bruteforce_encodings(
+		&mut self,
+		solver: SmtSolver,
+		hash_function: HashFunction,
+		collision_type: CollisionType,
+		prefer_test_reruns: bool,
+	) -> Result<BTreeMap<EncodingType, Vec<Benchmark>>, Box<dyn Error>> {
+		if self.all_results.is_none() {
+			self.cache_all()?;
+		}
+
+		let mut baselines = Vec::new();
+		let mut reruns = Vec::new();
+		for b in self.all_results.clone().unwrap() {
+			if b.solver == solver
+				&& b.hash_function == hash_function
+				&& b.collision_type == collision_type
+				&& !matches!(b.encoding, BruteForce {..})
+			{
+				if b.is_rerun {
+					reruns.push(b);
+				} else {
+					baselines.push(b);
+				}
+			}
+		}
+
+		if prefer_test_reruns {
+			substitute_reruns(&mut baselines, reruns);
+		}
+
+		let mut map = BTreeMap::new();
+		for benchmark in baselines {
+			let key = benchmark.encoding.clone();
+			map.entry(key)
+				.or_insert_with(Vec::new)
+				.push(benchmark);
+		}
+
+		Ok(map)
+	}
+}
+
+fn substitute_reruns(
+	baselines: &mut Vec<Benchmark>,
+	reruns: Vec<Benchmark>,
+) {
+	for rerun in reruns.into_iter() {
+		for baseline in baselines.iter_mut() {
+			if baseline.rounds == rerun.rounds
+				&& baseline.collision_type == rerun.collision_type
+				&& baseline.hash_function == rerun.hash_function
+				&& baseline.solver == rerun.solver
+			{
+				*baseline = rerun;
+				break;
+			}
+		}
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={graphing/mod.rs}]
+pub mod graph_renderer;
+pub mod graphs;
+mod utils;
+mod components;
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={graphing/utils.rs}]
+use std::ops::{Add, Range};
+use num_traits::One;
+use crate::structs::benchmark::Benchmark;
+
+
+/// Utility method to retrieve the range of a given data set for any numerical data.
+///
+/// # Arguments
+///
+/// * `data`: Data to retrieve range for.
+/// * `retr`: Retriever lambda to define which field and how to map it.
+///
+/// # Returns
+/// `Option<Range<T>>`
+///
+/// Returns `None` if length 0 data provided, otherwise provides a range of the retrieved data type.
+// Potential bug/oversight with plotters.rs?
+// Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
+pub(super) fn get_range<T: Copy + PartialOrd>(
+	data: &Vec<Benchmark>,
+	retr: &dyn Fn(&Benchmark) -> T,
+) -> Option<Range<T>> {
+	let mut it = data.into_iter();
+	let first = retr(it.next()?);
+	let (min, max) = it.fold((first, first), |(min_agg, max_agg), b| {
+		let v = retr(b);
+		(
+			if v < min_agg { v } else { min_agg },
+			if v > max_agg { v } else { max_agg }
+		)
+	});
+
+	Some(min..max)
+}
+
+/// Splits a data set to multiple segments.
+/// This is useful when there is a gap in the data which is meant to be rendered as disjoint.
+///
+/// # Arguments
+///
+/// * `data`: Data to split.
+///
+/// # Returns
+/// Vec<Vec<(XT, YT), Global>, Global>
+///
+/// A set of continious cartesian data.
+pub(super) fn split_data<XT, YT>(
+	data: Vec<(XT, YT)>
+) -> Vec<Vec<(XT, YT)>>
+where
+	XT: Clone + Copy + Add<Output = XT> + PartialOrd + One + 'static,
+	YT: Clone + 'static,
+{
+	if data.is_empty() {
+		return vec![];
+	}
+
+	let mut segments = Vec::new();
+	let mut current_segment = Vec::new();
+	current_segment.push(data[0].clone());
+
+	for window in data.windows(2) {
+		let (x1, _) = window[0];
+		let (x2, _) = window[1];
+
+		if x2 > x1 + XT::one() {
+			segments.push(current_segment);
+			current_segment = Vec::new();
+		}
+
+		current_segment.push(window[1].clone());
+	}
+
+	if !current_segment.is_empty() {
+		segments.push(current_segment);
+	}
+
+	segments
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={graphing/graphs.rs}]
+use std::collections::BTreeMap;
+use std::error::Error;
+use std::ops::Range;
+use std::path::PathBuf;
+use num_traits::Float;
+use plotters::prelude::*;
+use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
+use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
+use crate::graphing::utils::get_range;
+use crate::smt_lib::smt_retriever::EncodingType;
+use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
+
+
+/// Implementation of graph types
+impl GraphRenderer {
+	/// Create graph describing the relation of time and memory for a given run.
+	///
+	/// # Arguments
+	///
+	/// * `data`: Single run benchmark data.
+	///
+	/// # Returns
+	/// `Result<PathBuf, Box<dyn Error>>`
+	///
+	/// Returns path of saved graph file, or error.
+	fn create_time_and_memory_chart(
+		&self,
+		data: Vec<Benchmark>,
+	) -> Result<PathBuf, Box<dyn Error>> {
+		if data.len() == 0 {
+			println!("{}", MissingData { graph_name: "Time & Memory", dataset_name: "data" });
+		}
+
+		let solver_name = data[0].solver.to_string().to_lowercase();
+		let file_name = format!(
+			"detailed_{}_{}_{}.svg",
+			solver_name,
+			data[0].hash_function,
+			data[0].collision_type,
+		);
+		let path = self.output_dir.join(file_name);
+
+		let data: Vec<_> = data
+			.into_iter()
+			.filter(|b| b.result == BenchmarkResult::Sat || b.result == BenchmarkResult::Unsat)
+			.collect();
+
+		let mut sorted_data = data;
+		sorted_data.sort_by_key(|b| b.rounds);
+
+		// Define ranges
+		let x_range = get_range(&sorted_data.clone(), &|b| b.rounds as u32)
+			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range"})?;
+		let y_range_mem = get_range(&sorted_data.clone(), &|b| b.memory_bytes as f64 / 1048576.0)
+			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range_mem"})?;
+		let y_range_time = get_range(&sorted_data.clone(), &|b| b.execution_time.as_secs_f64())
+			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range_time"})?;
+
+		let path_clone_bind = path.clone();
+		let root = SVGBackend::new(&path_clone_bind, self.output_size)
+			.into_drawing_area();
+		root.fill(&WHITE)?;
+
+		let title = format!("{solver_name}; Memory & Time vs Rounds");
+		let mut chart = ChartBuilder::on(&root)
+			.x_label_area_size(45)
+			.y_label_area_size(60)
+			.right_y_label_area_size(60)
+			.margin(5)
+			.caption(title, self.title_style)
+			.build_cartesian_2d(x_range.clone(), y_range_time.log_scale().base(2.0))? // Time
+			.set_secondary_coord(x_range, y_range_mem); // Memory
+
+		// Draw axis
+		self.set_x_axis_as_rounds(&mut chart)?;
+		self.set_y_axis(
+			&mut chart,
+			"Time (s)",
+			Some(self.color_palette[0].to_rgba()),
+			Some(&|y: &f64| format!("2^{}", y.log2())),
+		)?;
+		self.set_secondary_y_axis(
+			&mut chart,
+			"Memory (MiB)",
+			Some(self.color_palette[1].to_rgba()),
+			None,
+		)?;
+
+		// Draw primary data
+		let time_data: Vec<_> = sorted_data
+			.clone()
+			.into_iter()
+			.map(|b| (b.rounds as u32, b.execution_time.as_secs_f64()))
+			.collect();
+
+		self.draw_series(
+			&mut chart,
+			time_data,
+			true,
+			true,
+			"Time",
+			Some(self.color_palette[0].to_rgba())
+		)?;
+
+		// Draw secondary data
+		let memory_data: Vec<_> = sorted_data
+			.clone()
+			.into_iter()
+			.map(|b| (b.rounds as u32, b.memory_bytes as f64 / 1048576.0))
+			.collect();
+
+		self.draw_secondary_series(
+			&mut chart,
+			memory_data,
+			true,
+			true,
+			"Memory",
+			Some(self.color_palette[1].to_rgba())
+		)?;
+
+		self.draw_legend(&mut chart)?;
+
+		// Write to PathBuf
+		root.present()?;
+		Ok(path)
+	}
+
+	/// Create graph where one solver run is a baseline, and the remaining data is compared against it.
+	///
+	/// # Arguments
+	///
+	/// * `baseline`: Single run benchmark data, used as a baseline.
+	/// * `data`: Vector of benchmark runs, used as deviation.
+	/// * `argument_name`: String outputted to the title.
+	/// * `buffer`: Should the graph be buffered on each end?
+	/// * `enforce`: Should minimums and a max range be respected?
+	///
+	/// # Returns
+	/// `Result<PathBuf, Box<dyn Error>>`
+	///
+	/// Returns path of saved graph file, or error.
+	fn create_baseline_graph<L>(
+		&self,
+		baseline_data: Vec<Benchmark>,
+		data: BTreeMap<L, Vec<Benchmark>>,
+		title_str: &str,
+		buffer: bool,
+		enforce: bool,
+		draw_background: bool,
+	) -> Result<PathBuf, Box<dyn Error>>
+	where
+		L: Clone + Ord + Into<String>,
+	{
+		if baseline_data.len() == 0 {
+			return Err(MissingData { graph_name: "baseline", dataset_name: "baseline" }.into());
+		}
+
+		if data.len() == 0 {
+			println!("{}", MissingData { graph_name: "baseline", dataset_name: "data" });
+		}
+
+		// Define x range
+		let x_range = get_range(&baseline_data, &|b| b.rounds as u32)
+			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range" })?;
+
+		// Trim data
+		let mut trimmed_data: BTreeMap<L, Vec<Benchmark>> = BTreeMap::new();
+		for (encoding, mut benchmarks) in data.clone().into_iter() {
+			if benchmarks.len() > x_range.end as usize {
+				benchmarks.retain(|b| b.rounds <= x_range.end as u8);
+			}
+
+			trimmed_data.insert(encoding, benchmarks);
+		}
+
+		let title = format!(
+			"{} {} {}: {}",
+			baseline_data[0].solver,
+			baseline_data[0].hash_function,
+			baseline_data[0].collision_type,
+			title_str,
+		);
+
+		let file_name = format!(
+			"{}_{}.svg",
+			baseline_data[0].solver.to_string().to_lowercase(),
+			title_str.to_lowercase().replace(" ", "_"),
+		);
+
+		let path = self.output_dir.join(file_name);
+
+		let mut baseline_data = baseline_data;
+		baseline_data.sort_by_key(|b| b.rounds);
+
+		let mut baseline = BTreeMap::new();
+		for b in &baseline_data {
+			baseline.insert(b.rounds as u32, b.execution_time.as_secs_f64());
+		}
+
+		// Convert generic to str
+
+		// Get range & calculate deviation from baseline
+		let mut deviation_range: Range<f64> = f64::MAX..f64::MIN;
+		let mut deviation_data: BTreeMap<String, Vec<(u32, f64)>> = BTreeMap::new();
+		for (label, run) in trimmed_data.clone() {
+			let mut data = vec![];
+			for b in run {
+				let dev_percent = if let Some(&base_time) = baseline.get(&(b.rounds as u32)) {
+					let dev_time = b.execution_time.as_secs_f64();
+					let dev_percent = ((dev_time / base_time) - 1.0) * 100.0;
+
+					if deviation_range.start > dev_percent {
+						deviation_range.start = dev_percent;
+					}
+
+					if deviation_range.end < dev_percent {
+						deviation_range.end = dev_percent;
+					}
+
+					dev_percent
+				} else {
+					f64::neg_infinity()
+				};
+
+				data.push((b.rounds as u32, dev_percent))
+			}
+
+			data.sort_by_key(|b| b.0);
+			deviation_data.insert(label.into(), data);
+		}
+
+		if buffer {
+			deviation_range.start = deviation_range.start - 5.0;
+			deviation_range.end = deviation_range.end + 5.0;
+		}
+
+		// Truncate max range & enforce a minimum
+		if enforce {
+			deviation_range.end = deviation_range.end.min(100.0);
+			deviation_range.start = deviation_range.start.min(-5.0);
+		}
+
+		// Define y range
+		let y_range = deviation_range;
+
+		let path_clone_bind = path.clone();
+		let root = SVGBackend::new(&path_clone_bind, self.output_size)
+			.into_drawing_area();
+		root.fill(&WHITE)?;
+
+		let mut chart = ChartBuilder::on(&root)
+			.x_label_area_size(45)
+			.y_label_area_size(60)
+			.margin(5)
+			.caption(title, self.title_style)
+			.build_cartesian_2d(x_range.clone(), y_range.clone())?;
+
+		// Draw background
+		if draw_background {
+			chart
+				.draw_series(std::iter::once(
+					Rectangle::new(
+						[(x_range.start, -2.0), (x_range.end, y_range.start)],
+						RGBAColor(182, 255, 182, 0.4).filled(),
+					)
+				))?;
+
+			chart
+				.draw_series(std::iter::once(
+					Rectangle::new(
+						[(x_range.start, 2.0), (x_range.end, -2.0)],
+						RGBAColor(182, 182, 182, 0.2).filled(),
+					)
+				))?;
+
+			chart
+				.draw_series(std::iter::once(
+					Rectangle::new(
+						[(x_range.start, 2.0), (x_range.end, y_range.end)],
+						RGBAColor(255, 182, 182, 0.4).filled(),
+					)
+				))?;
+		}
+
+		// Draw axis
+		self.set_x_axis_as_rounds(&mut chart)?;
+		self.set_y_axis(
+			&mut chart,
+			"Time (%dev)",
+			None,
+			Some(&|v| format!("{:+.0}%", v)),
+		)?;
+
+		// Draw deviation data
+		for (i, (label, run)) in deviation_data.into_iter().enumerate() {
+			if run.len() <= 0 {
+				continue;
+			}
+
+			self.draw_series(
+				&mut chart,
+				run.clone(),
+				true,
+				true,
+				&label,
+				Some(self.color_palette[i].to_rgba()),
+			)?
+		}
+
+		// Draw baseline data
+		self.draw_series(
+			&mut chart,
+			baseline.keys().map(|&x| (x, 0.0)).collect(),
+			true,
+			true,
+			"Baseline",
+			Some(RGBAColor(0, 0, 0, 0.3)),
+		)?;
+
+		self.draw_legend(&mut chart)?;
+
+		// Write to PathBuf
+		root.present()?;
+		Ok(path)
+	}
+
+	/// Create graph comparing solvers.
+	///
+	/// # Arguments
+	///
+	/// * `data`: All runs combined.
+	///
+	/// # Returns
+	/// `Result<PathBuf, Box<dyn Error>>`
+	///
+	/// Returns path of saved graph file, or error.
+	fn solver_comparison(
+		&self,
+		data: Vec<Benchmark>,
+	) -> Result<PathBuf, Box<dyn Error>> {
+		if data.is_empty() {
+			return Err(MissingData { graph_name: "comparison", dataset_name: "data" }.into());
+		}
+
+		let title = format!(
+			"{} {} Solver Comparison",
+			data[0].hash_function,
+			data[0].collision_type,
+		);
+
+		let file_name = format!(
+			"solver_comparison_{}_{}.svg",
+			data[0].hash_function,
+			data[0].collision_type,
+		);
+
+		let path = self.output_dir.join(file_name);
+
+		let mut sorted_data = data.clone();
+		sorted_data.sort_by_key(|b| b.rounds);
+
+		// Define ranges
+		let x_range = get_range(&data, &|b| b.rounds as u32)
+			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range"})?;
+		let y_range = get_range(&data, &|b| b.execution_time.as_secs_f64())
+			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range"})?;
+
+		let path_clone_bind = path.clone();
+		let root = SVGBackend::new(&path_clone_bind, self.output_size)
+			.into_drawing_area();
+		root.fill(&WHITE)?;
+
+		let mut chart = ChartBuilder::on(&root)
+			.x_label_area_size(45)
+			.y_label_area_size(60)
+			.margin(5)
+			.caption(title, self.title_style)
+			.build_cartesian_2d(x_range, y_range.log_scale().base(2.0))?;
+
+		// Draw axis
+		self.set_x_axis_as_rounds(&mut chart)?;
+		self.set_y_axis(
+			&mut chart,
+			"Time (s)",
+			None,
+			Some(&|y: &f64| format!("2^{}", y.log2())),
+		)?;
+
+		// Draw data
+		let mut split_data = BTreeMap::new();
+		for b in sorted_data {
+			split_data
+				.entry(b.solver)
+				.or_insert_with(Vec::new)
+				.push((b.rounds as u32, b.execution_time.as_secs_f64()));
+		}
+
+		for (i, (solver, data)) in split_data.into_iter().enumerate() {
+			self.draw_series(
+				&mut chart,
+				data,
+				true,
+				true,
+				&solver.to_string(),
+				Some(self.color_palette[i].to_rgba())
+			)?;
+		}
+
+		// TODO: Add shapes for result types!
+		// TODO: Do secondary legend with the result types
+		self.draw_legend(&mut chart)?;
+
+		Ok(path)
+	}
+
+	/// Collection function to generate all graphs.
+	pub fn generate_all_graphs(&mut self) -> Result<(), Box<dyn Error>> {
+		use crate::structs::hash_function::HashFunction::*;
+		use crate::structs::collision_type::CollisionType::*;
+		use crate::smt_lib::smt_retriever::EncodingType::*;
+
+
+		// Generate all solver comparisons for each HashFunction and CollisionType
+		for hash_function in [SHA224, SHA256, SHA512] {
+			for collision_type in [Standard, SemiFreeStart, FreeStart] {
+				let baselines = self.data_retriever.retrieve_all_baselines_with_encoding(
+					hash_function,
+					collision_type,
+					BruteForce {
+						simplified_maj_and_ch_functions: false,
+						alternative_add: false,
+					},
+					false,
+				)?;
+
+				if baselines.is_empty() {
+					println!(
+						"WARNING: {}",
+						FailedToGenerate {
+							hash_function,
+							collision_type,
+							err: &MissingData {
+								graph_name: "Time & Memory",
+								dataset_name: "Bitwuzla",
+							}.to_string(),
+						},
+					);
+					continue;
+				}
+				self.solver_comparison(baselines)?;
+			}
+		}
+
+
+		// Generate Bitwuzla detail chart
+		let bitwuzla_baseline_with_anomalies = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			BruteForce {
+				simplified_maj_and_ch_functions: false,
+				alternative_add: false
+			},
+			true,
+		)?;
+		self.create_time_and_memory_chart(bitwuzla_baseline_with_anomalies.clone())?;
+
+
+		// Generate Bitwuzla argument Graphs
+		let arg_categories = BTreeMap::from([
+			("Abstraction", "-abstraction"),
+			("Preprocessing", "-pp-"),
+			("Propagation", "-prop"),
+			("Rewrite Level", "-rwl"),
+			("SAT Solver", "--sat-solver"),
+			("Solver Engine", "--bv-solver"),
+		]);
+
+		let bitwuzla_baseline: Vec<_> = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			BruteForce {
+				simplified_maj_and_ch_functions: false,
+				alternative_add: false
+			},
+			false,
+		)?
+			.into_iter()
+			.filter(|b| b.result != BenchmarkResult::CPUOut)
+			.collect()
+			;
+
+		for (category, identifier) in arg_categories {
+			let deviation_data = self.data_retriever.retrieve_with_args(
+				SmtSolver::Bitwuzla,
+				SHA256,
+				Standard,
+				false,
+				identifier,
+			)?;
+
+			let deviation_data = deviation_data
+				.into_iter()
+				.map(|(a, runs)|{
+					let runs = runs.into_iter()
+						.filter(|b| b.result != BenchmarkResult::CPUOut)
+						.collect();
+					(a, runs)
+				})
+				.collect();
+
+			self.create_baseline_graph(
+				bitwuzla_baseline.clone(),
+				deviation_data,
+				&format!("{category} Args"),
+				true,
+				true,
+				true,
+			)?;
+		}
+
+
+		// Generate Bitwuzla encoding graphs
+		let encoding_data = self.data_retriever.retrieve_non_bruteforce_encodings(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			false,
+		)?;
+
+		// DXOR
+		let dxor_encoding_data: BTreeMap<_, _> = encoding_data
+			.clone()
+			.into_iter()
+			.filter(|(e, _)| matches!(e, DeltaXOR { .. }))
+			.collect();
+
+		self.create_baseline_graph(
+			bitwuzla_baseline.clone(),
+			dxor_encoding_data,
+			"Delta XOR Encoding Comparison",
+			true,
+			true,
+			true,
+		)?;
+
+		// DSUB
+		let dsub_encoding_data: BTreeMap<_, _> = encoding_data
+			.clone()
+			.into_iter()
+			.filter(|(e, _)| matches!(e, DeltaSub { .. }))
+			.collect();
+
+		self.create_baseline_graph(
+			bitwuzla_baseline.clone(),
+			dsub_encoding_data,
+			"Delta Sub Encoding Comparison",
+			true,
+			true,
+			true,
+		)?;
+
+		// Pure encoding comparison graph
+		let mut all_encodings: BTreeMap<EncodingType, Vec<Benchmark>> = BTreeMap::new();
+
+		// Retrieve remaining results
+		let bruteforce_simpl = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			BruteForce {
+				simplified_maj_and_ch_functions: true,
+				alternative_add: false,
+			},
+			false
+		).expect("Failed to retrieve bruteforce simplified baseline");
+
+		let bruteforce_alt_add = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			BruteForce {
+				simplified_maj_and_ch_functions: false,
+				alternative_add: true,
+			},
+			false
+		).expect("Failed to retrieve bruteforce alt add baseline");
+
+		let bruteforce_alt_add_simpl = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
+			BruteForce {
+				simplified_maj_and_ch_functions: true,
+				alternative_add: true,
+			},
+			false
+		).expect("Failed to retrieve bruteforce alt add simplified baseline");
+
+		// Insert baselines
+		all_encodings.insert(BruteForce {
+			simplified_maj_and_ch_functions: true,
+			alternative_add: false,
+		}, bruteforce_simpl);
+		all_encodings.insert(BruteForce {
+			simplified_maj_and_ch_functions: false,
+			alternative_add: true,
+		}, bruteforce_alt_add);
+		all_encodings.insert(BruteForce {
+			simplified_maj_and_ch_functions: true,
+			alternative_add: true,
+		}, bruteforce_alt_add_simpl);
+
+		self.create_baseline_graph(
+			bitwuzla_baseline.clone(),
+			all_encodings,
+			"Bruteforce Encoding Comparison",
+			true,
+			true,
+			true,
+		)?;
+
+		Ok(())
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={graphing/graph\_renderer.rs}]
+use std::error::Error;
+use std::fs;
+use std::path::PathBuf;
+use plotters::prelude::RGBColor;
+use crate::data::data_retriever::DataRetriever;
+use crate::structs::collision_type::CollisionType;
+use crate::structs::hash_function::HashFunction;
+
+
+pub struct GraphRenderer {
+	pub(super) output_dir: PathBuf,
+	pub(super) output_size: (u32, u32),
+	pub(super) title_style: (&'static str, u32),
+	pub(super) text_style: (&'static str, u32),
+	pub(super) color_palette: Box<[RGBColor]>,
+	pub(super) line_thickness: u32,
+	pub(super) data_retriever: DataRetriever,
+}
+
+impl GraphRenderer {
+	pub fn new(
+		output_dir: PathBuf,
+		output_size: (u32, u32),
+		title_style: (&'static str, u32),
+		text_style: (&'static str, u32),
+		color_palette: Box<[RGBColor]>,
+		line_thickness: u32,
+		data_retriever: DataRetriever,
+	) -> Result<Self, Box<dyn Error>> {
+		if !output_dir.exists() {
+			fs::create_dir_all(output_dir.clone())?;
+		}
+
+		Ok(GraphRenderer {
+			output_dir,
+			output_size,
+			title_style,
+			text_style,
+			color_palette,
+			line_thickness,
+			data_retriever,
+		})
+	}
+
+	#[allow(dead_code)]
+	pub fn default() -> Result<Self, Box<dyn Error>> {
+		Ok(GraphRenderer {
+			output_dir: PathBuf::from("graphs/"),
+			output_size: (1024, 768),
+			title_style: ("noto sans", 36),
+			text_style: ("noto sans", 14),
+			color_palette: Box::from([
+				RGBColor(166, 30, 77), // Maroon
+				RGBColor(24, 100, 171), // Dark Blue
+				RGBColor(8, 127, 91), // Green
+				RGBColor(250, 176, 5), // Yellow
+				RGBColor(156, 54, 181), // Purple
+				RGBColor(12, 133, 153), // Cyan
+				RGBColor(95, 61, 196), // Light Purple
+				RGBColor(70, 210, 94), // Light Green
+				RGBColor(116, 143, 252), // Light Blue
+				RGBColor(0, 0, 0), // Black
+			]),
+			line_thickness: 2,
+			data_retriever: DataRetriever::default()?,
+		})
+	}
+}
+
+#[derive(thiserror::Error, Debug, PartialEq, Clone)]
+pub enum GraphRendererError<'a> {
+	#[error("failed to get range for {variable}")]
+	GetRangeFailed {
+		variable: &'a str,
+	},
+	#[error("failed to generate chart {hash_function} {collision_type}: {err}")]
+	FailedToGenerate {
+		hash_function: HashFunction,
+		collision_type: CollisionType,
+		err: &'a str,
+	},
+	#[error("{graph_name} graph generation - {dataset_name} data cannot be empty!")]
+	MissingData {
+		graph_name: &'a str,
+		dataset_name: &'a str,
+	},
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={graphing/components.rs}]
+use std::error::Error;
+use std::ops::Add;
+use num_traits::One;
+use plotters::chart::DualCoordChartContext;
+use plotters::coord::ranged1d::ValueFormatter;
+use plotters::prelude::*;
+use crate::graphing::graph_renderer::GraphRenderer;
+use crate::graphing::utils::split_data;
+
+/// Generalized components for reuse in graphs.
+impl GraphRenderer {
+	/// Set the X-Axis to Compression Rounds
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to add axis to.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
+	pub(super) fn set_x_axis_as_rounds<'a, DB, X, Y, XT, YT>(
+		&self,
+		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
+	) -> Result<(), Box<dyn Error>>
+	where
+		DB: DrawingBackend + 'a,
+		DB::ErrorType: 'static,
+		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
+	{
+		chart
+			.configure_mesh()
+			.disable_mesh()
+			.disable_y_axis()
+			.x_desc("Compression Rounds")
+			.label_style(self.text_style.with_color(&BLACK))
+			.draw()?;
+		Ok(())
+	}
+
+	/// Set the primary (left side) Y-Axis to the given label and color.
+	/// For secondary (right side) Y-Axis see [Self::set_secondary_y_axis].
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to add axis to.
+	/// * `label`: Axis label.
+	/// * `color`: Color of axis labels, or black by default.
+	/// * `formatter`: Formatter of Y-Axis, that takes Y-Axis type and returns String.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
+	pub(super) fn set_y_axis<'a, DB, X, Y, XT, YT>(
+		&self,
+		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
+		label: &str,
+		color: Option<RGBAColor>,
+		formatter: Option<&dyn Fn(&YT) -> String>,
+	) -> Result<(), Box<dyn Error>>
+	where
+		DB: DrawingBackend + 'a,
+		DB::ErrorType: 'static,
+		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
+		YT: 'a,
+	{
+		let color = color.unwrap_or(BLACK.to_rgba());
+		let mut builder = chart.configure_mesh();
+
+		if let Some(formatter) = formatter {
+			builder.y_label_formatter(formatter);
+		}
+
+		builder
+			.disable_mesh()
+			.disable_x_axis()
+			.y_desc(label)
+			.label_style(self.text_style.with_color(color))
+			.draw()?;
+		Ok(())
+	}
+
+	/// Set the secondary (right side) Y-Axis to the given label and color.
+	/// For primary (left side) Y-Axis see [Self::set_y_axis].
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to add axis to.
+	/// * `label`: Axis label.
+	/// * `color`: Color of axis labels, or black by default.
+	/// * `formatter`: Formatter of Y-Axis, that takes Y-Axis type and returns String.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
+	pub(super) fn set_secondary_y_axis<'a, DB, X, Y1, Y2, XT, YT1, YT2>(
+		&self,
+		chart: &mut DualCoordChartContext<'a, DB, Cartesian2d<X, Y1>, Cartesian2d<X, Y2>>,
+		label: &str,
+		color: Option<RGBAColor>,
+		formatter: Option<&dyn Fn(&YT2) -> String>,
+	) -> Result<(), Box<dyn Error>>
+	where
+		DB: DrawingBackend + 'a,
+		DB::ErrorType: 'static,
+		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y1: Ranged<ValueType = YT1> + ValueFormatter<YT1>,
+		Y2: Ranged<ValueType = YT2> + ValueFormatter<YT2>,
+	{
+		let color = color.unwrap_or(BLACK.to_rgba());
+		let mut builder = chart.configure_secondary_axes();
+
+		if let Some(formatter) = formatter {
+			builder.y_label_formatter(formatter);
+		}
+
+		builder
+			.y_desc(label)
+			.label_style(self.text_style.with_color(color))
+			.draw()?;
+		Ok(())
+	}
+
+	/// Draw a line series of provided data on the primary Y-Axis.
+	/// For drawing on the secondary Y-Axis see [Self::draw_secondary_series].
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to draw on.
+	/// * `data`: The data to draw.
+	/// * `with_points`: Should circle points be made for each data plot?
+	/// * `discontinue_line`: Should the line be continious/discontinue if part of the data is missing?
+	/// * `label`: Legend label for the charted data.
+	/// * `color`: Color of drawn line, or black by default.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
+	pub(super) fn draw_series<'a, DB, X, Y, XT, YT>(
+		&self,
+		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
+		data: Vec<(XT, YT)>,
+		with_points: bool,
+		discontinue_line: bool,
+		label: &str,
+		color: Option<RGBAColor>,
+	) -> Result<(), Box<dyn Error>>
+	where
+		DB: DrawingBackend + 'a,
+		DB::ErrorType: 'static,
+		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
+		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
+		YT: Clone + 'static,
+	{
+		let color = color.unwrap_or(BLACK.to_rgba());
+
+		// Split into data contigious data segments
+		let data = if discontinue_line {
+			split_data(data)
+		} else {
+			vec![data]
+		};
+
+		// Render
+		let mut was_legend_defined = false;
+		for split in data {
+			let series = chart
+				.draw_series(LineSeries::new(
+					split.clone(),
+					ShapeStyle {
+						color: color.to_rgba(),
+						filled: false,
+						stroke_width: self.line_thickness,
+					}
+				))?;
+
+			// Define only once
+			if !was_legend_defined {
+				was_legend_defined = true;
+				series
+					.label(label)
+					.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
+			}
+
+			if with_points {
+				chart.draw_series(PointSeries::of_element(
+					split,
+					3,
+					color,
+					&|c, s, st| Circle::new(c, s, st.filled()),
+				))?;
+			}
+		}
+
+		Ok(())
+	}
+
+	/// Draw a line series of provided data on the secondary Y-Axis.
+	/// For drawing on the primary Y-Axis see [Self::draw_series].
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to draw on.
+	/// * `data`: The data to draw.
+	/// * `with_points`: Should circle points be made for each data plot?
+	/// * `discontinue_line`: Should the line be continious/discontinue if part of the data is missing?
+	/// * `label`: Legend label for the charted data.
+	/// * `color`: Color of drawn line, or black by default.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
+	pub(super) fn draw_secondary_series<'a, DB, X, Y1, Y2, XT, YT1, YT2>(
+		&self,
+		chart: &mut DualCoordChartContext<'a, DB, Cartesian2d<X, Y1>, Cartesian2d<X, Y2>>,
+		data: Vec<(XT, YT2)>,
+		with_points: bool,
+		discontinue_line: bool,
+		label: &str,
+		color: Option<RGBAColor>,
+	) -> Result<(), Box<dyn Error>>
+	where
+		DB: DrawingBackend + 'a,
+		DB::ErrorType: 'static,
+		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y1: Ranged<ValueType = YT1> + ValueFormatter<YT1>,
+		Y2: Ranged<ValueType = YT2> + ValueFormatter<YT2>,
+		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
+		YT1: Clone + 'static,
+		YT2: Clone + 'static,
+	{
+		let color = color.unwrap_or(BLACK.to_rgba());
+
+		// Split into data contigious data segments
+		let data = if discontinue_line {
+			split_data(data)
+		} else {
+			vec![data]
+		};
+
+		// Render
+		let mut was_legend_defined = false;
+		for split in data {
+			let series = chart
+				.draw_secondary_series(LineSeries::new(
+					split.clone(),
+					ShapeStyle {
+						color: color.to_rgba(),
+						filled: false,
+						stroke_width: self.line_thickness,
+					}
+				))?;
+
+			// Define only once
+			if !was_legend_defined {
+				was_legend_defined = true;
+				series
+					.label(label)
+					.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
+			}
+
+			if with_points {
+				chart.draw_secondary_series(PointSeries::of_element(
+					split,
+					3,
+					color,
+					&|c, s, st| Circle::new(c, s, st.filled()),
+				))?;
+			}
+		}
+
+		Ok(())
+	}
+
+	/// Draw a legend in the bottom right corner.
+	///
+	/// # Arguments
+	///
+	/// * `chart`: The chart to draw on.
+	///
+	/// # Returns
+	/// `Result<(), Box<dyn Error>>`
+	pub(super) fn draw_legend<'a, DB, CT>(
+		&self,
+		chart: &mut ChartContext<'a, DB, CT>,
+	) -> Result<(), Box<dyn Error>>
+	where
+		DB: DrawingBackend + 'a,
+		DB::ErrorType: 'static,
+		CT: CoordTranslate + 'a,
+	{
+		chart
+			.configure_series_labels()
+			.label_font(self.text_style.with_color(BLACK))
+			.background_style(RGBAColor(200, 200, 200, 0.8))
+			.position(SeriesLabelPosition::LowerRight)
+			.draw()?;
+		Ok(())
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={verification/mod.rs}]
+mod verification;
+pub mod bit_differential;
+pub(crate) mod verify_hash;
+pub mod colliding_pair;
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={verification/verification.rs}]
+#[cfg(test)]
+mod tests {
+	use crate::sha::{Sha, StartVector};
+	use crate::sha::StartVector::IV;
+	use crate::structs::hash_function::HashFunction::*;
+	use crate::verification::bit_differential::BitDifferential;
+
+	#[test]
+	/// Example in Li et al. (p.17, Table 4)
+	fn test_sha256_state_collision_table() {
+		let cv = StartVector::from([
+			0x02b19d5a_u32, 0x88e1df04, 0x5ea3c7b7, 0xf2f7d1a4,
+			0x86cb1b1f_u32, 0xc8ee51a5, 0x1b4d0541, 0x651b92e7,
+		]);
+
+		let m: [u32; 16] = [
+			0xc61d6de7, 0x755336e8, 0x5e61d618, 0x18036de6,
+			0xa79f2f1d, 0xf2b44c7b, 0x4c0ef36b, 0xa85d45cf,
+			0xf72b8c2f, 0x0def947c, 0xa0eab159, 0x8021370c,
+			0x4b0d8011, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
+		];
+
+		let m_prime: [u32; 16] = [
+			0xc61d6de7, 0x755336e8, 0x5e61d618, 0x18036de6,
+			0xa79f2f1d, 0xf2b44c7b, 0x4c0ef36b, 0xa85d45cf,
+			0xe72b8c2f, 0x0fcf907c, 0xb0eab159, 0x81a1bfc1,
+			0x4b098611, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
+		];
+
+		let expected: [u32; 8] = [
+			0x431cadcd, 0xce6893bb, 0xd6c9689a, 0x334854e8,
+			0x3baae1ab, 0x038a195a, 0xccf54a19, 0x1c40606d,
+		];
+
+		let result_m = Sha::from_message_block(m.into(), SHA256, 39, cv)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA256, 39, cv)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		println!("{}", result_m.states.bit_diff(result_m_prime.states));
+
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
+	}
+
+	#[test]
+	/// Example in Li et al. (p.25, Table 8)
+	fn test_sha512_state_collision_table() {
+		let m: [u64; 16] = [
+			0x1f736d69a0368ef6, 0x7277e5081ad1c198, 0xe953a3cdc4cbe577, 0xbd05f6a203b2f75f,
+			0xdd18b3e39f563fca, 0xcad0a5bb69049fcd, 0x4d0dd2a06e2efdc0, 0x86db19c26fc2e1cf,
+			0x0184949e92cdd314, 0x82fb3c1420112000, 0xe4930d9b8295ab26, 0x5500d3a2f30a3402,
+			0x26f0aa8790cb1813, 0xa9c09c5c5015bc0d, 0x53892c5a64e94edb, 0x8e60d500013a1932,
+		];
+
+		let m_prime: [u64; 16] = [
+			0x1f736d69a0368ef6, 0x7277e5081ad1c198, 0xe953a3cdc4cbe577, 0xbd05f6a203b2f75f,
+			0xdd18b3e39f563fca, 0xcad0a5bb69049fcd, 0x4d0dd2a06e2efdc0, 0x86db19c26fc2e1cf,
+			0x037a8f464c0bb995, 0x83033bd41e111fff, 0xe4930d9b8295ab26, 0x5500d3a2f30a3402,
+			0x26f0aa8790cb1813, 0xa9809e5c4015bc45, 0x53892c5a64e94edb, 0x8e60d500013a1932,
+		];
+
+		let expected: [u64; 8] = [
+			0xdceb3d88adf54bd2, 0x966c4cb1ab0cf400, 0x01e701fdf10ab603, 0x796d6e5028a5e89a,
+			0xf29a7517b216c09f, 0x46dbae73b1db8cce, 0x8ea44d45041010ea, 0x26a7a6b902f2632f,
+		];
+
+		let result_m = Sha::from_message_block(m.into(), SHA512, 28, IV)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA512, 28, IV)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		println!("{}", result_m.states.bit_diff(result_m_prime.states));
+
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
+	}
+
+	#[test]
+	/// Example in Li et al. (p.27, Table 10)
+	fn test_sha224_state_collision_table() {
+		let cv = StartVector::from([
+			0x791c9c6b_u32, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
+			0xc90690c5_u32, 0x5591553c, 0x43a5d984, 0xaf92402d,
+		]);
+
+		let cv_prime = StartVector::from([
+			0x791c9c6b_u32, 0xbaa7f900, 0xf7c53298, 0x9073cbbd,
+			0xc90690c5_u32, 0x5591553c, 0x43a5d984, 0xbf92402d,
+		]);
+
+		let m: [u32; 16] = [
+			0xf41d61b4, 0xce033ba2, 0xdd1bc208, 0xa268189b,
+			0xee6bda2c, 0x5ddbe94d, 0x9675bbd3, 0x32c1ba8a,
+			0x7eba797d, 0x88b06a8f, 0x3bc3015c, 0xd36f38cc,
+			0xcfcb88e0, 0x3c70f7f3, 0xfaa0c1fe, 0x35c62535,
+		];
+
+		let m_prime: [u32; 16] = [
+			0xe41d61b4, 0xce033ba2, 0xdd1bc208, 0xa268189b,
+			0xee6bda2c, 0x5ddbe94d, 0x9675bbd3, 0x32c1ba8a,
+			0x7eba797d, 0x98b06a8f, 0x39e3055c, 0xc36f38cc,
+			0xce4b002d, 0x3c74f1f3, 0xfaa0c1fe, 0x35c62535,
+		];
+
+		let expected: [u32; 7] = [
+			0x9af50cac, 0xc165a72f, 0xb6f1c9f3, 0xef54bad9,
+			0xaf0cfb1f, 0x57d357c9, 0xc6462616,
+		];
+
+		let result_m = Sha::from_message_block(m.into(), SHA224, 40, cv)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		let result_m_prime = Sha::from_message_block(m_prime.into(), SHA224, 40, cv_prime)
+			.unwrap()
+			.execute()
+			.unwrap();
+
+		println!("{}", result_m.states.bit_diff(result_m_prime.states));
+
+		assert_eq!(*result_m.hash.0, expected);
+		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={verification/verify\_hash.rs}]
+use crate::sha::HashError;
+use crate::structs::hash_function::HashFunction;
+
+pub trait VerifyHash {
+	fn verify(&self, hash_function: HashFunction, rounds: u8) -> Result<bool, HashError>;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={verification/colliding\_pair.rs}]
+use std::fmt::{Display, Formatter};
+use crate::sha::{HashError, MessageBlock, OutputHash, Sha, StartVector};
+use crate::structs::hash_function::HashFunction;
+use crate::structs::hash_result::HashResult;
+use crate::structs::sha_state::ShaState;
+use crate::verification::bit_differential::BitDifferential;
+use crate::verification::verify_hash::VerifyHash;
+
+#[derive(Debug)]
+pub struct MessageData {
+	pub m: MessageBlock,
+	pub cv: StartVector,
+	pub states: Vec<ShaState>,
+	pub expected_hash: OutputHash,
+}
+
+impl MessageData {
+	fn run_sha(
+		&self,
+		hash_function: HashFunction,
+		rounds: u8
+	) -> Result<HashResult, HashError> {
+		Sha::from_message_block(
+			self.m,
+			hash_function,
+			rounds,
+			self.cv,
+		)?.execute()
+	}
+}
+
+impl VerifyHash for MessageData {
+	fn verify(
+		&self,
+		hash_function: HashFunction,
+		rounds: u8,
+	) -> Result<bool, HashError> {
+		let hash_result = self.run_sha(hash_function, rounds)?;
+		Ok(hash_result.hash == self.expected_hash)
+	}
+}
+
+#[derive(Debug)]
+pub struct CollidingPair {
+	pub m0: MessageData,
+	pub m1: MessageData,
+	pub hash_function: HashFunction,
+	pub rounds: u8,
+}
+
+impl CollidingPair {
+	pub fn verify(&self) -> Result<bool, HashError> {
+		let is_m0_hash_same = self.m0.verify(self.hash_function, self.rounds)?;
+		let is_m1_hash_same = self.m0.verify(self.hash_function, self.rounds)?;
+
+		Ok(is_m0_hash_same && is_m1_hash_same)
+	}
+}
+
+impl Display for CollidingPair {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		let is_m0_hash_same = self.m0.verify(self.hash_function, self.rounds).unwrap_or(false);
+		let is_m1_hash_same = self.m1.verify(self.hash_function, self.rounds).unwrap_or(false);
+
+		let mut mismatch_info = String::new();
+		if !is_m0_hash_same {
+			match self.m0.run_sha(self.hash_function, self.rounds) {
+				Ok(result) => mismatch_info += &format!("\nActual Hash: {}", result.hash),
+				Err(_) => mismatch_info += "\nUnable to retrieve actual hash for M!",
+			}
+		}
+
+		if !is_m1_hash_same {
+			match self.m1.run_sha(self.hash_function, self.rounds) {
+				Ok(result) => mismatch_info += &format!("\nActual Hash': {}", result.hash),
+				Err(_) => mismatch_info += "\nUnable to retrieve actual hash for M'!",
+			}
+		}
+
+		if mismatch_info.len() > 0 {
+			mismatch_info += "\n";
+		}
+
+		let hash_message = format!(
+			"Hash : {} (Valid? {})\nHash': {} (Valid? {})\n{}",
+			self.m0.expected_hash,
+			is_m0_hash_same,
+			self.m1.expected_hash,
+			is_m1_hash_same,
+			mismatch_info,
+		);
+
+		write!(f, "CV   : {}\n", self.m0.cv)?;
+		write!(f, "CV'  : {}\n", self.m1.cv)?;
+		write!(f, "M    : {}\n", self.m0.m)?;
+		write!(f, "M'   : {}\n", self.m1.m)?;
+		write!(f, "{hash_message}\n\n")?;
+		write!(f, "{}", self.m0.states.clone().bit_diff(self.m1.states.clone()))?;
+		Ok(())
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={verification/bit\_differential.rs}]
+#[derive(Debug, Eq, PartialEq)]
+enum DiffType {
+	INCREASE,
+	DECREASE,
+	EQUAL,
+	FALSE,
+	TRUE,
+}
+
+impl DiffType {
+	fn represent(&self) -> char {
+		match self {
+			DiffType::INCREASE => 'n',
+			DiffType::DECREASE => 'u',
+			DiffType::EQUAL => '=',
+			DiffType::FALSE => '0',
+			DiffType::TRUE => '1',
+		}
+	}
+}
+
+pub trait BitDifferential {
+	fn bit_diff(self, other: Self) -> String;
+}
+
+macro_rules! impl_bit_differential_for {
+    ($($t:ty),*) => {
+        $(
+            impl BitDifferential for $t {
+                fn bit_diff(self, other: Self) -> String {
+					let size = size_of::<Self>() * 8;
+					let mut s: String = String::with_capacity(size);
+
+					for i in (0..size).rev() {
+						let bit_self = (self >> i) & 1 == 1;
+						let bit_other = (other >> i) & 1 == 1;
+
+						let representation = match (bit_self, bit_other) {
+							(false, true) => DiffType::INCREASE,
+							(true, false) => DiffType::DECREASE,
+							_ if bit_self == bit_other => DiffType::EQUAL,
+							(false, false) => DiffType::FALSE,
+							(true, true) => DiffType::TRUE,
+						}.represent();
+
+						s.push(representation);
+					}
+
+					s
+				}
+            }
+        )*
+    }
+}
+
+impl_bit_differential_for!(u8, u16,u32, u64, u128);
+
+impl<T: BitDifferential + Copy, const N: usize> BitDifferential for [T; N] {
+	fn bit_diff(self, other: Self) -> String {
+		self.into_iter()
+			.zip(other)
+			.map(|(s, o)| s.bit_diff(o))
+			.collect::<String>()
+	}
+}
+
+impl<T: BitDifferential + Copy> BitDifferential for &[T] {
+	fn bit_diff(self, other: Self) -> String {
+		self.into_iter()
+			.zip(other)
+			.map(|(s, o)| s.bit_diff(*o))
+			.collect::<String>()
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::BitDifferential;
+
+	#[test]
+	fn test_differential_same() {
+		let a = 5u8;
+		let b = 5u8;
+
+		assert_eq!(a.bit_diff(b), "========");
+	}
+
+	#[test]
+	fn test_differential_different() {
+		let a = 123u8;
+		let b = 5u8;
+
+		assert_eq!(a.bit_diff(b), "=uuuunu=");
+	}
+
+	#[test]
+	fn test_differential_slice() {
+		let a = [2u8; 2];
+		let b = [1, 3];
+		assert_eq!(a.bit_diff(b), "======un=======n");
+	}
+
+	#[test]
+	fn test_differential_boxed_slice() {
+		let a = Box::<[u8]>::from([2; 2]);
+		let b = Box::<[u8]>::from([1, 3]);
+		assert_eq!(a.bit_diff(&b), "======un=======n");
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={structs/mod.rs}]
+pub mod collision_type;
+pub mod hash_result;
+pub mod sha_state;
+pub mod size;
+pub mod hash_function;
+pub mod benchmark;
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={structs/size.rs}]
+/// Representation of a size, retrievable as bits or bytes.
+/// Useful for distinguishing between bits and bytes in code.
+pub struct Size(usize);
+
+#[allow(dead_code)]
+impl Size {
+	/// Construct a size from a given number of bits.
+	///
+	/// # Arguments
+	///
+	/// `bits`: Number of bits to represent
+	///
+	/// # Returns
+	/// `Size`
+	///
+	/// # Examples
+	///
+	/// ```
+	/// let size = Bits::from_bits(8);
+	/// ```
+	pub fn from_bits(bits: usize) -> Self {
+		Size(bits)
+	}
+
+	/// Construct a size from a given number of bytes.
+	///
+	/// # Arguments
+	///
+	/// `bytes`: Number of bytes to represent
+	///
+	/// # Returns
+	/// `Size`
+	///
+	/// # Examples
+	///
+	/// ```
+	/// let size = Bits::from_bytes(2);
+	/// ```
+	pub fn from_bytes(bytes: usize) -> Self {
+		Size(bytes * 8)
+	}
+
+	/// Retreive the number of bits.
+	///
+	/// # Returns
+	/// `usize`
+	///
+	/// # Examples
+	///
+	/// ```
+	/// let size = Bits::from_bytes(2);
+	/// println!("{}", size.bits()); // Outputs 16
+	/// ```
+	pub fn bits(&self) -> usize {
+		self.0
+	}
+
+	/// Retreive the number of bytes.\
+	/// The value will always be padded to the nearest full byte.
+	///
+	/// # Returns
+	/// `usize`
+	///
+	/// # Examples
+	///
+	/// ```
+	/// let size = Size::from_bits(8);
+	/// println!("{}", size.bytes()); // Outputs 1
+	/// ```
+	///
+	/// ```
+	/// let size = Size::from_bits(12);
+	/// println!("{}", size.bytes()); // Outputs 2
+	/// ```
+	pub fn bytes(&self) -> usize {
+		(self.0 + 7) / 8
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::Size;
+
+	#[test]
+	fn test_from_bits() {
+		assert!(matches!(Size::from_bits(8), Size(8)));
+		assert!(matches!(Size::from_bits(12), Size(12)));
+	}
+
+	#[test]
+	fn test_from_bytes() {
+		assert!(matches!(Size::from_bytes(1), Size(8)));
+		assert!(matches!(Size::from_bytes(2), Size(16)));
+	}
+
+	#[test]
+	fn test_bits() {
+		assert_eq!(Size(8).bits(), 8);
+	}
+
+	#[test]
+	fn test_bytes() {
+		assert_eq!(Size(8).bytes(), 1);
+	}
+
+	#[test]
+	fn test_non_full_bytes() {
+		assert_eq!(Size(11).bytes(), 2);
+	}
+}
+\end{lstlisting}
+
+Due to tex errors related to invalid UTF-8 byte sequence, the $\Delta$ and $_i$ symbols have been substituted with \texttt{d} and \texttt{i}.
+
+\begin{lstlisting}[language=rust, caption={structs/sha\_state.rs}]
+use crate::sha::Word;
+use crate::verification::bit_differential::BitDifferential;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct ShaState {
+	pub i: u8,
+	pub w: Word,
+	pub a: Word,
+	pub e: Word,
+}
+
+impl BitDifferential for ShaState {
+	fn bit_diff(self, other: Self) -> String {
+		let a_delta = self.a.bit_diff(other.a);
+		let e_delta = self.e.bit_diff(other.e);
+		let w_delta = self.w.bit_diff(other.w);
+
+		format!("{a_delta} | {e_delta} | {w_delta}")
+	}
+}
+
+impl BitDifferential for Vec<ShaState> {
+	fn bit_diff(self, other: Self) -> String {
+		let mut output = String::new();
+		let padding = if let Some(state) = self.get(0) {
+			match state.w {
+				Word::W32(_) => 32,
+				Word::W64(_) => 64,
+			}
+		} else { return output };
+
+		// Append heading
+		output += &format!(
+			" i | {:^padding$} | {:^padding$} | {:^padding$}\n",
+			"dAi", "dEi", "dWi"
+		);
+
+		// Append differential for each compression round
+		for i in 0..self.len() {
+			let diff = self[i].clone().bit_diff(other[i].clone());
+			output += &format!("{i:2} | {diff}\n");
+		}
+
+		output.shrink_to_fit();
+		output
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={structs/hash\_result.rs}]
+use crate::sha::OutputHash;
+use crate::structs::sha_state::ShaState;
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct HashResult {
+	pub hash: OutputHash,
+	pub states: Vec<ShaState>,
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={structs/hash\_function.rs}]
+use std::fmt::{Display, Formatter};
+use crate::sha::{HashError, Word};
+use crate::structs::size::Size;
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, serde::Serialize, serde::Deserialize, clap::ValueEnum)]
+pub enum HashFunction {
+	SHA224,
+	SHA256,
+	SHA512,
+}
+
+impl Display for HashFunction {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			HashFunction::SHA224 => f.write_str("SHA224"),
+			HashFunction::SHA256 => f.write_str("SHA256"),
+			HashFunction::SHA512 => f.write_str("SHA512"),
+		}
+	}
+}
+
+impl HashFunction {
+	pub fn max_rounds(&self) -> u8 {
+		use HashFunction::*;
+		match self {
+			SHA224 | SHA256 => 64,
+			SHA512 => 80,
+		}
+	}
+
+	pub fn length_size(&self) -> Size {
+		use HashFunction::*;
+		match self {
+			SHA224 | SHA256 => Size::from_bits(64),
+			SHA512 => Size::from_bits(128),
+		}
+	}
+
+	pub fn block_size(&self) -> Size {
+		use HashFunction::*;
+		match self {
+			SHA224 | SHA256 => Size::from_bits(512),
+			SHA512 => Size::from_bits(1024),
+		}
+	}
+
+	pub fn default_word(&self) -> Word {
+		use HashFunction::*;
+		match self {
+			SHA224 | SHA256 => Word::W32(0),
+			SHA512 => Word::W64(0),
+		}
+	}
+
+	pub fn word_size(&self) -> Size {
+		use HashFunction::*;
+		match self {
+			SHA224 | SHA256 => Size::from_bits(32),
+			SHA512 => Size::from_bits(64),
+		}
+	}
+
+	pub fn truncate_to_length(&self) -> Option<usize> {
+		use HashFunction::*;
+		match self {
+			SHA224 => Some(7),
+			_ => None,
+		}
+	}
+
+	/// Validates number of compression rounds.
+	/// Returns error if rounds exceed max_rounds of given hash function.
+	///
+	/// # Arguments
+	///
+	/// * `rounds`: Number of compression rounds
+	/// * `hash_function`: Hash function to validate against
+	///
+	/// # Returns
+	/// `Result<(), HashError>`
+	pub fn validate_rounds(&self, rounds: u8) -> Result<(), HashError> {
+		let max_rounds = self.max_rounds();
+		if rounds > max_rounds {
+			return Err(HashError::TooManyRounds {
+				requested: rounds,
+				maximum: max_rounds,
+			});
+		}
+
+		Ok(())
+	}
+
+	/// Retrieves constant K
+	pub fn get_constant(&self) -> Vec<Word> {
+		use HashFunction::*;
+		match self {
+			SHA224 | SHA256 => Word::from_u32_vec(vec![
+				0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
+				0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+				0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+				0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+				0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+				0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+				0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+				0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+				0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+				0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+				0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+				0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+				0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
+				0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+				0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+				0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+			]),
+			SHA512 => Word::from_u64_vec(vec![
+				0x428a2f98d728ae22, 0x7137449123ef65cd, 0xb5c0fbcfec4d3b2f, 0xe9b5dba58189dbbc,
+				0x3956c25bf348b538, 0x59f111f1b605d019, 0x923f82a4af194f9b, 0xab1c5ed5da6d8118,
+				0xd807aa98a3030242, 0x12835b0145706fbe, 0x243185be4ee4b28c, 0x550c7dc3d5ffb4e2,
+				0x72be5d74f27b896f, 0x80deb1fe3b1696b1, 0x9bdc06a725c71235, 0xc19bf174cf692694,
+				0xe49b69c19ef14ad2, 0xefbe4786384f25e3, 0x0fc19dc68b8cd5b5, 0x240ca1cc77ac9c65,
+				0x2de92c6f592b0275, 0x4a7484aa6ea6e483, 0x5cb0a9dcbd41fbd4, 0x76f988da831153b5,
+				0x983e5152ee66dfab, 0xa831c66d2db43210, 0xb00327c898fb213f, 0xbf597fc7beef0ee4,
+				0xc6e00bf33da88fc2, 0xd5a79147930aa725, 0x06ca6351e003826f, 0x142929670a0e6e70,
+				0x27b70a8546d22ffc, 0x2e1b21385c26c926, 0x4d2c6dfc5ac42aed, 0x53380d139d95b3df,
+				0x650a73548baf63de, 0x766a0abb3c77b2a8, 0x81c2c92e47edaee6, 0x92722c851482353b,
+				0xa2bfe8a14cf10364, 0xa81a664bbc423001, 0xc24b8b70d0f89791, 0xc76c51a30654be30,
+				0xd192e819d6ef5218, 0xd69906245565a910, 0xf40e35855771202a, 0x106aa07032bbd1b8,
+				0x19a4c116b8d2d0c8, 0x1e376c085141ab53, 0x2748774cdf8eeb99, 0x34b0bcb5e19b48a8,
+				0x391c0cb3c5c95a63, 0x4ed8aa4ae3418acb, 0x5b9cca4f7763e373, 0x682e6ff3d6b2b8a3,
+				0x748f82ee5defb2fc, 0x78a5636f43172f60, 0x84c87814a1f0ab72, 0x8cc702081a6439ec,
+				0x90befffa23631e28, 0xa4506cebde82bde9, 0xbef9a3f7b2c67915, 0xc67178f2e372532b,
+				0xca273eceea26619c, 0xd186b8c721c0c207, 0xeada7dd6cde0eb1e, 0xf57d4f7fee6ed178,
+				0x06f067aa72176fba, 0x0a637dc5a2c898a6, 0x113f9804bef90dae, 0x1b710b35131c471b,
+				0x28db77f523047d84, 0x32caab7b40c72493, 0x3c9ebe0a15c9bebc, 0x431d67c49c100d4c,
+				0x4cc5d4becb3e42b6, 0x597f299cfc657e2a, 0x5fcb6fab3ad6faec, 0x6c44198c4a475817,
+			]),
+		}
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={structs/collision\_type.rs}]
+use std::fmt::{Display, Formatter};
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize, clap::ValueEnum)]
+pub enum CollisionType {
+	/// Use the fixed iv for both m0 and m1, where m0 != m1
+	#[value(name = "std")]
+	Standard,
+	/// Use a shared cv for both m0 and m1, where m0 != m1
+	#[value(name = "sfs")]
+	SemiFreeStart,
+	/// Use cv0 for m0, cv1 for m1, where cv0 != cv1 and m0 ?= m1
+	#[value(name = "fs")]
+	FreeStart,
+}
+
+impl Display for CollisionType {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		match self {
+			CollisionType::Standard => f.write_str("STD"),
+			CollisionType::SemiFreeStart => f.write_str("SFS"),
+			CollisionType::FreeStart => f.write_str("FS"),
+		}
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={structs/benchmark.rs}]
+use std::collections::BTreeMap;
+use std::error::Error;
+use std::fmt::{Display, Formatter};
+use std::fs;
+use std::fs::File;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+use chrono::{DateTime, Utc};
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use crate::sha::{MessageBlock, OutputHash, StartVector, Word};
+use crate::smt_lib::smt_retriever::EncodingType;
+use crate::structs::collision_type::CollisionType;
+use crate::structs::hash_function::HashFunction;
+use crate::structs::sha_state::ShaState;
+use crate::verification::colliding_pair::{CollidingPair, MessageData};
+
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq, Hash, Ord, PartialOrd, clap::ValueEnum)]
+pub enum SmtSolver {
+	Z3,
+	CVC5,
+	Yices2,
+	Bitwuzla,
+	Boolector,
+	// STP, // STP Does not support SMTLIB 2.6!
+	Colibri2,
+	MathSAT,
+}
+
+// TODO: TO TEST:
+// Z3:
+// core.minimize (bool) minimize computed core (default: false)
+//    bce (bool) eliminate blocked clauses (default: false)
+//    ate (bool) asymmetric tautology elimination (default: true)
+//    abce (bool) eliminate blocked clauses using asymmetric literals (default: false)
+//     acce (bool) eliminate covered clauses using asymmetric added literals (default: false)
+//     anf (bool) enable ANF based simplification in-processing (default: false)
+//    binspr (bool) enable SPR inferences of binary propagation redundant clauses. This inprocessing step eliminates models (default: false)
+//    cce (bool) eliminate covered clauses (default: false)
+//		cut (bool) enable AIG based simplification in-processing (default: false)
+//    threads (unsigned int) number of parallel threads to use (default: 1)
+//    cancel_backup_file (symbol) file to save partial search state if search is canceled (default: )
+//		enable_sls (bool) enable SLS tuning during weighted maxsat (default: false)
+//    enable (bool) enable parallel solver by default on selected tactics (for QF_BV) (default: false)
+//    check_lemmas (bool) check lemmas on the fly using an independent nlsat solver (default: false)
+//    blast_distinct (bool) expand a distinct predicate into a quadratic number of disequalities (default: false)
+//    blast_eq_value (bool) blast (some) Bit-vector equalities into bits (default: false)
+//    bv_extract_prop (bool) attempt to partially propagate extraction inwards (default: false)
+//    bv_not_simpl (bool) apply simplifications for bvnot (default: false)
+//		bv_sort_ac (bool) sort the arguments of all AC operators (default: false)
+//    elim_and (bool) conjunctions are rewritten using negation and disjunctions (default: false)
+//[module] sls, description: Experimental Stochastic Local Search Solver (for QFBV only).
+//
+
+// CVC5:
+//  --arith-rewrite-equalities
+//                          turns on the preprocessing rewrite turning equalities
+//                          into a conjunction of inequalities [*]
+//   --arith-static-learning
+//                          do arithmetic static learning for ite terms based on
+//                          bounds when static learning is enabled [*]
+//   --dio-solver           turns on Linear Diophantine Equation solver (Griggio,
+//                          JSAT 2012) (EXPERTS only) [*]
+//  --dio-decomps          let skolem variables for integer divisibility
+//                          constraints leak from the dio solver (EXPERTS only) [*]
+//  --new-prop             use the new row propagation system (EXPERTS only) [*]
+//  --nl-cov               whether to use the cylindrical algebraic coverings
+//                          solver for non-linear arithmetic [*]
+//  --use-approx           attempt to use an approximate solver (EXPERTS only) [*]
+//  --use-fcsimplex        use focusing and converging simplex (FMCAD 2013
+//                          submission) (EXPERTS only) [*]
+//   --use-soi              use sum of infeasibility simplex (FMCAD 2013
+//                          submission) (EXPERTS only) [*]
+//  --plugin-share-skolems true if we permit sharing theory lemmas and SAT clauses
+//                          with skolems (EXPERTS only) [*]
+//  --bitblast=MODE        choose bitblasting mode, see --bitblast=help
+//  --bool-to-bv=MODE      convert booleans to bit-vectors of size 1 at various
+//                          levels of aggressiveness, see --bool-to-bv=help
+//  --bv-assert-input      assert input assertions on user-level 0 instead of
+//                          assuming them in the bit-vector SAT solver (EXPERTS
+//                          only) [*]
+//  --bv-eager-eval        perform eager context-dependent evaluation for
+//                          applications of bv kinds in the equality engine [*]
+//  --bv-eq-engine         enable equality engine when possible in bitvector
+//                          theory (EXPERTS only) [*]
+//   --bv-gauss-elim        simplify formula via Gaussian Elimination if applicable
+//                          (EXPERTS only) [*]
+//   --bv-propagate         use bit-vector propagation in the bit-blaster (EXPERTS
+//                          only) [*]
+//   --bv-rw-extend-eq      enable additional rewrites over zero/sign extend over
+//                          equalities with constants (useful on
+//                          BV/2017-Preiner-scholl-smt08) (EXPERTS only) [*]
+//   --bv-sat-solver=MODE   choose which sat solver to use, see
+//                          --bv-sat-solver=help
+//   --bv-solver=MODE       choose bit-vector solver, see --bv-solver=help
+//  --minisat-simplification=MODE
+//                          Simplifications to be performed by Minisat. (EXPERTS
+//                          only)
+
+// - Different arguments for each solver
+// - Different kernels (https://askubuntu.com/a/126671)
+// - Different memory timings
+// - CPU Core Clock difference
+// - Run to run variance
+
+// TODO: Yices2
+// TODO: Boolector
+
+impl Display for SmtSolver {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		use SmtSolver::*;
+
+		write!(f, "{}", match self {
+			Z3 => "Z3",
+			CVC5 => "CVC5",
+			Yices2 => "Yices",
+			Bitwuzla => "Bitwuzla",
+			Boolector => "Boolector",
+			// STP => "STP",
+			Colibri2 => "Colibri2",
+			MathSAT => "MathSAT",
+		})
+	}
+}
+
+impl SmtSolver {
+	pub fn command(&self) -> String {
+		use SmtSolver::*;
+
+		match self {
+			Z3 => "z3",
+			CVC5 => "cvc5",
+			Yices2 => "yices-smt2",
+			Bitwuzla => "bitwuzla",
+			Boolector => "boolector",
+			// STP => "stp",
+			Colibri2 => "./solvers/colibri2",
+			MathSAT => "./solvers/mathsat",
+		}.into()
+	}
+}
+
+pub type SolverArg = String;
+
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
+pub enum BenchmarkResult {
+	Sat,
+	Unsat,
+	MemOut,
+	CPUOut,
+	Aborted,
+	SMTError,
+	Unknown,
+}
+
+impl Display for BenchmarkResult {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{}", match self {
+			BenchmarkResult::Sat => "SAT",
+			BenchmarkResult::Unsat => "UNSAT",
+			BenchmarkResult::MemOut => "OUT OF MEMORY",
+			BenchmarkResult::CPUOut => "OUT OF CPU TIME",
+			BenchmarkResult::Aborted => "ABORTED",
+			BenchmarkResult::SMTError => "SMT ERROR",
+			BenchmarkResult::Unknown => "UNKNOWN",
+		})
+	}
+}
+
+#[derive(Clone, Copy)]
+enum SmtOutputFormat {
+	Boolean,
+	Hex,
+	Decimal,
+}
+
+impl SmtOutputFormat {
+	fn output_string(self) -> String {
+		match self {
+			SmtOutputFormat::Boolean => "#b([01]*)",
+			SmtOutputFormat::Hex => "#x([0-9a-fA-F]*)",
+			SmtOutputFormat::Decimal => "([0-9]*)",
+		}.to_string()
+	}
+
+	fn get_base_size(
+		self,
+		capture: &str,
+		hash_function: HashFunction
+	) -> Result<Word, Box<dyn Error>> {
+		let radix_size = match self {
+			SmtOutputFormat::Boolean => 2,
+			SmtOutputFormat::Hex => 16,
+			SmtOutputFormat::Decimal => 10,
+ 		};
+
+		Ok(Word::from_str_radix(capture, radix_size, hash_function)?)
+	}
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MutableShaState {
+	pub i: u8,
+	pub w: Option<Word>,
+	pub a: Option<Word>,
+	pub e: Option<Word>,
+}
+
+impl Default for MutableShaState {
+	fn default() -> Self {
+		MutableShaState {
+			i: 0,
+			w: None,
+			a: None,
+			e: None,
+		}
+	}
+}
+
+impl MutableShaState {
+	fn to_immutable(self) -> Option<ShaState> {
+		Some(ShaState {
+			i: self.i,
+			w: self.w?,
+			a: self.a?,
+			e: self.e?,
+		})
+	}
+
+	fn update_state_variable(&mut self, variable: char, value: Word) {
+		match variable {
+			'a' => self.a = Some(value),
+			'e' => self.e = Some(value),
+			'w' => self.w = Some(value),
+			_ => {},
+		}
+	}
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+pub struct Benchmark {
+	pub date_time: DateTime<Utc>,
+	pub solver: SmtSolver,
+	pub arguments: Option<SolverArg>,
+	pub hash_function: HashFunction,
+	pub rounds: u8,
+	pub collision_type: CollisionType,
+	pub execution_time: Duration,
+	pub memory_bytes: u64,
+	pub result: BenchmarkResult,
+	pub console_output: (String, String),
+	pub is_valid: Option<bool>,
+	pub is_baseline: bool,
+	pub is_rerun: bool,
+	pub encoding: EncodingType,
+	pub stop_tolerance: u8,
+	pub timeout: Duration,
+}
+
+impl Benchmark {
+	pub fn save(&self, path: &Path) -> Result<PathBuf, Box<dyn Error>> {
+		if !path.exists() {
+			fs::create_dir_all(path)?;
+		}
+
+		let path = path.join(
+			format!("{}_{}_{}_{}_{}.json",
+					self.hash_function,
+					self.collision_type,
+					self.solver,
+					self.rounds,
+					self.date_time,
+			)
+		);
+
+		let mut file = File::options()
+			.create_new(true)
+			.write(true)
+			.open(path.clone())?;
+
+		let json = serde_json::to_string(&self)?;
+		file.write_all(json.as_bytes())?;
+
+		Ok(path)
+	}
+
+	pub fn load(file: &Path) -> Result<Self, Box<dyn Error>> {
+		let contents = fs::read(file)?;
+		let benchmark: Self = serde_json::from_slice(&contents)?;
+		Ok(benchmark)
+	}
+
+	pub fn load_all(dir_location: &Path, recursively: bool) -> Result<Vec<Self>, Box<dyn Error>> {
+		let mut benchmarks = vec![];
+
+		if dir_location.is_file() {
+			benchmarks.push(Self::load(dir_location)?);
+			return Ok(benchmarks);
+		}
+
+		for dir_entry in fs::read_dir(dir_location)? {
+			if let Ok(entry) = dir_entry {
+				let metadata = entry.metadata()?;
+				if recursively && metadata.is_dir() {
+					benchmarks.extend(Self::load_all(&entry.path(), recursively)?)
+				} else if metadata.is_file() {
+					benchmarks.push(Self::load(&entry.path())?);
+				}
+			}
+		}
+
+		Ok(benchmarks)
+	}
+
+	pub fn parse_output(&mut self) -> Result<Option<CollidingPair>, Box<dyn Error>> {
+		if self.result != BenchmarkResult::Sat {
+			return Ok(None);
+		}
+
+		let output_format = self.get_output_format()?;
+		let number_format = output_format.output_string();
+		let re = Regex::new(
+			&format!(
+				r"\((?:m([01])_|)(delta_[aew]|[a-hw]|hash)([0-9]+) (?:\(_ bv{number_format} (?:32|64)\)|{number_format})\)",
+			)
+		)?;
+
+		let (smt_output, _) = self.console_output.clone();
+		let default_word = self.hash_function.default_word();
+
+		let mut hash = Box::new([None; 8]);
+		let mut start_blocks = [[default_word; 16]; 2];
+		let mut start_vectors = [[default_word; 8]; 2];
+		let mut states = [BTreeMap::new(), BTreeMap::new()];
+
+		for capture in re.captures_iter(&smt_output) {
+			let msg= capture.get(1);
+			let var = &capture[2];
+			let round: usize = capture[3].parse()?;
+
+			let val = match (capture.get(4), capture.get(5)) {
+				(Some(val), _) => val,
+				(_, Some(val)) => val,
+				(None, None) => {
+					return Err(Box::from("Failed to retrieve value"));
+				}
+			};
+			let val = output_format.get_base_size(val.into(), self.hash_function)?;
+
+			let is_differential = var.contains("delta");
+
+			match msg {
+				Some(msg) => {
+					self.parse_update_for_msg(
+						msg.as_str().parse()?,
+						var,
+						round,
+						val,
+						&mut hash,
+						&mut start_blocks,
+						&mut start_vectors,
+						&mut states,
+						is_differential,
+					)?;
+				}
+				None => {
+					self.parse_update_for_msg(
+						0,
+						var,
+						round,
+						val,
+						&mut hash,
+						&mut start_blocks,
+						&mut start_vectors,
+						&mut states,
+						is_differential,
+					)?;
+					self.parse_update_for_msg(
+						1,
+						var,
+						round,
+						val,
+						&mut hash,
+						&mut start_blocks,
+						&mut start_vectors,
+						&mut states,
+						is_differential,
+					)?;
+				}
+			}
+		}
+
+		// Trim hash
+		let output_size = self.hash_function.truncate_to_length().unwrap_or(8);
+		let mut trimmed_hash = Vec::with_capacity(output_size);
+		for (i, word) in hash.into_iter().enumerate() {
+			if let Some(word) = word {
+				trimmed_hash.push(word);
+			} else if i == output_size {
+				break;
+			}
+		}
+
+		// Process messages
+		let mut messages = vec![];
+		for (i, message_states) in states.into_iter().enumerate() {
+			let mut states = vec![];
+			for (_, mut state) in message_states {
+				if self.rounds == 0 {
+					state.w = Some(self.hash_function.default_word());
+				}
+
+				states.push(
+					state
+						.to_immutable()
+						.ok_or("Failed to retrieve all message states")?
+				);
+			}
+
+			messages.push(MessageData {
+				m: MessageBlock(start_blocks[i]),
+				cv: StartVector::CV(start_vectors[i]),
+				states,
+				expected_hash: OutputHash(Box::from(trimmed_hash.clone())),
+			});
+		}
+
+		let [m0, m1] = messages.try_into().unwrap();
+		let colliding_pair = CollidingPair {
+			m0,
+			m1,
+			hash_function: self.hash_function,
+			rounds: self.rounds,
+		};
+
+		// Verify benchmark
+		self.is_valid = Some(colliding_pair.verify()?);
+
+		Ok(Some(colliding_pair))
+	}
+
+	fn parse_update_for_msg(
+		&self,
+		msg: usize,
+		var: &str,
+		round: usize,
+		val: Word,
+		hash: &mut Box<[Option<Word>; 8]>,
+		start_blocks: &mut [[Word; 16]; 2],
+		start_vectors: &mut [[Word; 8]; 2],
+		states: &mut [BTreeMap<usize, MutableShaState>; 2],
+		differential: bool,
+	) -> Result<(), Box<dyn Error>> {
+		// Special handling if differential
+		let (var, val) = if differential {
+			let var = var.split("_").collect::<Vec<_>>()[1];
+			let val = if msg == 0 {
+				val
+			} else {
+				self.hash_function.default_word()
+			};
+
+			(var, val)
+		} else { (var, val) };
+
+		// Parse
+		if var == "hash" {
+			hash[round] = Some(val);
+		} else {
+			let var_char: char = var.parse()?;
+
+			// Parse H constants (CV/IV)
+			if !differential && round == 0 && var_char != 'w' {
+				let i = (var_char as u8) - ('a' as u8);
+				start_vectors[msg][i as usize] = val;
+			}
+
+			// Parse start blocks
+			if !differential && var_char == 'w' && round < 16 {
+				start_blocks[msg][round] = val;
+			}
+
+			// Upsert updated state
+			states[msg].entry(round).and_modify(|state| {
+				state.update_state_variable(var_char, val);
+			}).or_insert_with(|| {
+				let mut state = MutableShaState::default();
+				state.i = round as u8;
+				state.update_state_variable(var_char, val);
+				state
+			});
+		}
+		Ok(())
+	}
+
+	fn get_output_format(&self) -> Result<SmtOutputFormat, Box<dyn Error>> {
+		let (smt_output, _) = self.console_output.clone();
+		if smt_output.contains("#b") {
+			Ok(SmtOutputFormat::Boolean)
+		} else if smt_output.contains("#x") {
+			Ok(SmtOutputFormat::Hex)
+		} else {
+			Ok(SmtOutputFormat::Decimal)
+		}
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/mod.rs}]
+pub mod smt_lib;
+pub mod smt_retriever;
+mod utilities;
+pub(super) mod encodings;
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/smt\_lib.rs}]
+use std::error::Error;
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
+use crate::sha::{HashError};
+use crate::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
+use crate::structs::collision_type::CollisionType;
+use crate::structs::hash_function::HashFunction;
+
+pub struct SmtBuilder {
+	/// Sha defined in SMTLIB2 format
+	pub(super) smt: String,
+	/// Hash function to use
+	pub(super) hash_function: HashFunction,
+	/// Number of compression rounds
+	pub(super) rounds: u8,
+	/// The target collision type
+	pub(super) collision_type: CollisionType,
+	/// The target encoding type
+	pub(super) encoding: EncodingType,
+}
+
+impl SmtBuilder {
+	fn new(
+		hash_function: HashFunction,
+		rounds: u8,
+		collision_type: CollisionType,
+		encoding: EncodingType
+	) -> Result<Self, HashError> {
+		hash_function.validate_rounds(rounds)?;
+
+		Ok(SmtBuilder {
+			smt: String::new(),
+			hash_function,
+			rounds,
+			collision_type,
+			encoding,
+		})
+	}
+
+	fn to_file(self, file_path: PathBuf) -> Result<File, std::io::Error> {
+		let mut file = File::create(file_path)?;
+
+		file.write(self.smt.as_bytes())?;
+
+		Ok(file)
+	}
+
+	fn write_encoding(&mut self)  -> Result<(), Box<dyn Error>> {
+		use EncodingType::*;
+
+		match self.encoding {
+			BruteForce { .. } => self.brute_force_encoding()?,
+			DeltaXOR { .. } => self.dxor_encoding()?,
+			DeltaSub { .. } => self.dsub_encoding()?,
+			Base4 { .. } => self.base4_encoding()?,
+		};
+
+		Ok(())
+	}
+}
+
+pub fn generate_smtlib_files(
+	smt_retriever: SmtRetriever,
+) -> Result<(), Box<dyn Error>> {
+	use HashFunction::*;
+	use CollisionType::*;
+
+	for hash_function in [SHA224, SHA256, SHA512] {
+		for collision_type in [Standard, SemiFreeStart, FreeStart] {
+			for encoding in EncodingType::get_all_permutations() {
+				for rounds in 1..=hash_function.max_rounds() {
+					let mut builder = SmtBuilder::new(
+						hash_function,
+						rounds,
+						collision_type,
+						encoding,
+					)?;
+
+					builder.write_encoding()?;
+
+					let file_path = smt_retriever.get_file(
+						hash_function,
+						collision_type,
+						rounds,
+						encoding,
+					);
+
+					builder.to_file(file_path)?;
+				}
+			}
+		}
+	}
+
+	Ok(())
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/smt\_retriever.rs}]
+use std::error::Error;
+use std::fmt::{Display, Formatter};
+use std::fs;
+use std::path::PathBuf;
+use std::str::FromStr;
+use serde::{Deserialize, Serialize};
+use crate::smt_lib::smt_retriever::EncodingType::{BruteForce, DeltaSub, DeltaXOR, Base4};
+use crate::structs::collision_type::CollisionType;
+use crate::structs::hash_function::HashFunction;
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, PartialOrd, Ord)]
+pub enum EncodingType {
+	BruteForce {
+		simplified_maj_and_ch_functions: bool,
+		alternative_add: bool,
+	},
+	DeltaXOR {
+		simplified_maj_and_ch_functions: bool,
+		alternative_add: bool,
+	},
+	DeltaSub {
+		simplified_maj_and_ch_functions: bool,
+		alternative_add: bool,
+	},
+	Base4 {
+		simplified_maj_and_ch_functions: bool,
+		alternative_add: bool,
+	},
+}
+
+impl Into<String> for EncodingType {
+	fn into(self) -> String {
+		let mut encoding_str = match self {
+			BruteForce { .. } => "bruteforce",
+			DeltaXOR { .. } => "delta-xor",
+			DeltaSub { .. } => "delta-sub",
+			Base4 { .. } => "base-4",
+		}.to_string();
+
+		if self.alternative_add() {
+			encoding_str.push_str(" bitwise add");
+		}
+
+		if self.simplified_maj_and_ch_functions() {
+			encoding_str.push_str(" simplified MAJ & CH fn");
+		}
+
+		encoding_str
+	}
+}
+
+impl EncodingType {
+	pub fn get_diff(&self) -> Result<&str, Box<dyn Error>> {
+		use EncodingType::*;
+		match self {
+			DeltaXOR { .. } => Ok("bvxor"),
+			DeltaSub { .. } => Ok("bvsub"),
+			_ => Err(Box::from("get_diff not supported for encoding type")),
+		}
+	}
+
+	pub fn simplified_maj_and_ch_functions(&self) -> bool {
+		use EncodingType::*;
+		*match self {
+			BruteForce { simplified_maj_and_ch_functions, .. } => simplified_maj_and_ch_functions,
+			DeltaXOR { simplified_maj_and_ch_functions, .. } => simplified_maj_and_ch_functions,
+			DeltaSub { simplified_maj_and_ch_functions, .. } => simplified_maj_and_ch_functions,
+			Base4 { simplified_maj_and_ch_functions, .. } => simplified_maj_and_ch_functions,
+		}
+	}
+
+	pub fn alternative_add(&self) -> bool {
+		use EncodingType::*;
+		*match self {
+			BruteForce { alternative_add, .. } => alternative_add,
+			DeltaXOR { alternative_add, .. } => alternative_add,
+			DeltaSub { alternative_add, .. } => alternative_add,
+			Base4 { alternative_add, .. } => alternative_add,
+		}
+	}
+
+	pub fn get_all_permutations() -> Vec<Self> {
+		let mut vec = Vec::with_capacity(4 * 3);
+
+		for simplified_maj_and_ch_functions in [false, true] {
+			for alternative_add in [false, true] {
+				vec.push(BruteForce {
+					simplified_maj_and_ch_functions,
+					alternative_add,
+				});
+				vec.push(DeltaXOR {
+					simplified_maj_and_ch_functions,
+					alternative_add,
+				});
+				vec.push(DeltaSub {
+					simplified_maj_and_ch_functions,
+					alternative_add,
+				});
+				// TODO: Uncomment once implemented
+				// vec.push(Base4 {
+				// 	simplified_maj_and_ch_functions,
+				// 	alternative_add,
+				// });
+			}
+		}
+
+		vec
+	}
+}
+
+fn parse_bool(s: &str) -> bool {
+	match s.to_lowercase().as_str() {
+		"true" | "1" | "yes" | "y" => true,
+		_ => false,
+	}
+}
+
+impl FromStr for EncodingType {
+	type Err = String;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		use EncodingType::*;
+
+		let parts: Vec<_> = s.splitn(3, ":").collect();
+		let encoding_type_str = parts[0].trim();
+
+		let simplified_maj_and_ch_functions = parts
+			.get(1)
+			.map_or(false, |&s| parse_bool(s));
+
+		let alternative_add = parts
+			.get(2)
+			.map_or(false, |&s| parse_bool(s));
+
+		match encoding_type_str {
+			"bruteforce" => {
+				Ok(BruteForce {
+					simplified_maj_and_ch_functions,
+					alternative_add,
+				})
+			},
+			"dxor" => {
+				Ok(DeltaXOR {
+					simplified_maj_and_ch_functions,
+					alternative_add,
+				})
+			},
+			"dsub" => {
+				Ok(DeltaSub {
+					simplified_maj_and_ch_functions,
+					alternative_add,
+				})
+			},
+			"base4" => {
+				Ok(Base4 {
+					simplified_maj_and_ch_functions,
+					alternative_add,
+				})
+			},
+			_ => Err(format!("Unknown encoding type: {}", encoding_type_str)),
+		}
+	}
+}
+
+impl Display for EncodingType {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		use EncodingType::*;
+
+		let (et_name, simplified_maj_and_ch_functions, alternative_add) = match self {
+			BruteForce { simplified_maj_and_ch_functions, alternative_add } =>
+				("", *simplified_maj_and_ch_functions, *alternative_add),
+			DeltaXOR { simplified_maj_and_ch_functions, alternative_add } =>
+				("DXOR", *simplified_maj_and_ch_functions, *alternative_add),
+			DeltaSub { simplified_maj_and_ch_functions, alternative_add } =>
+				("DSUB", *simplified_maj_and_ch_functions, *alternative_add),
+			Base4 { simplified_maj_and_ch_functions, alternative_add } =>
+				("BASE4", *simplified_maj_and_ch_functions, *alternative_add),
+		};
+
+		let mut s = String::from(et_name);
+
+		if simplified_maj_and_ch_functions {
+			if !s.is_empty() {
+				s.push('_');
+			}
+
+			s += "SIMP";
+		}
+
+		if alternative_add {
+			if !s.is_empty() {
+				s.push('_');
+			}
+
+			s += "ALTADD";
+		}
+
+		write!(f, "{s}")
+	}
+}
+
+pub struct SmtRetriever {
+	smt_dir: PathBuf,
+}
+
+impl SmtRetriever {
+	pub fn new(smt_dir: PathBuf) -> Result<Self, Box<dyn Error>> {
+		if !smt_dir.exists() {
+			fs::create_dir_all(smt_dir.clone())?;
+		}
+
+		Ok(SmtRetriever {
+			smt_dir,
+		})
+	}
+
+	#[allow(dead_code)]
+	pub fn default() -> Result<Self, Box<dyn Error>> {
+		SmtRetriever::new(PathBuf::from("smt/"))
+	}
+
+	pub fn get_file(
+		&self,
+		hash_function: HashFunction,
+		collision_type: CollisionType,
+		rounds: u8,
+		encoding_type: EncodingType,
+	) -> PathBuf {
+		let mut base = format!("{hash_function}_{collision_type}_{rounds}");
+		if encoding_type.to_string().len() > 0 {
+			base += &format!("_{encoding_type}");
+		}
+
+		self.smt_dir.join(base + ".smt2")
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/utilities.rs}]
+use crate::sha::Word;
+use crate::structs::collision_type::CollisionType;
+use crate::structs::hash_function::HashFunction;
+
+pub(super) fn smt_hex(val: Word, hash_function: &HashFunction) -> String {
+	let size = hash_function.word_size().bytes() * 2;
+	format!("#x{:0size$x}", val)
+}
+
+pub(super) fn get_previous_var(var: char) -> char {
+	if var == 'a' {
+		'h'
+	} else {
+		char::from_u32(var as u32 - 1).unwrap()
+	}
+}
+
+pub(super) fn msg_prefix(
+	message: u8,
+	i: u64,
+	collision_type: CollisionType,
+) -> String {
+	// SemiFreeStart has separate parameters for the 0th iteration
+	if i == 0 && collision_type != CollisionType::FreeStart {
+		"".to_string()
+	} else {
+		format!("m{message}_")
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/encodings/mod.rs}]
+mod brute_force;
+mod generic_shared;
+mod dxor;
+mod dsub;
+mod differential_shared;
+mod base4;
+mod bitwise_adder;
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/encodings/generic\_shared.rs}]
+use std::error::Error;
+use crate::sha::StartVector;
+use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::smt_lib::utilities::{get_previous_var, msg_prefix, smt_hex};
+use crate::structs::collision_type::CollisionType;
+
+
+impl SmtBuilder {
+	pub(super)  fn title(&mut self, title: &str) {
+		let break_like = if self.smt.len() != 0 {"\n\n"} else {""};
+		self.smt += format!("{break_like};; {title}\n").as_str();
+	}
+
+	pub(super) fn comment(&mut self, comment: &str) {
+		self.smt += format!("; {comment}\n").as_str();
+	}
+
+	pub(super) fn break_line(&mut self) {
+		self.smt += "\n";
+	}
+
+	pub(super) fn set_logic(&mut self) {
+		self.smt += "(set-option :produce-models true)\n(set-logic QF_BV)\n";
+	}
+
+	pub(super) fn define_word_type(&mut self) {
+		let bit_size = self.hash_function.word_size().bits();
+		self.smt += &format!("(define-sort Word () (_ BitVec {bit_size}))\n");
+	}
+
+	pub(super) fn define_functions(&mut self) -> Result<(), Box<dyn Error>> {
+		let word_size = self.hash_function.word_size().bits();
+		let simplified = self.encoding.simplified_maj_and_ch_functions();
+
+		// MAJ & CH simplification
+		let ch = if simplified {
+			"(define-fun ch ((e Word) (f Word) (g Word)) Word\n\t(bvor (bvand e f) (bvand (bvnot e) g))\n)"
+		} else {
+			"(define-fun ch ((e Word) (f Word) (g Word)) Word\n\t(bvxor (bvand e f) (bvand (bvnot e) g))\n)"
+		};
+
+		let maj = if simplified {
+			"(define-fun maj ((a Word) (b Word) (c Word)) Word\n\t(bvor (bvand a b) (bvand a c) (bvand b c))\n)"
+		} else {
+			"(define-fun maj ((a Word) (b Word) (c Word)) Word\n\t(bvxor (bvand a b) (bvand a c) (bvand b c))\n)"
+		};
+
+		if self.encoding.alternative_add() {
+			self.comment("Append bitwise adder and helpers if necessary");
+			self.smt += &self.define_bitwise_add();
+			self.break_line();
+		}
+
+		// ALT ADD
+		let t1_add = self.add(vec!["h", "(sigma1 e)", "(ch e f g)", "k", "w"])?;
+		let t2_add = self.add(vec!["(sigma0 a)", "(maj a b c)"])?;
+		let expand_message_add = self.add(vec!["a", "(gamma0 b)", "c", "(gamma1 d)"])?;
+
+		let sigma0 = "(define-fun sigma0 ((a Word)) Word\n\t(bvxor ((_ rotate_right 2) a) ((_ rotate_right 13) a) ((_ rotate_right 22) a))\n)";
+		let sigma1 = "(define-fun sigma1 ((e Word)) Word\n\t(bvxor ((_ rotate_right 6) e) ((_ rotate_right 11) e) ((_ rotate_right 25) e))\n)";
+		let gamma0 = format!("(define-fun gamma0 ((x Word)) Word\n\t(bvxor ((_ rotate_right 7) x) ((_ rotate_right 18) x) (bvlshr x (_ bv3 {word_size})))\n)");
+		let gamma1 = format!("(define-fun gamma1 ((x Word)) Word\n\t(bvxor ((_ rotate_right 17) x) ((_ rotate_right 19) x) (bvlshr x (_ bv10 {word_size})))\n)");
+		let t1 = format!("(define-fun t1 ((h Word) (e Word) (f Word) (g Word) (k Word) (w Word)) Word\n\t{t1_add}\n)");
+		let t2 = format!("(define-fun t2 ((a Word) (b Word) (c Word)) Word\n\t{t2_add}\n)");
+		let expand_message = format!("(define-fun expandMessage ((a Word) (b Word) (c Word) (d Word)) Word\n\t{expand_message_add}\n)");
+
+		self.smt += &format!("{ch}\n{maj}\n{sigma0}\n{sigma1}\n{gamma0}\n{gamma1}\n{t1}\n{t2}\n{expand_message}");
+		Ok(())
+	}
+
+	pub(super) fn define_constants(&mut self) {
+		if self.rounds == 0 {
+			self.comment("K constants irrelevant for 0 rounds");
+			return;
+		}
+
+		self.comment("Define K constants");
+		let k = self.hash_function.get_constant();
+
+		// Only k[i] constants required, where i is number of compression rounds
+		// Therefore, we only take the number of rounds required
+
+		let mut s = String::new();
+		for (i, val) in k.iter().take(self.rounds as usize).enumerate() {
+			s += &format!("(define-fun k{i} () Word {})\n", smt_hex(*val, &self.hash_function))
+		};
+
+		self.smt += &s;
+	}
+
+	pub(super) fn define_expansion_for_message(&mut self, message: u8) {
+		self.comment(&format!("MESSAGE {message}"));
+		let msg = format!("m{message}_w");
+
+		// Only w[i] required, where i is number of compression rounds
+		// Therefore, we only take the number of rounds required, and initialize the first 16 as 0.
+
+		self.comment("Initial state");
+		let mut s = String::new();
+		for i in 0..self.rounds.min(16) {
+			if i < self.rounds.min(16) {
+				s += &format!("(declare-fun {msg}{i} () Word)\n");
+			} else {
+				s += &format!(
+					"(define-fun {msg}{i} () Word {}) ; Irrelevant for {} rounds\n",
+					smt_hex(self.hash_function.default_word(), &self.hash_function),
+					self.rounds,
+				);
+			}
+		}
+		self.smt += &s;
+
+		if self.rounds <= 16 {
+			self.comment(&format!("Message expansion irrelevant for {} rounds", self.rounds));
+		} else {
+			self.break_line();
+			self.comment("Message expansion");
+			for i in 16..self.rounds {
+				self.smt += &format!(
+					"(define-fun {msg}{i} () Word (expandMessage {msg}{} {msg}{} {msg}{} {msg}{}))\n",
+					i - 16, i - 15, i - 7, i - 2
+				)
+			}
+		}
+	}
+
+	pub(super) fn define_compression_for_message(&mut self, message: u8) -> Result<(), Box<dyn Error>> {
+		self.comment(&format!("MESSAGE {message}"));
+
+		let mut s = String::new();
+		for i in 1..=self.rounds {
+			let prev = i - 1;
+			let msg = &msg_prefix(message, prev.into(), self.collision_type);
+
+			s.push_str(&format!("(define-fun m{message}_t1_{i} () Word (t1 {msg}h{prev} {msg}e{prev} {msg}f{prev} {msg}g{prev} k{prev} m{message}_w{prev}))\n\
+				(define-fun m{message}_t2_{i} () Word (t2 {msg}a{prev} {msg}b{prev} {msg}c{prev}))\n"));
+
+			for var in 'a'..='h' {
+				if var == 'a' {
+					let a_add = self.add(vec![
+						&format!("m{message}_t1_{i}"),
+						&format!("m{message}_t2_{i}"),
+					])?;
+
+					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word {a_add})\n"))
+				} else if var == 'e' {
+					let e_add = self.add(vec![
+						&format!("{msg}d{prev}"),
+						&format!("m{message}_t1_{i}"),
+					])?;
+
+					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word {e_add})\n"))
+				} else {
+					let prev_var = get_previous_var(var);
+					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word {msg}{prev_var}{prev})\n"))
+				}
+			}
+		}
+
+		self.smt += &s;
+		Ok(())
+	}
+
+	pub(super) fn define_initial_vector(&mut self) {
+		self.comment("Define H constants (IV/CV)");
+		use crate::structs::collision_type::CollisionType::*;
+
+		let iv_vec = StartVector::IV.get_vector(self.hash_function);
+		let mut s = String::new();
+		for (i, var) in ('a'..='h').enumerate() {
+			s += &match self.collision_type {
+				Standard => format!("(define-fun {var}0 () Word {})\n", smt_hex(iv_vec[i], &self.hash_function)),
+				SemiFreeStart => format!("(declare-fun {var}0 () Word)\n"),
+				FreeStart => format!("(declare-fun m0_{var}0 () Word)\n(declare-fun m1_{var}0 () Word)\n"),
+			}
+		}
+
+		self.smt += &s;
+	}
+
+	pub(super) fn final_state_update(&mut self) -> Result<(), Box<dyn Error>> {
+		self.comment("Final state update");
+
+		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
+		for (i, var) in ('a'..='h').take(final_size).enumerate() {
+			for m in 0..2 {
+				let msg_round0 = msg_prefix(m, 0, self.collision_type);
+				let msg = msg_prefix(m, self.rounds.into(), self.collision_type);
+
+				let state_update_add = self.add(vec![
+					&format!("{msg_round0}{var}0"),
+					&format!("{msg}{var}{round}", round = self.rounds)
+				])?;
+
+				self.smt += &format!("(define-fun m{m}_hash{i} () Word {state_update_add})\n");
+			}
+		}
+		Ok(())
+	}
+
+	pub(super) fn check_sat(&mut self) {
+		self.title("GO!");
+		self.smt += "(check-sat)\n";
+	}
+
+	pub(super) fn get_full_model(&mut self) {
+		self.title("GET OUTPUT");
+
+		self.comment("H Constants (IV/CV)");
+		let mut h = String::new();
+		for var in 'a'..='h' {
+			if self.collision_type == CollisionType::FreeStart {
+				h += &format!("m0_{var}0 m1_{var}0 ");
+			} else {
+				h += &format!("{var}0 ");
+			}
+		}
+		self.smt += &format!("(get-value ({}))\n", h.trim());
+		self.break_line();
+
+		self.comment("Output hash");
+		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
+		let mut hash = String::new();
+		for i in 0..final_size {
+			hash += &format!("m0_hash{i} ");
+		}
+		self.smt += &format!("(get-value ({}))\n", hash.trim());
+
+		if self.rounds == 0 {
+			return;
+		}
+
+		self.break_line();
+		self.comment("Output round A/E/W state changes");
+		let mut s = String::new();
+		for i in 0..self.rounds {
+			for var in ['a', 'e', 'w'] {
+				if i == 0 && self.collision_type != CollisionType::FreeStart && var != 'w' {
+					s += &format!("{var}{i} ");
+				} else {
+					for m in 0..2 {
+						s += &format!("m{m}_{var}{i} ");
+					}
+				}
+			}
+		}
+		self.smt += &format!("(get-value ({}))\n", s.trim());
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/encodings/differential\_shared.rs}]
+use std::error::Error;
+use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::structs::collision_type::CollisionType;
+
+
+impl SmtBuilder {
+	pub(super) fn define_calculated_differential_initial_vector(
+		&mut self
+	) -> Result<(), Box<dyn Error>> {
+		let encoding = self.encoding.clone();
+		let diff = encoding.get_diff()?;
+		self.comment("Initial Vector difference");
+
+		let word_size = self.hash_function.word_size().bits();
+		for var in 'a'..='h' {
+			if self.collision_type == CollisionType::FreeStart {
+				self.smt += &format!("(define-fun delta_{var}0 () Word ({diff} m0_{var}0 m1_{var}0))\n");
+			} else {
+				self.smt += &format!("(define-fun delta_{var}0 () Word #b{})\n", "0".repeat(word_size));
+			}
+		}
+
+		Ok(())
+	}
+
+	pub(super) fn define_differential_words(&mut self) -> Result<(), Box<dyn Error>> {
+		let encoding = self.encoding.clone();
+		let diff = encoding.get_diff()?;
+
+		self.define_expansion_for_message(0);
+		self.break_line();
+		self.define_expansion_for_message(1);
+		self.break_line();
+
+		self.comment("Message Differential (W)");
+		for i in 0..self.rounds.min(16) {
+			self.smt += &format!("(define-fun delta_w{i} () Word ({diff} m0_w{i} m1_w{i}))\n");
+		}
+
+		if self.rounds <= 16 {
+			self.comment(&format!("Message expansion differentials irrelevant for {} rounds", self.rounds));
+		} else {
+			self.break_line();
+			self.comment("Message Expansion Assertions");
+			for i in 16..self.rounds {
+				self.smt += &format!(
+					"(define-fun delta_w{i} () Word (expandMessage delta_w{} delta_w{} delta_w{} delta_w{}))",
+					i - 16, i - 15, i - 7, i - 2
+				);
+			}
+		}
+
+		Ok(())
+	}
+
+	pub(super) fn define_differential_for_working_variables(
+		&mut self
+	) -> Result<(), Box<dyn Error>> {
+		let encoding = self.encoding.clone();
+		let diff = encoding.get_diff()?;
+		self.comment("Variable Differential");
+
+		for i in 1..=self.rounds {
+			for var in 'a'..='h' {
+				self.smt += &format!(
+					"(define-fun delta_{var}{i} () Word ({diff} m0_{var}{i} m1_{var}{i}))\n"
+				);
+			}
+		}
+
+		Ok(())
+	}
+
+	pub(super) fn define_differential_final_state(&mut self) -> Result<(), Box<dyn Error>> {
+		let encoding = self.encoding.clone();
+		let diff = encoding.get_diff()?;
+		self.comment("Final state difference");
+
+		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
+		for i in 0..final_size {
+			self.smt += &format!("(define-fun delta_hash{i} () Word ({diff} m0_hash{i} m1_hash{i}))\n");
+		}
+
+		Ok(())
+	}
+
+	pub(super) fn assert_initial_vector_different(&mut self) {
+		self.comment("Assert starting vector different");
+
+		let word_size = self.hash_function.word_size().bits();
+		let mut s = String::new();
+		for var in 'a'..='h' {
+			s += &format!("\t(distinct delta_{var}0 #b{})\n", "0".repeat(word_size));
+		}
+
+		self.smt += &format!("(assert (or\n{s}))\n");
+	}
+
+	pub(super) fn assert_message_difference(&mut self) {
+		self.comment("Assert messages not the same");
+		let word_size = self.hash_function.word_size().bits();
+
+		let mut s = String::new();
+		for i in 0..self.rounds.min(16) {
+			s += &format!("\t(distinct delta_w{i} #b{})\n", "0".repeat(word_size));
+		}
+
+		if self.rounds == 1 {
+			self.smt += &format!("(assert\n{s})\n");
+		} else if self.rounds > 1 {
+			self.smt += &format!("(assert (or\n{s}))\n");
+		}
+	}
+
+	pub(super) fn assert_hash_difference_equal(&mut self) {
+		self.comment("Assert difference in output hash is none");
+
+		let word_size = self.hash_function.word_size().bits();
+		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
+		let mut s = String::new();
+		for i in 0..final_size {
+			s += &format!("\t(= delta_hash{i} #b{})\n", "0".repeat(word_size));
+		}
+
+		self.smt += format!("(assert (and\n{s}))\n").as_str();
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/encodings/dsub.rs}]
+use std::error::Error;
+use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::structs::collision_type::CollisionType;
+
+
+impl SmtBuilder {
+	pub fn dsub_encoding(&mut self) -> Result<(), Box<dyn Error>>  {
+		self.title("SETUP");
+		self.set_logic();
+
+		self.title("TYPE");
+		self.define_word_type();
+
+		self.title("FUNCTIONS");
+		self.define_functions()?;
+
+		self.title("CONSTANTS");
+		self.define_constants();
+		self.break_line();
+		self.define_initial_vector();
+		self.define_calculated_differential_initial_vector()?;
+
+		self.title("MESSAGE EXPANSION");
+		self.define_differential_words()?;
+
+		self.title("MESSAGE COMPRESSION");
+		self.define_compression_for_message(0)?;
+		self.break_line();
+		self.define_compression_for_message(1)?;
+		self.break_line();
+		self.define_differential_for_working_variables()?;
+
+		self.break_line();
+		self.final_state_update()?;
+		self.break_line();
+		self.define_differential_final_state()?;
+
+		self.title("ASSERTIONS");
+		if self.collision_type == CollisionType::FreeStart {
+			self.assert_initial_vector_different();
+		} else {
+			self.assert_message_difference();
+		}
+		self.break_line();
+
+		self.assert_hash_difference_equal();
+
+		self.check_sat();
+		self.get_full_model();
+
+		Ok(())
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/encodings/dxor.rs}]
+use std::error::Error;
+use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::structs::collision_type::CollisionType;
+
+
+impl SmtBuilder {
+	pub fn dxor_encoding(&mut self) -> Result<(), Box<dyn Error>> {
+		self.title("SETUP");
+		self.set_logic();
+
+		self.title("TYPE");
+		self.define_word_type();
+
+		self.title("FUNCTIONS");
+		self.define_functions()?;
+
+		self.title("CONSTANTS");
+		self.define_constants();
+		self.break_line();
+		self.define_initial_vector();
+		self.define_calculated_differential_initial_vector()?;
+
+		self.title("MESSAGE EXPANSION");
+		self.define_differential_words()?;
+
+		self.title("MESSAGE COMPRESSION");
+		self.define_compression_for_message(0)?;
+		self.break_line();
+		self.define_compression_for_message(1)?;
+		self.break_line();
+		self.define_differential_for_working_variables()?;
+
+		self.break_line();
+		self.final_state_update()?;
+		self.break_line();
+		self.define_differential_final_state()?;
+
+		self.title("ASSERTIONS");
+		if self.collision_type == CollisionType::FreeStart {
+			self.assert_initial_vector_different();
+		} else {
+			self.assert_message_difference();
+		}
+		self.break_line();
+
+		self.assert_hash_difference_equal();
+
+		self.check_sat();
+		self.get_full_model();
+
+		Ok(())
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/encodings/brute\_force.rs}]
+use std::error::Error;
+use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::structs::collision_type::CollisionType;
+
+
+impl SmtBuilder {
+	fn assert_initial_vector_not_same(&mut self) {
+		self.comment("Assert starting vectors (CV) not the same");
+
+		let mut s = String::new();
+		for var in 'a'..='h' {
+			s += &format!("\t(distinct m0_{var}0 m1_{var}0)\n")
+		}
+
+		self.smt += &format!("(assert (or\n{s}))\n");
+	}
+
+	fn assert_messages_not_same(&mut self) {
+		self.comment("Assert messages not the same");
+
+		let mut s = String::new();
+		for i in 0..self.rounds.min(16) {
+			s += &format!("\t(distinct m0_w{i} m1_w{i})\n");
+		}
+
+		if self.rounds == 1 {
+			self.smt += &format!("(assert\n{s})\n");
+		} else if self.rounds > 1 {
+			self.smt += &format!("(assert (or\n{s}))\n");
+		}
+	}
+
+	fn assert_hash_same(&mut self) {
+		self.comment("Assert output hash is the same");
+
+		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
+		let mut s = String::new();
+		for i in 0..final_size {
+			s += &format!("\t(= m0_hash{i} m1_hash{i})\n");
+		}
+
+		self.smt += format!("(assert (and\n{s}))\n").as_str();
+	}
+
+	pub fn brute_force_encoding(&mut self) -> Result<(), Box<dyn Error>>{
+		self.title("SETUP");
+		self.set_logic();
+
+		self.title("TYPE");
+		self.define_word_type();
+
+		self.title("FUNCTIONS");
+		self.define_functions()?;
+
+		self.title("CONSTANTS");
+		self.define_constants();
+		self.break_line();
+		self.define_initial_vector();
+
+		self.title("MESSAGE EXPANSION");
+		self.define_expansion_for_message(0);
+		self.break_line();
+		self.define_expansion_for_message(1);
+
+		self.title("MESSAGE COMPRESSION");
+		self.define_compression_for_message(0)?;
+		self.break_line();
+		self.define_compression_for_message(1)?;
+		self.break_line();
+		self.final_state_update()?;
+
+		self.title("ASSERTIONS");
+		if self.collision_type == CollisionType::FreeStart {
+			self.assert_initial_vector_not_same();
+		} else {
+			self.assert_messages_not_same();
+		}
+		self.break_line();
+
+		self.assert_hash_same();
+
+		self.check_sat();
+		self.get_full_model();
+		Ok(())
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/encodings/base4.rs}]
+use std::error::Error;
+use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::structs::collision_type::CollisionType;
+
+#[allow(unreachable_code)]
+#[allow(dead_code)]
+impl SmtBuilder {
+	fn define_base4_differential_constants(&mut self) {
+		self.comment("Define K constant differential");
+
+		let word_size = self.hash_function.word_size().bits();
+		for i in 0..self.rounds {
+			self.smt += &format!(
+				"(define-fun delta_k{i}_A () Word #b{})\n",
+				"0".repeat(word_size)
+			);
+			self.smt += &format!(
+				"(define-fun delta_k{i}_B () Word #b{})\n",
+				"0".repeat(word_size)
+			);
+			self.smt += &format!(
+				"(define-fun delta_k{i}_C () Word #b{})\n",
+				"0".repeat(word_size)
+			);
+			self.smt += &format!(
+				"(define-fun delta_k{i}_D () Word #b{})\n",
+				"0".repeat(word_size)
+			);
+			self.smt += &format!(
+				"(define-fun delta_k{i}_E () Word #b{})\n",
+				"0".repeat(word_size)
+			);
+			self.smt += &format!(
+				"(define-fun delta_k{i}_F () Word #b{})\n",
+				"0".repeat(word_size)
+			);
+			self.smt += &format!(
+				"(define-fun delta_k{i}_G () Word #b{})\n",
+				"0".repeat(word_size)
+			);
+		}
+	}
+
+	fn define_base4_differential_initial_vector(&mut self) {
+		self.comment("Define H constant differential (IV/CV)");
+
+		let word_size = self.hash_function.word_size().bits();
+		for var in 'a'..='h' {
+			if self.collision_type == CollisionType::Standard {
+				self.smt += &format!(
+					"(define-fun delta_{var}0 () Word #b{})\n",
+					"0".repeat(word_size));
+			} else {
+				self.smt += &format!("(declare-fun delta_{var}0 () Word)\n");
+			}
+		}
+	}
+
+	// fn define_base4_differential_compression(&mut self) {
+	// 	for i in 1..=self.rounds {
+	// 		let prev = i - 1;
+	//
+	// 		self.smt += &format!("(define-fun delta_t1_{i} () Word (t1 delta_h{prev} delta_e{prev} delta_f{prev} delta_g{prev} delta_k{prev} delta_w{prev}))\n\
+	// 			(define-fun delta_t2_{i} () Word (t2 delta_a{prev} delta_b{prev} delta_c{prev}))\n");
+	//
+	// 		for var in 'a'..='h' {
+	// 			if var == 'a' {
+	// 				self.smt += &format!("(define-fun delta_{var}{i} () Word (bvadd delta_t1_{i} delta_t2_{i}))\n");
+	// 			} else if var == 'e' {
+	// 				self.smt += &format!("(define-fun delta_{var}{i} () Word (bvadd delta_d{prev} delta_t1_{i}))\n");
+	// 			} else {
+	// 				let prev_var = get_previous_var(var);
+	// 				self.smt += &format!("(define-fun delta_{var}{i} () Word delta_{prev_var}{prev})\n");
+	// 			}
+	// 		}
+	// 	}
+	// }
+	//
+	// fn define_base4_differential_hash_state(&mut self) {
+	// 	self.comment("Final state difference");
+	//
+	// 	let max_round = self.rounds;
+	// 	let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
+	// 	for (i, var) in ('a'..='h').take(final_size).enumerate() {
+	// 		self.smt += &format!("(define-fun delta_hash{i} () Word (bvadd delta_{var}0 delta_{var}{max_round}))\n");
+	// 	}
+	// }
+	//
+	// fn get_base4_full_model_differential(&mut self) {
+	// 	self.title("GET OUTPUT");
+	//
+	// 	self.comment("Input message");
+	// 	let mut message = String::new();
+	// 	for i in 0..=self.rounds.min(7) {
+	// 		message += &format!("m0_w{i} m1_w{i} ");
+	// 	}
+	// 	self.smt += &format!("(get-value ({}))\n", message.trim());
+	//
+	// 	if self.rounds == 0 {
+	// 		return;
+	// 	}
+	//
+	// 	self.break_line();
+	// 	self.comment("Output round A/E/W state changes");
+	// 	let mut s = String::new();
+	// 	for i in 0..self.rounds {
+	// 		for var in ['a', 'e', 'w'] {
+	// 			if i == 0 && self.collision_type != CollisionType::FreeStart && var != 'w' {
+	// 				s += &format!("delta_{var}{i} ");
+	// 			} else {
+	// 				s += &format!("delta_{var}{i} ");
+	// 			}
+	// 		}
+	// 	}
+	// 	self.smt += &format!("(get-value ({}))\n", s.trim());
+	// }
+
+	pub fn base4_encoding(&mut self) -> Result<(), Box<dyn Error>> {
+		todo!(); //TODO: Implement
+		self.title("SETUP");
+		self.set_logic();
+
+		self.title("TYPE");
+		self.define_word_type();
+
+		self.title("FUNCTIONS");
+		self.define_functions()?;
+
+		self.title("CONSTANTS");
+		self.define_base4_differential_constants();
+		self.break_line();
+		self.define_base4_differential_initial_vector();
+
+		self.title("MESSAGE EXPANSION");
+		// self.define_differential_words();
+
+		self.title("MESSAGE COMPRESSION");
+		// self.define_base4_differential_compression();
+
+		// self.break_line();
+		// self.define_base4_differential_hash_state();
+
+		self.title("ASSERTIONS");
+		// if self.collision_type == CollisionType::FreeStart {
+		// 	self.assert_initial_vector_different();
+		// } else {
+		// 	self.assert_message_difference();
+		// }
+		// self.break_line();
+
+		// self.assert_hash_difference_equal();
+
+		self.check_sat();
+		self.get_full_model();
+
+		Ok(())
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=rust, caption={smt\_lib/encodings/bitwise\_adder.rs}]
+use std::error::Error;
+use crate::smt_lib::smt_lib::SmtBuilder;
+
+
+fn bvadd(exprs: Vec<&str>) -> String {
+	let mut s = String::from("(bvadd");
+	for expr in exprs {
+		s.push_str(&format!(" {expr}"))
+	}
+	s.push(')');
+	s
+}
+
+fn bitwise_add(exprs: Vec<&str>) -> String {
+	if exprs.len() > 6 {
+		unimplemented!("Bitwise add only implemented up to 6 expressions.")
+	}
+
+	let mut s = String::from(format!("(bitadd-{} ", exprs.len()));
+
+	for (i, expr) in exprs.iter().enumerate() {
+		if i != 0 {
+			s.push(' ');
+		}
+		s.push_str(expr);
+	}
+	s.push(')');
+	s
+}
+
+impl SmtBuilder {
+	pub(super) fn define_bitwise_add(&self) -> String {
+		String::from("(define-fun bitadd-2 ((a (_ BitVec 32)) (b (_ BitVec 32))) (_ BitVec 32)
+		(let (
+			(p0 (bvxor a b))
+			(g0 (bvand a b))
+		)
+		(
+			let (
+				(g1 (bvor g0 (bvand p0 (bvshl g0 #x00000001))))
+				(p1 (bvand p0 (bvshl p0 #x00000001)))
+			)
+			(
+				let (
+					(g2 (bvor g1 (bvand p1 (bvshl g1 #x00000002))))
+					(p2 (bvand p1 (bvshl p1 #x00000002)))
+				)
+				(
+					let (
+						(g3 (bvor g2 (bvand p2 (bvshl g2 #x00000004))))
+						(p3 (bvand p2 (bvshl p2 #x00000004)))
+					)
+					(
+						let (
+							(g4 (bvor g3 (bvand p3 (bvshl g3 #x00000008))))
+							(p4 (bvand p3 (bvshl p3 #x00000008)))
+						)
+						(
+							let (
+								(g5 (bvor g4 (bvand p4 (bvshl g4 #x00000010))))
+								(p5 (bvand p4 (bvshl p4 #x00000010)))
+							)
+							(
+								let (
+									(g6 (bvor g5 (bvand p5 (bvshl g5 #x00000020))))
+									(p6 (bvand p5 (bvshl p5 #x00000020)))
+								)
+								(
+									bvxor p0 (bvshl g6 #x00000001)
+								)
+							)
+						)
+					)
+				)
+			)
+		))
+	)
+
+	; Adder Helpers using some Walace Tree reduction principles
+	(define-fun bitadd-3 ((a (_ BitVec 32)) (b (_ BitVec 32)) (c (_ BitVec 32))) (_ BitVec 32)
+		(let (
+			(sum (bvxor a b c))
+			(carry (bvshl (bvor (bvand a b) (bvand a c) (bvand b c)) #x00000001))
+		)
+		(
+			bitadd-2 sum carry
+		))
+	)
+	(define-fun bitadd-4 ((a (_ BitVec 32)) (b (_ BitVec 32)) (c (_ BitVec 32)) (d (_ BitVec 32))) (_ BitVec 32)
+		(let (
+			(sum (bvxor a b c))
+			(carry (bvshl (bvor (bvand a b) (bvand a c) (bvand b c)) #x00000001))
+		)
+		(
+			bitadd-3 sum carry d
+		))
+	)
+	(define-fun bitadd-5 ((a (_ BitVec 32)) (b (_ BitVec 32)) (c (_ BitVec 32)) (d (_ BitVec 32)) (e (_ BitVec 32))) (_ BitVec 32)
+		(let (
+			(sum1 (bvxor a b c))
+			(carry1 (bvshl (bvor (bvand a b) (bvand a c) (bvand b c)) #x00000001))
+			(sum2 (bvxor d e))
+			(carry2 (bvshl (bvand d e) #x00000001))
+		)
+		(
+			bitadd-4 sum1 carry1 sum2 carry2
+		))
+	)
+	(define-fun bitadd-6 ((a (_ BitVec 32)) (b (_ BitVec 32)) (c (_ BitVec 32)) (d (_ BitVec 32)) (e (_ BitVec 32)) (f (_ BitVec 32))) (_ BitVec 32)
+		(let (
+			(sum1 (bvxor a b c))
+			(carry1 (bvshl (bvor (bvand a b) (bvand a c) (bvand b c)) #x00000001))
+			(sum2 (bvxor d e f))
+			(carry2 (bvshl (bvor (bvand d e) (bvand d f) (bvand e f)) #x00000001))
+		)
+		(
+			bitadd-4 sum1 carry1 sum2 carry2
+		))
+	)")
+	}
+
+	pub(super) fn add(
+		&self,
+		exprs: Vec<&str>,
+	) -> Result<String, Box<dyn Error>> {
+		if exprs.len() < 2 {
+			return Err(Box::from("Add requires at least 2 expressions!"));
+		}
+
+		if self.encoding.alternative_add() {
+			Ok(bitwise_add(exprs))
+		} else {
+			Ok(bvadd(exprs))
+		}
+	}
+}
+\end{lstlisting}

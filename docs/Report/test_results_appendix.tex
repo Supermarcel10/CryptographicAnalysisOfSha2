@@ -1,0 +1,37 @@
+The supplied software package consists of 30 unit tests, predominantly designed to affirm the accuracy of the internal sha implementation against established standards.
+
+\begin{lstlisting}[caption={\texttt{cargo test} Results Output}]
+running 30 tests
+test sha::sha::tests::test_padding ... ok
+test sha::sha::tests::test_dual_cv_collision_sha224 ... ok
+test sha::sha::tests::test_sha224_correctness ... ok
+test sha::sha::tests::test_sha256_correctness ... ok
+test sha::sha::tests::test_sha256_round_difference ... ok
+test sha::sha::tests::test_sha512_correctness ... ok
+test sha::sha::tests::test_sha512_round_difference ... ok
+test sha::sha::tests::test_single_cv_collision_sha256 ... ok
+test sha::sha::tests::test_single_cv_collision_sha512 ... ok
+test sha::sha::tests::test_too_many_rounds ... ok
+test sha::structs::tests::test_word_ch ... ok
+test sha::structs::tests::test_word_from_be_bytes ... ok
+test sha::structs::tests::test_word_gamma0 ... ok
+test sha::structs::tests::test_word_gamma1 ... ok
+test sha::structs::tests::test_word_maj ... ok
+test sha::structs::tests::test_word_sigma0 ... ok
+test sha::structs::tests::test_word_sigma1 ... ok
+test sha::structs::tests::test_word_wrapping_add ... ok
+test structs::size::tests::test_bits ... ok
+test structs::size::tests::test_bytes ... ok
+test structs::size::tests::test_from_bits ... ok
+test structs::size::tests::test_from_bytes ... ok
+test structs::size::tests::test_non_full_bytes ... ok
+test verification::bit_differential::test::test_differential_boxed_slice ... ok
+test verification::bit_differential::test::test_differential_different ... ok
+test verification::bit_differential::test::test_differential_same ... ok
+test verification::bit_differential::test::test_differential_slice ... ok
+test verification::verification::tests::test_sha256_state_collision_table ... ok
+test verification::verification::tests::test_sha224_state_collision_table ... ok
+test verification::verification::tests::test_sha512_state_collision_table ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+\end{lstlisting}

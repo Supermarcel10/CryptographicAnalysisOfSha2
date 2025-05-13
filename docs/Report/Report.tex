@@ -1,3 +1,5 @@
+% !TEX options=--shell-escape
+
 \documentclass[a4paper]{report}
 
 \usepackage[margin=2.5cm]{geometry} % set margins
@@ -10,13 +12,17 @@
 \usepackage{multirow} % merged rows for table
 \usepackage[toc]{glossaries}
 \usepackage[toc]{appendix} % appendix
+\usepackage{pdfpages}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{float} % placement of figures
+\usepackage{listings}
+\usepackage{listings-rust}
+\usepackage{enumitem} % research question enumeration
+\usepackage{pdflscape} % landscape
 
-
-
-% TODO: FONT SELECTION
 
 % CODE FORMATTING
-\usepackage{listings}
 \lstset{
     basicstyle=\ttfamily\footnotesize,
     breaklines=true,
@@ -26,8 +32,9 @@
     numbers=left,
     numberstyle=\tiny\color{gray},
     keywordstyle=\color{blue},
-    commentstyle=\color{green!50!black}
-}
+    commentstyle=\color{green!50!black},
+		tabsize=2
+	}
 
 % HEADING FORMATTING
 \usepackage{titlesec}
@@ -41,15 +48,17 @@
 \usepackage{setspace}
 \onehalfspacing
 
-% HYPERREFERENCES
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    filecolor=magenta,
-    urlcolor=cyan,
+% IMAGE PROCESSING
+\epstopdfDeclareGraphicsRule{.svg}{pdf}{.pdf}{inkscape -z -D --file=#1 --export-pdf=\OutputFile}
+\AppendGraphicsExtensions{.svg}
+\graphicspath{ {img/} }
+
+% RESEARCH QUESTION LISTING
+\newlist{researchquestions}{enumerate}{1}
+\setlist[researchquestions]{
+	label=\textbf{RQ\arabic*},
+  ref=RQ\arabic*
 }
-
-
 
 %% Glossary
 \makeglossaries
@@ -76,11 +85,11 @@
 }
 \newglossaryentry{truncation}{
     name={Truncation},
-    description={The process of shortening the final hash digest to a specified bit-length, as defined by the \cite{secure_hash_standard}}
+    description={The process of shortening the final hash digest to a specified bit-length}
 }
 \newglossaryentry{message}{
   name={Message},
-  description={Input data processed by the hash function, padded and divided into fixed-size blocks for hashing, as defined by the \cite{secure_hash_standard}}
+  description={Input data processed by the hash function, padded and divided into fixed-size blocks for hashing}
 }
 
 % Vector Types
@@ -91,20 +100,6 @@
 \newglossaryentry{CV}{
     name={Chaining Vector (CV)},
     description={Intermediate state values created during message expansion, and used as input for processing each given block iteratively}
-}
-
-% Collition Types
-\newglossaryentry{FS}{
-    name={Free-start collision (FS)},
-    description={A free-start collision involves finding two messages, either distinct or identical, that produce identical hash digests, where each message utilies its own distinct chosen IV}
-}
-\newglossaryentry{SFS}{
-    name={Semi-free-start collision (SFS)},
-    description={A semi-free-start collision involved finding two distinct messages that produce identical hash digests under a chosen IV}
-}
-\newglossaryentry{STD}{
-    name={Standard collision (STD)},
-    description={A standard collision involves finding two distinct messages that produce identical hash digests under a fixed initial value. This is the classic collision resistance security property required of cryptographic hash functions}
 }
 
 % Cryptanalysis Terms
@@ -123,164 +118,1217 @@
   name={SMT},
   description={A Satisfiability Modulo Theory (SMT) solver is a tool that determines the satisfiability of logical formulas with respect to combinations of background theories}
 }
+\newglossaryentry{encoding}{
+	name={encoding},
+	description={An encoding is a guidance to allow the solver to either reason better or to prune the search space.}
+}
 
+% Report Specific Terms
+\newglossaryentry{Pure Brute-force}{
+	name={Pure Brute-force},
+	description={A \textbf{pure/true brute-force} attack is an attack where all possible hash combinations are attempted with no reasoning logic, attempted as is.}
+}
 
+\newglossaryentry{Brute-force}{
+	name={Brute-force},
+	description={A \textbf{brute-force} attack, as used from here on, is an SMTLIB encoding that follows the SHA-2 mathematical algorithm, but does no additional processing or assertion.
+	This means the underlying SAT/SMT implementation \textit{may} still use heuristics or othwerise simplify the problem at hand.
+	One way to think about this, is as a brute-force guided search.}
+}
 
-\title{\textbf{Improving SHA-2 Collisions Using Satisfiability Modulo Theory (SMT) Solvers}}
-\author{Barlik Marcel \\ City St George's University of London \\ marcel.barlik@citystgeorges.ac.uk}
+\newglossaryentry{FS}{
+    name={Free-start collision (FS)},
+    description={A free-start collision involves finding two messages, either distinct or identical, that produce identical hash digests, where each message utilies its own distinct chosen IV}
+}
+\newglossaryentry{SFS}{
+    name={Semi-free-start collision (SFS)},
+    description={A semi-free-start collision involved finding two distinct messages that produce identical hash digests under a chosen IV}
+}
+\newglossaryentry{STD}{
+    name={Standard collision (STD)},
+    description={A standard collision involves finding two distinct messages that produce identical hash digests under a fixed initial value. This is the classic collision resistance security property required of cryptographic hash functions}
+}
 
 
 
 \begin{document}
+\title{\textbf{Improving Secure Hashing Algorithm 2 (SHA-2) Collisions Using Satisfiability Modulo Theory (SMT) Solvers}}
+\author{Barlik Marcel \\ City St George's University of London \\ marcel.barlik@citystgeorges.ac.uk}
 \maketitle
 
 
-\section{Abstract}
-\textcolor{red}{TODO!}
+\begin{abstract}
+This work presents a detailed analysis on the performance differences among various Satisfiability Modulo Theory (SMT)
+solvers in generating collisions for the SHA-2 family of cryptographic hash functions.
+The focus of this project was to quantify which SMT solver is most effective at generating collisions for SHA-256,
+a widely adopted hash function critical for maintaining data integrity and security of protocols like TLS.
+Additionally, the research involved examining different arguments with these solvers, and their effects to the overall solving performance.
+Taking inspiration from recent works, I experimented with various encodings and developed my own theoretical differential encoding to enhance SMT reasoning.
+These findings provide both a methodological baseline and actionable insights regarding solver effectivness for future research in automated cryptanalysis.
+\end{abstract}
 
 
 \tableofcontents
 \setcounter{tocdepth}{3}
 
 
-\section{Introduction}
-\paragraph{
-    This research paper investigates potential measurable quantifiable performance differences in \gls{smt} solvers and their parameters.
-    Ideally, this helps shape future research with the knowledge and understanding of impacts certain solving lemmas make on \gls{sha2} collisions.
-}
+\chapter{Introduction}
+\section{Domain Problem}
+As part of this research project, my goal was to experiment and investigate potential measurable quantified performance differences in SMT solvers and their arguments --
+a novel contribution to SHA-2 collisions.
+My primary focus within the SHA-2 family is SHA-256.
 
-\paragraph{
-    \textcolor{orange}{Utilise unexplored opportunities that have arisen from advances in \cite{y_et_al_2024}. This research will expand on the novel concept of using a \gls{smt} solver for practical \gls{collision}s, using the principles and mathematics described, in addition to their code as a reference.}
-}
+Since this is an experimental science research project, which looked at different avenues,
+some research questions could not be answered declaratively within the timeframe.
+As such, no claims have been made that could not be proven.
 
-\subsection{Research Questions}
-\begin{center}
-  \begin{enumerate}
-      \item Does using a more effective SMT solver yield better SHA-256 collision results?
-    \item Can encodings provided in the research by \cite{y_et_al_2024} be improved upon, aiming for better practical SHA-256 collisions?
-  \end{enumerate}
-\end{center}
+\subsection{What is a Hash Function?}
+\label{ssec:hash-function-basics}
+A hash function is a deterministic mathematical algorithm that takes an input, known as the message, of an arbitrary size,
+and maps it to a fixed-size output, known as the hash value, digest or checksum.
+Hash functions are fundamental in computer science for data integrity verification, password storage, digital signatures and efficient data retrieval in hash tables.
+
+They are designed in a manner to be efficient to compute, but computationally infeasible to reverse-engineer.
+In addition to that, they follow the avalanche effect principles -- they are designed so that a minor change in the input propagates a huge output change.
+
+\subsection{Why SHA-2?}
+Secure Hashing Algorithm 2 (SHA-2) is a set of cryptographic hash functions published in 2001 by the National Security Agency.
+The main security applications are most notably the HTTPS/SSL/TLS protocols, cryptocurrencies such as Bitcoin, PGP, package authentication and more. \cite{wiki:SHA2}
+
+This work will go into an in-depth explanation about SHA-2 in \ref{ssec:sha2-info}.
+
+\subsection{What is a Collision?}
+In cryptography, a collision refers to a scenario where two distinct inputs provide the same output.
+As desribed by \cite{NIST_SP_800_107} in 4.1, SHA-256 has a collision resistance of $2^{128}$, meaning it is computationally infeasible.
+This mathematical strength is why SHA-2 continues to be trusted for critical security applications, despite being developed over two decades ago.
+Discovery of a full collision on SHA-2 algorithms would have a critical security impact on billions of users around the globe.
+
+\subsection{What is a Satisfiability Modulo Theory (SMT) Solver?}
+A Satisfiability Modulo Theory (SMT) solver is an automated reasoning tool that combines propositional logic with various computer science and mathematical theories.
+Given a specific mathematical/logical problem, a SMT checks if there exists a satisfying condition given the constraints.
+It is capable of reasoning about potential inputs to deduct potential computational paths -- either represented as trees or graphs depending on the core problem.
+Most (but not all) SMT solvers integrate a SAT solver backend, which handles the boolean structure of the problem.
+A standard input, widely accepted by many SMT solvers is the SMTLIB format. \cite{SMTLIB}
+
+No additional knowledge in SMT solvers is required for the understanding of this work.
+
+\section{Research Questions (RQs)}
+\begin{researchquestions}
+  \item \label{rq1} Does using a more effective SMT solver yield better SHA-256 collision results?
+  \item \label{rq2} Does using SMT solver arguments yield better SHA-256 collision results?
+	\item \label{rq3} How do different encodings impact SHA-256 collision results?
+	\item \label{rq4} Do principles of theory defined in \cite{li_2024} work in an SMT, and could they be improved?
+\end{researchquestions}
+
+\subsection{Scope Alterations}
+These research questions have slightly deviated in order to become more meaningful and deterministic.
+All of them have remained closely related.
+
+\cite{li_2024}'s research utilises somewhat complicated theory and representation.
+My original research question eagerly wanted to improve on it straight away.
+However, after analysing the situation, it proves a very difficult task on its own.
+Instead, it has been altered to look at potential theoretical improvements.
+
+\section{Beneficiaries}
+This research provides a formal verification; assurance that SHA-2 is still securely
+sound in the near-foreseeable future, while pushing the current field boundaries in
+SHA-2 SMT collisions, knowledge and benchmarks.
+Everyone indirectly is a beneficiary due to how prominent SHA-2 is.
+\ref{chap:pdd}
+
+\section{Work Performed}
+In order to answer and reason about the research questions, I developed a tool in Rust. \ref{sec:implementation}
+Using this tool, and an outlined benchmark methodology \ref{sec:benchmark-methodology}, I was able to visualise graphs to answer my questions. \ref{sec:graphs}
+
+Similarly, I reasoned about potential encodings and created a bit differential representation that could potentially improve on \cite{li_2024}. \ref{ssec:base4-encoding}
+
+\pagebreak
+\section{Additional Information}
+During this research project, no assumptions have been made on previous works.
+When basing on previous research, the claims were taken with caution, until the results could be replicated.
+All mentioned and outlined information is correct as of my knowledge, and can be proven or externally verified if necessary.
+This ensures validity and corectness for the entirety of this work.
+
+I assume, the reader has basic programming knowledge, knows about data structures and their differences, as well as the concepts of how to operate a Unix-based system to do the bare minimum.
+As part of that assumption, the reader should know what the Rust programming language is, and how it differs compared to other low-level languages such as C and C++ in design.
+
+Aside from this, all critical parts for the understanding of this work have been outlined in a readible manner, throughout this paper before they are necessary.
 
 
-\section{Codebase}
-\subsection{Information}
-\paragraph{
-    All code is written in Rust (rustc version 1.85.1), compiled with the provided LLVM backend, and linked with mold (version 2.37.1). \cite{rust}, \cite{mold}
-}
+\chapter{Output Summary}
+The primary output of this project is a suite of visualised graphs and tables aimed at addressing research questions \ref{rq1}, \ref{rq2}, and \ref{rq3}.
+The most substantial output can be found in Section \ref{sec:graphs} with the respective analysis in \ref{sssec:analysis}
+Complete output, albeit without analysis, can be found in \ref{sec:full-results}.
 
-\paragraph{
-    The code is licensed under CC BY-NC-SA 4.0, allowing free use with attribution for further research, while limiting any commercial use. \cite{cc_by-nc-sa}
-}
+As for \ref{rq4} I investigated potential encodings, taking inspiration from \cite{li_2024}'s representation of differences.
+My complete encoding theory can be found in \ref{ssec:base4-encoding}.
+This is promising, since it should be capable of reasoning fully about differences, including the non-linearity of SHA-2.
+Due to time constraints I was unable to develop and benchmark it.
 
-\paragraph{
-    Repository for the code can be found here, with further build information in the README.md file:
-}
+These outputs primarily benefit the community of researchers by providing insight into different SMT tools and their performance.
 
-\begin{center}
-    \url{https://github.com/Supermarcel10/CSG-IN3007}
-\end{center}
+\section{Software Tool}
+A significant output of this project is the software tool, written entirely by me in Rust to facilitate reasoning about the research questions.
+This tool serves as a versatile CLI application for generating, benchmarking, and visualising results related to SHA-2 collisions using SMT solvers.
+It is designed to be extensible, allowing additional encodings and functionality implementations.
+
+This software tool consists of approximately \textbf{5357} lines of Rust code (as shown by git \texttt{ls-files}). \cite{git_ls_files}
+The full codebase can be found on GitHub mentioned in \ref{sec:implementation}, or alternatively in \ref{sec:codebase}.
+
+The intended recipients of this output are primarily researchers in cryptography, computer security, and formal verification looking for templates for their research.
+They will benefit from using this tool by having a base to reproduce and build results, as well as to develop new encoding strategies for SMT solvers.
+
+Some screenshots of the output have been provided in \ref{chap:usage-example}.
+
+\section{Open Source Contributions}
+While experiencing issues with SMT solvers, namely Bitwuzla, I decided to contribute to external repositories, in order to bring attention to these issues.
+More information about my contributions can be found in \ref{sssec:bitwuzla-issues}.
+
+\section{Additional Information}
+This report has been written in a manner and terminology to be convertible to a research paper.
+Its benefits (if approved) will serve the SMT2025 Workshop. \cite{smt2025}
 
 
-\subsection{Functionality}
-\paragraph{
-    The functionality of the software is split into multiple parts, working together to form a working package:
-}
+\chapter{Context}
+\section{Report Specific Term Disambiguation}
+SMT solvers inherently rely on logical constraints (not pure brute-force), making the distinction between "brute-force" and "guided search" ambiguous.
+This is a disambiguation to give meaning and context behind each term.
 
+\glsdesc{Pure Brute-force}
+
+\glsdesc{Brute-force}
+
+\section{Mathematical Notation}
+\label{sec:math-notation}
+For all mathematical foundation described in this work, the following mathematical representation is in use: \\
+$\gg$ represents a shift right (SHR). \\
+$\ll$ represents a shift left (SHL). \\
+$\oplus$ represents Exlusive Or (XOR). \\
+$+$ represents modulo addition.
+
+As common in Computer Science, all examples of iterators start from 0.
+
+\pagebreak
+\section{SHA-2 Collisions and Cryptographic Security}
+\subsection{Overview of SHA-2}
+\label{ssec:sha2-info}
+The SHA-2 family, designed by the National Security Agency (NSA) and standardised by NIST in 2001,
+comprises six primary hash functions: SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, and SHA-512/256.
+These algorithms employ the Merkle–Damgård construction with a Davies–Meyer compression function,
+differing primarily in digest size (224 to 512 bits), initial values, and round counts (64 for SHA-256, 80 for SHA-512). \cite{NIST_SP_180_4}
+SHA-256 and SHA-512 remain widely adopted in TLS, DNSSEC, cryptocurrencies such as Bitcoin, PGP, package authentication and government applications. \cite{wiki:SHA2}
+
+\subsection{Inner Workings of SHA-2}
+The SHA-2 algorithm processes input through a series of deterministic transformations governed by its Merkle–Damgård structure.
+
+\subsubsection{Message Processing}
+Input messages undergo a pre-processing step to conform to the 512-bit block for SHA-256 (1024-bit block for SHA-512 respectively).
+This step is necessary only when converting an input message to a hash digest.
+However, this step is mostly irrelevant for automated reasoning tools like SMTs, which directly use arbitrary message blocks to reason about their values.
+As such, no additional knowledge is necessary about the preprocessing step.
+
+\subsubsection{Message Expansion}
+\label{ssec:sha2-message-expansion}
+The pre-processed message only makes up the first 16 words.
+Remaining words, $16 \leq i \leq 63$, are expanded based on the mathematical foundation: \\
+
+\begin{equation}
+	\begin{aligned}
+		s_0 &= (w_{i - 15} \gg 7) \oplus (w_{i - 15} \gg 18) \oplus (w_{i - 15} \gg 3) \\
+		s_1 &= (w_{i - 2} \gg 17) \oplus (w_{i - 2} \gg 19) \oplus (w_{i - 2} \gg 10) \\
+		w_i &= w_{i - 16} + s_0 + w_{i - 7} + s_1
+	\end{aligned}
+\end{equation}
+
+\subsubsection{Function Definition}
+\label{ssec:sha2-func-definition}
+The SHA-2 standard utilises non-linear functions $Maj$ and $Ch$, which introduce diffusion. These are defined as:
+\begin{equation}
+	\begin{aligned}
+		Maj(a, b, c) = (a \land b) \oplus (a \land c) \oplus (b \land c) \\
+		Ch(e, f, g) = (e \land f) \oplus (\neg e \land g)
+	\end{aligned}
+\end{equation}
+
+\subsubsection{Constants and Initialisation}
+Each hash function part of the SHA-2 family uses different initialisation vectors (IVs), or otherwise known as H-constants.
+These serve as the initial hash values when starting the compression function.
+SHA-256 uses fractional parts of square roots from the first 8 primes, whereas SHA-512 uses cube roots.
+
+The round constants, also known as K-constants, are derived from fractional parts of cube roots for the first 64 primes (SHA-256) or first 80 primes (SHA-512).
+These aim to break symmetry in message scheduling during modular addition of the compression function.
+
+\subsubsection{Compression Function}
+\label{ssec:sha2-compression-function}
+Each H-constant updates one of eight 32-bit registers $a$–$h$, often referred as the "working variables", which are part of the 256-bit starting state.
+
+The compression function employs 64 rounds (80 for SHA-512), where for each round, the following are executed:
+\begin{equation}
+	\begin{aligned}
+		\text{Calculate temporary variables} \\
+		T_1 &= h + \Sigma_1(e) + Ch(e,f,g) + K_t + W_t \\
+		T_2 &= \Sigma_0(a) + Maj(a,b,c) \\
+		\\
+		\text{Rotate working variables, calculate $a$ and $e$} \\
+		h &= g \\
+		g &= f \\
+		f &= e \\
+		e &= d + T_1 \\
+		d &= c \\
+		c &= b \\
+		b &= a \\
+		a &= T_1 + T_2
+	\end{aligned}
+\end{equation}
+
+What is often referred to as a round-reduced model, is simply a compression with less iterations than standard.
+The number of iterations of this compression function, is what are often referred to as the number of "rounds" or "steps" of a collision.
+
+For round-reduced models, a lot of K-constants and expanded messages are not required during compression to obtain the hash.
+As such, these can be removed from the SMTLIB encoding as they are redundant.
+
+\subsubsection{Finalisation}
+After processing all blocks, the final hash concatenates the eight registers' contents.
+At this stage, truncated variants trim the output size.
+For SHA-256, this produces a 64-character hexadecimal value.
+
+\subsection{Collision Fundamentals}
+A cryptographic collision occurs when distinct inputs $M \neq M'$ yield identical digests $H(M) = H(M')$.
+Such collisions violate the deterministic uniqueness expected of hash functions, enabling certificate forgery, blockchain double-spending, and data integrity breaches.
+As described in \cite{NIST_SP_800_107}, due to SHA-2's collision resistance, a true brute-force collision requires $O(2^{n/2})$ operations for $n$-bit hashes.
+Reasoning and analytical attacks, such as \cite{li_2024}, exploit weaknesses with the use of encodings and heuristics, to achieve practical breaks at reduced-rounds.
+
+\subsection{Classification of Collision Attacks}
 \begin{itemize}
-    \item SMTLIB Generation
-    \item Benchmarking
-    \item Verification
-    \item Graph Plotting
+    \item \textbf{Free-Start Collisions (FS):} Attacker controls both message blocks and initialisation vectors (IVs).
+			A collision occurs with either or both the message and/or IV are unique.
+    \item \textbf{Semi-Free-Start Collisions (SFS):} Attacker chooses a fixed IV for both messages, while controlling the message blocks.
+    \item \textbf{Classical/Standard Collisions (STD):} Attacker controls only the message blocks.
 \end{itemize}
 
+\subsubsection{Satisfiability Theory}
+\label{sssec:sat-theory}
+During my work, I observed that a standard collision is always unsatisfiable for the first 8 rounds.
+This is likely because the constants as part of the standard mathematically make this infeasible.
+Since there are 8 working variables, it takes exactly 8 rounds for a full rotation of a given variable, therefore from the 9th round onward at least one collision exists, but more likely many collisions exist.
+This does not hold true for SFS or FS collisions, which are satisfiable from the very start.
 
-\section{Methodology}
-\subsection{Benchmarking}
-In order to obtain quantifiable results, benchmarks were used in order to obtain time and memory information.
+\subsection{History of Collisions}
+
+\begin{table}[H]
+\centering
+\resizebox{\textwidth}{!}{
+	\begin{tabular}{cccccc}
+	\textbf{Hash Function} & \textbf{CT}          & \textbf{Rounds} & \textbf{Time} & \textbf{Memory} & \textbf{References}             \\ \hline
+	SHA-256                & \multirow{5}{*}{STD} & 18              & practical     & practical       & \ref{fig:sha256_std} \\
+					&         & 31 & $2^{49.8}$  & $2^{48}$                     & \cite{li_2024}        \\
+					&         & 28 & practical   & - & \cite{christoph_2016} \\
+					&         & 31 & $2^{65.5}$  & - & \cite{mendel_2013}    \\
+					&         & 24 & $2^{22.5}$  & -                            & \cite{sanadhya_2008}  \\ \cline{2-6}
+					& FS & 39 & practical   & -                            & \cite{li_2024}        \\
+					& SFS     & 38 & $~2^{19.2}$ & -                            & \cite{alamgir_2024}   \\
+					& SFS & 38 & $2^{37}$    & - & \cite{mendel_2013}    \\ \hline
+	SHA-512 & STD     & 31 & $2^{115.6}$ & $2^{77.3}$ & \cite{li_2024}        \\
+					& STD     & 24 & $2^{22.5}$  & -                            & \cite{sanadhya_2008}  \\ \cline{2-6}
+					& FS & 39 & practical & - & \cite{christoph_2016} \\
+					& SFS & 38 & $2^{40.5}$  & - & \cite{maria_2014}
+	\end{tabular}
+}
+\caption{Historical SHA-256 and SHA-512 collisions from 2008 to present, including this paper's SHA-256 results for reference.}
+\label{tab:historical-collisions}
+\end{table}
+
+The pace of progression in this domain have been very slow moving, as can be seen by \ref{tab:historical-collisions}.
+Many researchers have attempted finding vulnerabilities since the big crash of MD4 and similarly structured hash functions. \cite{xiaoyun_2004}
+
+\subsection{Security Implications and Mitigations}
+The 2017 SHA-1 collision (SHAttered attack) \cite{marc_2017} demonstrated real-world risks, prompting NIST to mandate SHA-2/3 migration for digital signatures.
+While full SHA-2 remains secure, reduced-round vulnerabilities highlight the importance of monitoring cryptanalytic advances.
+
+Recent automated reasoning tool driven attacks underscore the role of SMTs in cryptanalysis.
+By encoding SHA-2's nonlinear functions and message expansion into SMT constraints,
+the tool can efficiently discover collisions with guaranteed certainty.
+Automated reasoning tools may also find differential characteristics, previously deemed intractable.
+
+In the event of a full SHA-2 collision, NIST would most likely retire SHA-2 and urge for immediate adoption of post-quantum encryption standards defined in \cite{NIST_PQC_2024}.
+
+\section{Recent Works}
+\cite{alamgir_2024} utilised a SAT + CAS approach.
+Their claim was that the SAT + CAS solver is capable of better performance as opposed to just a SAT approach.
+Despite this, \cite{li_2024} still beat \cite{alamgir_2024}, but interestingly enough both of them used different encodings.
+It would be interesting to see how a SMT approach would fare against these, given a combination of both of these encodings.
+\cite{alamgir_2024}'s work makes use of a similar notation as \cite{li_2024}.
+
+\cite{flatt_2024} made a direct attack targetting OpenWRT's implementation of SHA-256.
+As of my understanding, OpenWRT used only 12 characters out of the total output hash, where full collisions are more probable due to the smaller search space.
+The researcher was able to find a full collision for those 12 characters using true brute-force approaches, utilising a tool called HashCat. \cite{hashcat}
+However, since this is not a reasoning tool, this can not be advanced any further -- the only possible way would be to utilise more powerful compute,
+and would fall into the same category of NP-Hard as SAT solving.
+
+Most interestingly, the researcher utilised GPU compute for their search instead of CPU compute.
+As of my awareness, there have been attempts to make a GPU accelerated SAT or SMT solver, but all failed or were outperformed by standard CPU alternatives. \cite{paraFROST}
+This work raises a question -- could it be possible to make advances in reasoning tool that utilise GPU compute for cryptanalysis?
+
+\section{SMT Performance Claims}
+\label{sec:smt-performance-claims}
+\cite{bellini_2024}'s research compared a wider variety of cryptanalysis tools, including SAT, SMT, MILP and CP for multiple different ciphers, permutations and hash functions.
+Their winner categorising strategy is described as:
+"The best solver for each cipher is the one with the highest number of wins.
+The winner of our competition (for every formalism) is the solver that performs best for the highest number of ciphers (more than 20, each from round 2 to 6)."
+Their claim is that "In the SMT solvers category, Z3 and MathSAT are always inferior to Yices2, which is thus clearly the best SMT solver in our testing".
+
+As of my knowledge, no research has previously defined the baseline of what SMT solvers are capable of for SHA-2 collisions.
+No work has quantatively defined the floor of what is possible by simply doing nothing except stating the problem at hand.
+All research papers I read never mentioned any attempt at this, and made no comments if it was even feasible.
+It is likely that researchers who used SAT or SMT solvers were only able of getting a few rounds for collisions,
+and took this as an implied hard limit without the use of encodings.
+This creates the basis for \ref{rq1} and \ref{rq2}, which aims to fill this knowledge gap.
+
+\pagebreak
+\section{Compilation Performance}
+\label{sec:compilation-performance}
+Prior work demonstrates that binaries compiled from identical source code can exhibit performance or
+structural differences due to compiler optimizations, build environments, or platform-specific toolchains.
+For instance, \cite{ren_2021} showed that non-default optimisation sequences can amplify binary differences,
+while \cite{dietrich_2024} highlights the prevalence of non-bitwise equivalence in alternative builds.
+Due to this, all of my work attempts to generate performance equivalent artifacts by specifying exact build tools and their respective versions, as taken directly from the source websites (preferably GitHub releases).
 
 
-An X86\_64 machine was set up for this, with no background tasks or workers, and an otherwise fresh installation of linux.
-Each run was ran sequentially, as to ensure no performance degradation, with a 15 minute timeout, and stop tloerance of 3.
-The parameters, hardware and software were used in this specific configuraiton, for all figures presented, unless otherwise specified.
+\chapter{Method}
+\section{Background}
+Prior to this work, I never utilised SMTLIB, and only briefly worked with Rust.
+I also never learnt anything about the security of SHA-2 or Hash Functions.
+This meant that my development journey was steep, and required a lot of research and trial and error.
+Despite this, I persevered; learnt topics that were required, read documentation on SMTLIB and Rust, and produced a viable software to answer my research questions.
+This section will mention and evaluate my full implementation methodology, benchmarking structure and mathematical encoding basis.
 
-The full runner specification:
+\section{Project Methodology}
+During the development of this project I used a Kanban-styled board, split into multiple sprints.
+Each sprint consisted of tasks required towards a certain goal/subgoal of the project.
+As the project matured and I read more information from articles, research papers and different sources, tasks and their ordering somewhat changed.
+The Kanban-board came in handy for tracking these ad-hoc tasks.
+
+Despite keeping everything organised, the scope of the project was too large at hand and required some alterations.
+I quickly found out that \textbf{quality} is more important than \textbf{quantity} in research.
+Unfortunately, it is quite hard to have accuracy, consistency and quality while working solo on a research project.
+Because of this, I stumbled into issues and oversights which I did not realise until later.
+Having had someone validate thins as the project went on, some of the traps I fell into could have been avoided.
+This gave me a wider understanding of why research is often conducted by multiple people.
+
+\section{Design}
+This project builds a binary providing a Command Line Interface (CLI).
+Design choices were still undertaken in various manners as described below.
+
+\subsection{Command Line Interface}
+Since the project mainly interfaces with SMT solvers, which are all CLI based -- it made no sense to develop GUIs.
+Providing a packaged CLI binary allows reusability and shows intention that the code is ready to be used as is for further
+research and/or encodings.
+
+For the design of subcommands, I took into consideration what functions were called most often with their respective arguments.
+Based on that, I derived default arguments and categorised functionality by subcommand.
+All subcommands with their respective arguments can be retrieved by appending \verb|--help| to the command/subcommand invocation.
+An image representing this can be seen in \ref{chap:usage-example}.
+
+A Rust crate clap.rs was used for command functionality. \cite{cargo:clap}
+
+\subsection{Graphs}
+\label{ssec:graph-design}
+Rust has somewhat limited visualisation libraries.
+Charming.rs provides very beautiful results, but has very limited control and otherwise uses an extremely heavy JavaScript backend. \cite{cargo:charming}
+Plotters.rs on the other hand, is a long standing and time tested visualisation crate,
+that gives almost all control over plotting, albeit with very verbose and hard to learn syntax. \cite{cargo:plotters}
+Due to the limited choice, I have chosen plotters as my graphing library.
+
+I utilised the SVG backend to render images, using a colour pallette defined for consistency.
+Due to some graphs having a lot of relevant data, where up to 10 colours had to be used, some colours simply clash together -- this was inevitable.
+My attempt at avoiding this was by ensuring contrasting colours where possible.
+No Rust visualisation crates support patterns (such as dashed lines), and utilising Python or alternative options would provide greater complexity,
+at the cost of having an extensible bundled software.
+Inevitably, some data could not be split, as it would become less meaningful.
+Due to this, some graphs might be harder to read.
+As an alternative, I have bundled tables in \ref{sec:full-results-tables}, which contain the raw values.
+
+\subsection{Graph Filtering \& Correction}
+\label{ssec:graph-filtering-and-correction}
+All graph data is verified with the SHA-2 implementation.
+Any invalid results are automatically filtered out and removed from all plots.
+
+Due to some issues in my SMTLIB generation code, all satisfiable SHA-512 results are invalid.
+As such, the SHA-512 graphs look very empty, despite investing around 30 hours of benchmark runtime.
+With the short timeframe to resolve this, I shifted focus towards other experiments.
+I make mention of this, since my software is capable of generating SMT for the entire SHA-2 family, given a proper implementation.
+
+\subsection{Understanding Graphs}
+In order to answer the research questions effectively, I created 3 different visualisation layouts.
+
+\subsubsection{Comparison Graph}
+With the main purpose of providing a side by side comparison of each solver baseline, the comparison graph plots data on a Cartesian2D line graph,
+where the compression rounds are displayed on the X-axis and $\log 2$ time on the Y-axis.
+
+The timeout is the top of the graph.
+One way to understand this graph is -- the line that goes the most to the right (more rounds), while staying low (less time) is the best.
+Additionally, the consistency and linearity of the line provides insight about the reasoning of the problem.
+
+This graph is used to answer \ref{rq1} in \ref{sec:graphs}.
+
+\subsubsection{Baseline Graph}
+The baseline graph was designed to primarily reason and compare between different runs with variants.
+It utilises a Cartesian2D line graph, plotting a main baseline in the middle.
+Any missing or invalid data is skipped from plotting.
+Deviation data is then calculated from the baseline based on time difference, and represented as a percentage.
+
+If no plot exists on baseline, but a valid deviation is plotted, $+\infty$ will be used as the deviation value.
+This can be interpreted as "This was infinitely faster than the nothing achieved (on baseline) within timeout".
+If a baseline exists, but no deviation for that round is present, the plot will be skipped.
+
+A rough run-to-run variance is shown with a grey-ish colour near the middle.
+The green area with $-\%$ implies "this took $x\%$ less time, compared to baseline".
+Similarly, the red area with $+\%$ implies "this took $x\%$ more time, compared to baseline."
+
+The graph scales with the results, and trims out at 100\% in both directions.
+When a result is plotted on the edge of the graph, the deviation is $\geq 100\%$ (i.e. twice as long or half as long).
+
+This graph was written with generics in mind, and was reused to visualise results for \ref{rq2} and \ref{rq3} in \ref{sec:graphs}.
+
+\subsubsection{Detailed Graph}
+The detailed graph is more complex in terms of construction.
+Unlike other graphs, only a single benchmark run is plotted.
+It utilises a DualCartesian2D coordinate system, where the first line graph relates to time taken in $\log 2$, and the second to memory usage in Mibibytes (MiB).
+
+Since SMT solving prefers more locality in memory hierarchy, this graph can help understand if the performance degradation is due to hardware limitations, such as saturating all CPU L3 cache.
+A graph for Bitwuzla with additional reruns can be seen in the full results \ref{sec:full-results}.
+
+\pagebreak
+\section{Implementation}
+\label{sec:implementation}
+All code was written in Rust (rustc version 1.85.1), compiled with the provided LLVM backend, and linked with mold (version 2.37.1). \cite{rust} \cite{mold}
+
+The code is licensed under CC BY-NC-SA 4.0, allowing free use with attribution, while limiting any commercial use. \cite{cc_by-nc-sa}
+
+Repository for the code can be found below, with further build information in the README.md file:
 \begin{center}
-    \begin{tabular}{|r|c|}
-        \hline
-        & \textbf{Runner Specification} \\
-        \hline
-        \textbf{CPU} & AMD Ryzen 9 5900X \\
-        \textbf{MEM} & 4 x 32GiB DDR4 3600MHz CL 36 \\
-        \textbf{OS} & NixOS 25.05 (Warbler) x86\_64 \\
-        \textbf{KERNEL} & Linux Realtime 6.6.77-rt50 \\
-        \hline
-    \end{tabular}
+	\url{https://github.com/Supermarcel10/CSG-IN3007/tree/0.1.1} \\
+	\textcolor{gray}{\textit{At the time of submission, this repository is private}}
 \end{center}
 
+\subsection{Functionality}
+The functionality of the tool is split into multiple parts.
+Each part is invoked by a separate subcommand.
+
+\subsubsection{SMTLIB Generation}
+\label{sssec:smtlib-generation}
+The SHA-2 algorithm can be expressed as mathematical operations on a set of bits, where the Theory of Quantifier Free Bit Vector (QF\_BV) is the primary foundation.
+This subcommand generates SMTLIB 2.6 files to talk with SMT solvers universally.
+
+At present the code is capable of generating brute-force (purely modelling the SHA-2 algorithm), as well as differential encodings (Subsection \ref{ssec:differential-encoding}).
+The generated files can also be written with $Maj$ and $Ch$ simplifications (Subsection \ref{ssec:simplification-encoding}), as well as alternative bitwise add (Subsection \ref{ssec:add-encoding}).
+Designed with extensibility in mind, the base 4 encoding (Subsection \ref{ssec:base4-encoding}), which is partially implemented, can be easily added on by appending a new definition.
+
+Rust does offer some SMTLIB based crates. \cite{cargo:smtlib}
+However, these mostly interface directly with solvers, and provide no real way to of writing all instructions to a \texttt{.smt2} file.
+Because of this, no additional crates were used, and I manually wrote files using \texttt{std::fs} from an owned \texttt{std::String} containing my SMT code.
+
+\subsubsection{Load}
+\label{ssec:load}
+The \texttt{load} subcommand reads (an) inputted result file(s) from a given dir/file path.
+
+Loaded data is then deserialised into a \texttt{Benchmark} struct.
+The struct aims to preserve the original output of console out (cout) and console error (cerr), while storing additional metadata and information.
+By doing so, any additional data can be traced back, benchmarks can be reran with known parameters, and filtering is made simple.
+
+One of my objectives mid-way was to migrate to rusqlite, a sqlite wrapper API for Rust. \cite{cargo:rusqlite}
+This would allow cleaning up the hundreds of JSON result files, and make querying even easier.
+However, in doing so this would hinder the ablity to quickly view a result file without additional tools.
+With this consideration, I considered this a very low priority, and put the time aside for more experiments instead.
+
+\subsubsection{SHA-2}
+Written with \cite{NIST_SP_180_4} guidelines, this subcommand provides a partially deconstructed SHA-2 implementation.
+No established SHA-2 implementations allow control over the number of compression rounds, message digest or Initial Vector.
+
+My original plan was to reuse parts of the Rust sha2 crate. \cite{cargo:sha2}
+However, the inner workings utilise dark arts wizardry
+\footnote{Rust dark arts refers to "The Dark Arts of Unsafe Rust", defined by The Rustonomicon. \cite{rustonomicon}},
+with very optimised system calls based on architecture.
+Due to the complexity, I opted for my own implementations from scratch.
+
+This implementation is not formally verified, but outputs the correct hash digest for standard variables against standard implementations.
+Due to SHA-2's avalanche effect mentioned in \ref{ssec:hash-function-basics}, this likely means the implementation is fully correct for the hash functions implemented.
+
+My original implementation of SHA-2 utilised generics, and took in a 32 or 64 bit unsigned integer as the word type.
+This functioned correctly, and was somewhat simple to build, however was very restrictive.
+Having multiple components relying on the SHA-2 implementation, it hindered development by requiring those generics everywhere.
+To simplify this, I rewrote the entire SHA-2 functionality to use an enum structure with fields instead.
+
+\subsubsection{Benchmarking}
+\label{sssec:benchmarking}
+The \texttt{benchmark} subcommand is the primary and most important part of the software.
+Given an input of a solver, round range, collision type, encoding and argument matrix, it calls the solver on the host machine and executes it with the \texttt{time} command.
+
+Different SMT solvers output satisfiable (SAT) results in different bases, formats and patterns.
+To overcome this, I created a RegEx pattern to detect and process the input for boolean, decimal and hexadecimal.
+Additional formats can easily be defined in the \texttt{SmtOutputFormat} enum.
+
+Another challenge was parsing the error codes returned from the SMT binary.
+There are no definitive standards related to output status of a solver.
+CVC5 as an example, returns an error code if the result is unsatisfiable, whereas some others return a success code.
+To overcome this, my output parser utilised the status code and console output to determine benchmark result.
+
+A thread with a chrono timer is spawned right before a benchmark starts.
+This has minimum performance overhead, if any at all.
+When the thread wakes from sleep, the timeout period has elapsed.
+Consequently, the entire process stack is killed with \texttt{SIGTERM} (19), the output parser is ran and a \texttt{Benchmark} struct object is serialised.
+Benchmarking continues until all user options have been exhausted.
+
+If the stop tolerance is hit, all benchmarks for the given solver are aborted, and benchmarking moves to the next viable solver (if applicable).
+This can happen for multiple reasons.
+One example of this, is if a SMT error is encountered.
+In such case, my result parser will return a \texttt{SMTError} for its status, and increment the stop hit count.
+
+When a benchmark succeeds at finding a collision, or if no collision exists, the chrono thread is aborted and the parser reads the tokens and creates a new \texttt{Benchmark} object.
+This is then verified using the \texttt{sha2} subcommand, and the metadata is attached to the \texttt{Benchmark} struct.
+When complete, this is dumped to disk by deserialising the object and freeing memory for the next benchmark.
+
+\subsubsection{Graph Plotting}
+The \texttt{graph} subcommand is responsible for regenerating all the graphs from the filtered deserialised data.
+For designs and further information, refer to \ref{ssec:graph-design}.
+
+\section{Benchmark Methodology}
+\label{sec:benchmark-methodology}
+In order to obtain quantifiable results towards answering \ref{rq1}, \ref{rq2} and \ref{rq3} the \texttt{benchmark} subcommand described in \ref{sssec:benchmarking} was used.
+This section goes in depth related to the methodologies and strategies employed for consistent, reproducible and reliable data.
+
+A dedicated X86\_64 machine was set up for running this workload, with no background tasks or workers, and an otherwise fresh installation of linux.
+Each benchmark run was invoked sequentially (one after the other), as to ensure no performance degradation.
+The machine was set up in a manner to provide the most reproducible results.
+The default parameters when running were \texttt{--round-range 1..21 --stop-tolerance 0 --continue-on-fail true}.
+A timeout period, of 15 minutes (default), was utilised for all benchmarks.
+The hardware, parameters and software versions are the basic configuration for all figures presented, unless otherwise specified.
+
 \begin{center}
-    \begin{tabular}{|r|c|}
-        \hline
-        \textbf{Solver} & \textbf{Version} \\
-        \hline
-        Z3 & 4.13.4 \\
-        CVC5 & 1.2.1 \\
-        Yices & 2.6.5 \\
-        Bitwuzla & 0.7.0 \\
-        Boolector & 3.2.3 \\
-        STP & 2.3.4 \\
-        \hline
-    \end{tabular}
+	\begin{tabular}{|r|c|}
+		\hline
+		& \textbf{Runner Specification} \\
+		\hline
+		\textbf{CPU} & AMD Ryzen 9 5900X \\
+		\textbf{MEM} & 4 x 32GiB DDR4 3600MHz CL 36 \\
+		\textbf{OS} & NixOS 25.05 (Warbler) x86\_64 \\
+		\textbf{KERNEL} & Linux Realtime 6.6.77-rt50 \\
+		\hline
+	\end{tabular}
 \end{center}
-% TODO: Add footnote about Bitwuzla issue
-% TODO: Add references to all of these tools
 
+\subsection{CPU and XMP Configuration}
+The primary task of my home lab prior to this research was to run 24/7 as a home server configuration with miscelaneous tasks.
+As such, some settings are tailored to lower power draw, better reliability and efficiency.
+These settings lock the core clock at base 3700MHz and disable any turbo boost clock.
+This reduces performance, but provides more consistent run-to-run performance and result reproducability.
 
-\section{Findings}
-Summary of collision attacks on SHA-2.
-Time in seconds, memory in MiB.
-
+The following BIOS settings have been applied:
 \begin{center}
-\begin{tabular}{c c c c c c c c}
-    Hash Function & Attack Type & Collision Type & Rounds & Time & Memory & References & Year \\
-    \hline \hline
-    \multirow{3}{*}{SHA-256}
-                  & Differential & STD & 31 & $2^{49.8}$ & $2^{48}$ & \cite{y_et_al_2024} & 2024 \\
-                  & Brute Force & STD & 18 & $2^{5.5}$ & $2^{6.6}$ & - & 2025 \\
-                  & Differential & SFS & 39 & practical & - & \cite{y_et_al_2024} & 2024 \\
-    \hline
-    \multirow{3}{*}{SHA-512}
-        & Differential & STD & 28 & practical & - & \cite{y_et_al_2024} & 2024 \\
-        & Differential & STD & 31 & $2^{115.6}$ & $2^{77.3}$ & \cite{y_et_al_2024} & 2024 \\
-        & Brute Force & STD & 18 & $2^{5.4}$ & $2^{7.4}$ & - & 2025 \\
+	\begin{tabular}{|r|c|}
+		\hline
+		\textbf{Setting} & \textbf{Value} \\
+		\hline
+		\textbf{CPU Clock} & 37.00 \\
+		\textbf{CPU Clock Control} & 100.000 MHz \\
+		\textbf{XMP} & DDR4-3600 18-22-22-42-64-1.35V \\
+		\textbf{CPU Vcore} & 0.818V \\
+		\textbf{CPU Vcore Loadline Calibration} & LOW \\
+		\textbf{CSM Support} & ENABLED \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Kernel Choice}
+\label{ssec:kernel-choice}
+The runner utilises the Linux Realtime kernel, which aims to have predictable response times.
+One of the main differences is the task scheduling and interrupt handling.
+In short, the rt kernel uses a preemptible task assignment system, where in most cases high priority tasks cannot be interrupted by the kernel.
+Additionally, because of the scheduling, multi-threaded workloads often become slightly more deterministic and reproducible.
+This is all at the cost of some throughput loss.
+
+In theory, it would be possible to test the differences between kernel choice, specifically for SMT solving.
+My current implementation would fully support this, and could produce a graph specific to answer this question.
+Producing a baseline run for all the solvers would take worst-case 40 hours per kernel to generate a graph towards a single SHA-2 hash function.
+This means producing data for 3-4 different kernels would take an additional 160 hours of benchmark runtime.
+
+\subsection{Reproducability}
+This runner can be rebuilt at any time, using the NixOS configuration found here: \\
+\url{https://github.com/Supermarcel10/NixOSConfig/blob/f1d26ec/devices/E01/configuration.nix}
+
+\section{SMT Solver Choice}
+\label{sec:smt-solver-choice}
+Selecting appropriate solvers for benchmarking is crucial to ensure comprehensive coverage and reliable results.
+To achieve this, I aimed to create an exhaustive list of currently available SMT solvers.
+The following table lists the solvers tested in this work, along with their versions and corresponding citations:
+
+\begin{center}	\begin{tabular}{|r|c|l|}
+		\hline
+		\textbf{Solver} & \textbf{Version} & \textbf{Citation} \\
+		\hline
+		Z3 & 4.13.4 & \cite{z3} \\
+		CVC5 & 1.2.1 & \cite{cvc5} \\
+		Yices & 2.6.5 & \cite{yices2} \\
+		Bitwuzla & 0.7.0 & \cite{bitwuzla} \\
+		Boolector & 3.2.3 & \cite{boolector} \\
+		STP & 2.3.4 & \cite{stp} \\
+		Colibri2 & 0.4-dirty & \cite{colibri2} \\
+		MathSAT & 5.6.11 (1a1154baf0ab) & \cite{MathSAT} \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\section{Implementation Challenges}
+\subsection{SMTLIB Compatibility}
+\label{ssec:smtlib-compatibility}
+The current available version of the SMTLIB standard is 2.7.
+However, as of writing this report, most of the solvers do not support this version.
+Therefore, all encodings and \texttt{smt2} files in this work have been written using the SMTLIB 2.6 standard. \cite{SMTLIB}
+
+Some solvers use an older version of SMTLIB 2.0, which does not provide the `\verb|:left-assoc|` feature.
+This would require rewriting a significant portion of the SMT code to maintain compatibility, leading to those solvers being excluded from the benchmarks.
+
+\subsection{Compilation and Linking Issues}
+\label{ssec:compilation-linkage-issues}
+\subsubsection{MathSAT}
+\label{sssec:mathsat-issues}
+MathSAT dynamically links to libraries in the binary, which did not work as expected.
+To resolve this issue, I patched the ELF file considering its closed-source nature.
+Due to reproducability, MathSAT is present in the \texttt{solvers} directory with a \texttt{mathsat\_patch.nix} file.
+
+\subsubsection{Colibri2}
+\label{sssec:colibri2-issues}
+Colibri2 worked but exhibited some fundamental problems.
+It occasionally threw internal errors and sometimes generated output that failed SMTLIB assertions.
+This can only be seen in the JSON files part of the codebase.
+
+As mentioned in \ref{ssec:graph-filtering-and-correction}, my graph implementation automatically filtered out invalid results, allowing all Colibri2 results to be included while displaying only valid ones.
+
+\subsection{Solver Issues}
+\label{ssec:benchmark-solver-issues}
+\subsubsection{Bitwuzla}
+\label{sssec:bitwuzla-issues}
+Bitwuzla was very strong from the beginning and ran without significant issues.
+However, during experimentation, I discovered an issue with memory handling that has since been resolved through creating an issue on their repository (\url{https://github.com/bitwuzla/bitwuzla/issues/169}).
+
+Additionally, I encountered issues with the \texttt{nixpkgs} repository related to compiling the Kissat solver backend.
+I submitted a pull request to fix this issue, which has since been merged (\url{https://github.com/NixOS/nixpkgs/pull/400299}).
+
+As mentioned in \ref{sec:compilation-performance}, different tools during compilation can have varying runtime performance.
+For benchmarking the Kissat solver backend in Bitwuzla, I used my built binary.
+Other backends performed within acceptable variance of the original runs.
+
+\section{Encodings}
+\label{sec:encoding}
+Each of the encodings, and their combinations were benchmarked.
+Their analysis can be seen in \ref{sssec:encoding-analysis}.
+
+\subsection{Simplifying Compression Functions}
+\label{ssec:simplification-encoding}
+As described in \ref{ssec:sha2-compression-function}, the SHA-2 compression function relies on two non-linear functions:
+the choice function \(\textrm{Ch}(e, f, g)\) and the majority function \(\textrm{Maj}(a, b, c)\).
+Both functions traditionally employ XOR operations to combine inputs as defined in the SHA-2 standard \cite{NIST_SP_180_4}.
+From my mathematical analysis, it is possible to replace XOR with OR in these functions, simplifying their implementation, while preserving logical behaviour.
+
+The original definitions of the functions are:
+\begin{equation}
+	\begin{aligned}
+		Ch(e, f, g) &= (e \land f) \oplus (\neg e \land g) \\
+		Maj(a, b, c) &= (a \land b) \oplus (a \land c) \oplus (b \land c)
+	\end{aligned}
+\end{equation}
+
+In the simplified encoding, all XOR operations were substituted with OR:
+\begin{equation}
+	\begin{aligned}
+		Ch'(e, f, g) &= (e \land f) \lor (\neg e \land g) \\
+		Maj'(a, b, c) &= (a \land b) \lor (a \land c) \lor (b \land c)
+	\end{aligned}
+\end{equation}
+
+To validate equivalence, truth tables were constructed for all possible input combinations.
+Table~\ref{tab:truth-table} demonstrates identical outputs for both $Ch$ and $Ch'$, as well as $Maj$ and $Maj'$.
+This arises because the sub-expressions in $Ch$ are mutually exclusive: $e \land f$ and $\neg e \land g$ cannot simultaneously be 1.
+Consequently, OR and XOR produce identical results in this context.
+Similarly, for $Maj$, the OR operation captures the majority condition, as overlapping terms do not affect the final output.
+
+\begin{table}[H]
+\centering
+\caption{Truth table comparing original and modified $Ch$ and $Maj$ functions.}
+\label{tab:truth-table}
+\begin{tabular}{ccc|cc|cc}
+\(x\) & \(y\) & \(z\) & \(\textrm{Ch}\) & \(\textrm{Ch}'\) & \(\textrm{Maj}\) & \(\textrm{Maj}'\) \\ \hline
+0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 1 & 1 & 1 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 1 & 1 & 1 & 1 & 1 \\
+1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+1 & 0 & 1 & 0 & 0 & 1 & 1 \\
+1 & 1 & 0 & 1 & 1 & 1 & 1 \\
+1 & 1 & 1 & 1 & 1 & 1 & 1 \\
 \end{tabular}
-\end{center}
+\end{table}
+
+The substitution preserves non-linearity, as both OR and XOR are non-linear operations in Boolean algebra.
+Diffusion properties also remain unaffected, as the output dependence on input bits is unchanged.
+
+This simplification aims to optimise the reasoning a solver might attempt.
+An XOR operation can be expressed using a combination of OR and AND logical operators alongside negation, specifically as $a \oplus b = (a \lor b) \land \lnot (a \land b)$ \cite{wiki:xor}.
+By utilising my simplification methodology, the logical behaviour remains unchanged, while potentially reducing the search space.
+
+\subsection{Alternative Bitwise Add}
+\label{ssec:add-encoding}
+Another potential idea for improving the reasoning of the solver was to use an alternative add encoding, distinct from the baseline bitvector addition \texttt{bvadd}.
+Naturally, since this encoding no longer runs at the hardware level, there will be significant runtime overhead.
+However, the hope with this encoding is for the solver to find new and potentially meaningful logic to reason about, pruning non-viable paths earlier.
+
+The core implementation leveraged a bitwise carry-lookahead adder inspired by principles in \cite{wiki:cla} \cite{kogge_1973}.
+For two BitVector (BV) operands $a$ and $b$, the adder computed generate ($g$) and propagate ($p$) signals, where $i \leq length$, $length =$ number of input bits in BV:
+\begin{equation}
+	\begin{aligned}
+		g_0 &= a \land b \\
+		p_0 &= a \oplus b \\
+		\\
+		g_{i + 1} &= g_i \lor (p_i \land (g_i \ll 2^i)) \\
+		p_{i + 1} &= p_i \land (p_i \ll 2^i) \\
+		\\
+		\text{bitadd-2}(a, b) &= p_0 \oplus (g_{length} \ll 1) \\
+	\end{aligned}
+\end{equation}
+
+For handling 3 or more operands, we can extend the base adder:
+\begin{equation}
+    \text{bitadd-$n$}(x_1, \ldots, x_n) = \text{bitadd-2}(\bigoplus_{k=1}^n x_k, \ll \bigvee_{1 \leq i < j \leq n} (x_i \land x_j))
+\end{equation}
+
+This hierarchical structure, in theory, enables $O(\log n)$ carry propagation, though practical SMT constraints,
+in addition to lack of support for user-implemented \verb|:left-assoc|, necessitated sequential left-to-right chaining for multi-operand cases.
+The SMTLIB implementation cascaded smaller adders through nested \texttt{let} bindings, avoiding combinatorial explosion in constraint generation.
+The full core adder SMTLIB implementation is available in \ref{lst:bitadd}.
+The full multi-operand SMTLIB implementation is available in \ref{lst:bitadd-multi}.
+
+The encoding drew inspiration from modern hardware optimisation techniques, particularly 3:2 compressor logic \cite{wiki:3:2_compressor} and Wallace tree principles \cite{wallace_1964}.
+
+\subsection{Differential Encodings}
+\label{ssec:differential-encoding}
+In order to move to a differential reasoning model, I moved to using two differential encodings,
+with the primarily focus on reducing complexity by reasoning more about relative differences, thereby avoiding unnecessary constraints on absolute values.
+These encodings operated on the deltas between pairs of computation components rather than their absolute values,
+following established approaches that make the basis of research like \cite{li_2024}.
+
+Two differential encodings were created for this:
+\begin{itemize}
+	\item \textbf{Delta Subtraction} (DSub) $\Delta_- = x - x'$
+	\item \textbf{Delta Exclusive OR} (DXOR) $\Delta_\oplus = x \oplus x'$
+\end{itemize}
+
+Both encodings were systematically applied to:
+\begin{itemize}
+    \item Message block differences during expansion (via the $w_it$ variables),
+    \item Working variables ($a$-$h$) in the compression function,
+    \item Round-specific constants ($K_i$),
+    \item Final digest segments.
+\end{itemize}
+
+For collision assertions, I required all hash digest differences to satisfy $\Delta_{\text{hash}} = 0$, ensuring identical outputs.
+Message or initial vector differences, depending on collision type, were constrained with $\Delta_{\text{input}} \neq 0$ to enforce at least one distinct chunk.
+
+Notably, the implementation did not introduce additional assertions beyond these difference constraints.
+The base SHA-2 algorithm's logical operations and modular arithmetic were preserved in both encodings.
+All the underlying absolute values were still present and being calculated for each variable to ensure compliance with the SHA-2 definition.
+
+While this preserved flexibility for mixed constraints, I considered (but did not implement) a pure delta encoding that would reason exclusively about differences.
+Such an approach would require reconstructing original values from deltas during constraint solving.
+However, this introduces challenges like handling the non-linear interaction propagation through $Ch$ and $Maj$ functions described in \ref{ssec:sha2-compression-function}.
+
+\pagebreak
+\section{Base 4 Encoding}
+\label{ssec:base4-encoding}
+
+The base 4 encoding addresses the challenge of the DSub and DXOR representations.
+Binary uses a base 2 system, and comparing two bits creates a $2 \times 2$ matrix with four possible variations.
+Thus, using a base 4 system ensures that all operations are non-lossy and revertible to absolute values if needed.
+
+This encoding can overcome the issue of non-linearity in OR and XOR logic by providing deterministic outcomes without requiring any absolute values.
+Although this work is only theoretical, due to time constraints for implementation and testing, it has the potential to perform well.
+
+For simplicity, this work uses symbols $a$ through $d$ to represent different states instead of numerical values.
+In addition to the base 4 system, shorthand symbols are used to provide an abstraction and generalisation of underlying differences and their original values.
+
+These shorthands include:
+\begin{itemize}
+    \item $e \Leftrightarrow a \vee b$: both values equal
+    \item $f \Leftrightarrow b \vee d$: right bit is 1
+    \item $g \Leftrightarrow c \vee d$: left bit is 1
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllllll}
+\hline
+$(x, x')$ & a & b & c & d & e & f & g \\ \hline
+$(0, 0)$  & + &   &   &   & + &   &   \\
+$(0, 1)$  &   & + &   &   &   & + &   \\
+$(1, 0)$  &   &   & + &   &   &   & + \\
+$(1, 1)$  &   &   &   & + & + & + & + \\ \hline
+\end{tabular}
+\caption{Representation of base 4 symbols including shorthand operators ($e$, $f$, $g$). A '+' indicates whether a specific value pair is possible
+for $(x, x')$. Table design inspired by \cite{alamgir_2024}.}
+\label{tab:base4-representation}
+\end{table}
+
+Each representation becomes a separate variable in SMTLIB format.
+This way, it is possible to continue using the theory of BitVectors.
+Each variable can then be used for the most suited logical operation according to SHA-2's rules, as described in \ref{ssec:sha2-info}.
+Alternatively, it is also possible to experiment with the \texttt{declare-datatype} SMTLIB instruction to define this encoding.
+
+In order to maintain corectness, these have been tested with AND, OR and XOR operations.
+No counter-examples have been found. \ref{lst:and-proof} \ref{lst:or-proof} \ref{lst:xor-proof}
+
+
+\chapter{Results}
+\section{Graphs}
+\label{sec:graphs}
+This section presents a comprehensive analysis of the most significant findings from my experiments.
+For an exhaustive set of results, please refer to \ref{sec:full-results} and \ref{sec:full-results-tables} for most raw data.
+
+All visualisations included in this document were generated using the implementation process detailed in \ref{sec:implementation}.
+This ensures consistency and reproducibility across all graphs.
+The experiments described here were conducted following the benchmarking methodologies outlined in \ref{sec:benchmark-methodology}.
+Adhering to these strategies enabled me to obtain reliable and comparable results.
+
+\subsection{Significant Graphs}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{../../graphs/solver_comparison_SHA256_STD.svg}
+	\caption{Graph representing SHA-256 standard collisions from 1 to 20 rounds using brute-force, where each colour line represents a separate solver.
+	Results ran with arguments \texttt{--round-range 1..21 --continue-on-fail true}.}
+	\label{fig:sha256_std}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{../../graphs/bitwuzla_rewrite_level_args.svg}
+	\caption{Bitwuzla SHA-256 standard collisions from 1 to 18 rounds using brute-force, where each colour line represents a different solver argument related to rewrite level.
+	Results ran with arguments \texttt{--round range 1..19 --continue-on-fail true}}
+	\label{fig:bitwuzla_rewrite}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{../../graphs/bitwuzla_preprocessing_args.svg}
+	\caption{Bitwuzla SHA-256 standard collisions from 1 to 18 rounds using brute-force, where each colour line represents a different solver argument related to preprocessing.
+	Results ran with arguments \texttt{--round range 1..19 --continue-on-fail true}}
+	\label{fig:bitwuzla_preprocessing}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{../../graphs/bitwuzla_sat_solver_args.svg}
+	\caption{Bitwuzla SHA-256 standard collisions from 1 to 18 rounds using brute-force, where each colour line represents a different solver argument related to the backend SAT solver.
+	Results ran with arguments \texttt{--round range 1..19 --continue-on-fail true}}
+	\label{fig:bitwuzla_sat_solver}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{../../graphs/bitwuzla_delta_xor_encoding_comparison.svg}
+	\caption{Bitwuzla SHA-256 standard collision from 1 to 20 rounds using $\Delta_\oplus$ encoding. Where each colour line represents a different encoding variant.
+	Results ran with arguments \texttt{--round-range 1..19 --stop-tolerance 0 --continue-on-fail true}}
+	\label{fig:delta_xor}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{../../graphs/bitwuzla_delta_sub_encoding_comparison.svg}
+	\caption{Bitwuzla SHA-256 standard collision from 1 to 20 rounds using $\Delta_-$ encoding. Where each colour line represents a different encoding variant.
+	Results ran with arguments \texttt{--round-range 1..19 --stop-tolerance 0 --continue-on-fail true}}
+	\label{fig:delta_sub}
+\end{figure}
+
+\pagebreak
+\begin{landscape}
+\subsection{Significant Console Output}
+Both of these outputs showcase the differential graphs with notation as \cite{li_2024}.
+The $\Delta$ and $_i$ notation has been escaped due to being invalid UTF-8 in LaTeX.
+
+\begin{lstlisting}[caption={14 round collision output obtained by running
+\texttt{sha2-collision benchmark --solver bitwuzla --hash-function sha256 --collision-type std --round-range 14..15 -R true -E bruteforce::true}}, label=lst:collision-output-simpl]
+14 rounds; SHA256 STD collision; Bitwuzla; SMT solver PID: 57943
+File: smt/SHA256_STD_14_ALTADD.smt2
+CV   : 6a09e667 bb67ae85 3c6ef372 a54ff53a 510e527f 9b05688c 1f83d9ab 5be0cd19
+CV'  : 6a09e667 bb67ae85 3c6ef372 a54ff53a 510e527f 9b05688c 1f83d9ab 5be0cd19
+M    : ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffe9 00000000 00000000
+M'   : 7fffffff ddf3fdbf 7c8b10a7 de0fffbf a1ec023f 9dec01bf ffffffff 7fffffff 7fffffff ffffffff ffffffff ffffffff ffffffff ffffffe9 00000000 00000000
+Hash : 1121e8fd ad9d9f9f 5e16068c 8acbfb6b 9cde4233 a73a2f5f dc9ced0a d8f47aa2 (Valid? true)
+Hash': 1121e8fd ad9d9f9f 5e16068c 8acbfb6b 9cde4233 a73a2f5f dc9ced0a d8f47aa2 (Valid? true)
+
+
+ i |                A                 |                E                 |                W
+ 0 | ================================ | ================================ | u===============================
+ 1 | u=============================== | u=============================== | ==u===u=====uu========u==u======
+ 2 | ================================ | =nn==========n========u========= | u=====uu=uuu=u==uuu=uuuu=u=uu===
+ 3 | ================================ | u=============================== | ==u====uuuuu=============u======
+ 4 | ================================ | n=============================== | =u=uuuu====u==uuuuuuuu=uuu======
+ 5 | ================================ | u=============================== | =uu===u====u==uuuuuuuuu==u======
+ 6 | ================================ | ================================ | ================================
+ 7 | ================================ | ================================ | u===============================
+ 8 | ================================ | ================================ | u===============================
+ 9 | ================================ | ================================ | ================================
+10 | ================================ | ================================ | ================================
+11 | ================================ | ================================ | ================================
+12 | ================================ | ================================ | ================================
+13 | ================================ | ================================ | ================================
+\end{lstlisting}
+
+\pagebreak
+\begin{lstlisting}[caption={14 round collision output obtained by running
+\texttt{sha2-collision benchmark --solver bitwuzla --hash-function sha256 --collision-type std --round-range 14..15 -R true -E bruteforce::}}, label=lst:collision-output]
+14 rounds; SHA256 STD collision; Bitwuzla; SMT solver PID: 58100
+File: smt/SHA256_STD_14.smt2
+CV   : 6a09e667 bb67ae85 3c6ef372 a54ff53a 510e527f 9b05688c 1f83d9ab 5be0cd19
+CV'  : 6a09e667 bb67ae85 3c6ef372 a54ff53a 510e527f 9b05688c 1f83d9ab 5be0cd19
+M    : 00000000 00269eb0 073a5f45 870a253d 10cf61c3 340c932a 252046ec a8e31d41 3bf4e7e6 ba76205e 9c4e594a 38c84784 c504f3aa f3ea62bc 00000000 00000000
+M'   : 00900018 a97b43d8 bc209ac8 bb2001f0 a79d7d46 fe43c1a8 38304343 860d9489 7b9b7537 d7879422 20a912e5 227a74d1 6e52b216 6efc2748 00000000 00000000
+Hash : 2d09ea67 bb67ae85 3c6ef372 a54ff53a 8550d704 9f05689c b00572e3 a5670f5a (Valid? true)
+Hash': 2d09ea67 bb67ae85 3c6ef372 a54ff53a 8550d704 9f05689c b00572e3 a5670f5a (Valid? true)
+
+
+ i |                A                 |                E                 |                W
+ 0 | ================================ | ================================ | ========n==n===============nn===
+ 1 | ========n==n==============n=u=== | =======nu==n===============nn=== | n=n=n==n=n=nnu=nun=uuu=n=nu=n===
+ 2 | nu===nuu==nn=n=nnn=n=n=u=un===== | ==nuuuu==nn=u=n=n==u=nnn==nnn=== | n=nnn=uu===uu=u=nu===u=un===nu=u
+ 3 | u=n====nn=nu=nunnn===nnunu=n==u= | ==u=unun===u===nnu==nunuu==nnu== | ==nnnu====n=u=u===u==u==nn==uu=u
+ 4 | unn=nu=u==uu=u===uuu==nu=uu==n=u | ===nnn=uuu==u===n==un======un=un | n=nu=nnn=u=n==u====nnn==u====n=u
+ 5 | n=u=uu=nnn===n=======nn========= | ==u=n=====n=u===nn====nn==n=u=== | nn==n=n==n==uunn=n=u==u=n=====u=
+ 6 | u===nu=n===u==u==n===u==u==u=n== | nuun==nn=n===n=n======u===n=nnnn | ===nnu=u===n=========u=nu=u=uunn
+ 7 | ================================ | u=u===u===n=u===u=u=n==n=n=nnn=n | ==u=unn=uuu=nnu=n===u==unu==n===
+ 8 | ================================ | ====n=uunuuuu==un===nnn=n=n==n=u | =n=======uu=nunnu==n==u=uu=n===n
+ 9 | ================================ | =n=n===nnn===n=======nn====n==== | =nu=un=nnuuu===nn=un=n===unuuu==
+10 | ================================ | u====n=n==u=nnn==n===u==u==u=n== | u=nuuu==nun==uun=u==u=nun=n=unun
+11 | ================================ | ================================ | ===uu=n=u=nn==n===nn==uu=n=n=u=n
+12 | ================================ | ================================ | u=n=n=nu=n=n=un==u=====uu=unun==
+13 | ================================ | ================================ | u==unn=u===n=nu==u===n=nunuu=u==
+\end{lstlisting}
+\end{landscape}
+
+\pagebreak
+\subsection{Analysis}
+\label{sssec:analysis}
+
+Figure \ref{fig:sha256_std} helps answer \ref{rq1} and showcases interesting aspects of SMT solver choice.
+The first eight rounds are UNSAT, meaning no collisions exist.
+As mentioned in \ref{sssec:sat-theory}, this could be due to how the IV combined with rotational working variables work.
+
+Bitwuzla was the most consistent SMT solver, being the only one capable of finding a collision for 7 and 8 rounds.
+This suggests that Bitwuzla likely has stronger reasoning capabilities for UNSAT cores as opposed to its competitors.
+
+As most solvers struggled with higher-round collisions, Bitwuzla and MathSAT were capable of pushing through and delivering 18 and 17 rounds respectively.
+Bitwuzla is the definitive winner, being both more consistent and able to deliver the most rounds within the timeout period.
+This means Bitwuzla is the baseline SMT solver to beat.
+
+Measuring Bitwuzla's brute-force capabilities, with a 12 hour timeout, no collision was found for 19 rounds. \ref{sec:full-results}
+
+\subsubsection{Arguments}
+\label{sssec:sat-solver-args}
+
+To answer \ref{rq2}, I ran all arguments available on the most promising SMT solver, Bitwuzla.
+Figures \ref{fig:bitwuzla_rewrite} and \ref{fig:bitwuzla_preprocessing} proved that adjusting Bitwuzla's arguments can significantly impact performance.
+Despite this, the solvability of consecutive rounds was not meaningfully improved.
+
+Setting the rewrite level to 0 or disabling \texttt{variable-subst} improved short-running collisions but hindered long-running ones.
+
+Adjusting Bitwuzla's SAT solver backend arguments influenced performance.
+The Kissat SAT solver backend outperformed the baseline (CaDiCal) in lower UNSAT rounds but struggled with higher-round collisions, as can be seen in \ref{fig:bitwuzla_sat_solver}.
+
+Enabling \texttt{--bv-solver prop} negated all of Bitwuzla's performance gains against the competition. \ref{sec:full-results}
+This is likely what gives Bitwuzla most of the edge compared to other solvers.
+
+Enabling multithreading via CryptoMiniSat improved overall performance, though increasing threads beyond four (the lowest tested) led to diminishing returns.
+As described in \ref{ssec:kernel-choice}, the runner's Linux Kernel could have impacted this.
+However, more likely at scale, this is caused by practical trade-offs related to SMT parallelism and SMT solver memory characteristics.
+
+\subsubsection{Encodings}
+\label{sssec:encoding-analysis}
+
+To answer \ref{rq3}, all combinations of implemented differential encodings, mentioned in \ref{sec:encoding}, have been benchmarked.
+While there were no significant performance improvements, insights can be gathered from \ref{fig:delta_xor} and \ref{fig:delta_sub}.
+
+The delta subtract encoding, did not allow the solver to reason more freely as expected, and performed within margin of error.
+It did however influence the solvability of round 5, where previously no satisfiable result was found within the timeout period.
+
+On the other hand, the delta XOR encoding proved to be impactful, especially in short-running collisions.
+It did however see a noticeable spike after round 17, but on round 18 returned slightly below baseline brute-force run, remaining a promising solution to expand on.
+
+As for the alternative bitwise add, it almost always performed worse.
+However, some output collisions were simpler with less altered bits, implying the SMT solver has managed to reason more effectively to negate the effects of SHA-2's collision resistance.
+A good example of this can be seen in \ref{lst:collision-output-simpl}, as opposed to the exact same parameters without the alternative bitwise add in \ref{lst:collision-output}.
+
+$Maj$ and $Ch$ simplification proved to have some effect, but did not paint a clear enough picutre to make a conclusive answer.
+In combination with other encodings, it could prove to be more useful.
+
+
+\chapter{Conclusions and Discussion}
+\section{Conclusion}
+This work has quantatively assessed solving times for SHA-2 collisions using different SMT solvers, their arguments, and encodings.
+
+The graphs, provided in \ref{sec:graphs}, undoubtedly answer \ref{rq1}: Bitwuzla \cite{bitwuzla} stands out as the most promising SMT solver among those tested.
+While MathSAT \cite{MathSAT} performed closely, it fell short in terms of round solvability.
+
+It is plausible that an alternative set of arguments could improve MathSAT's or another solver's performance, leaving \ref{rq2} partially unanswered.
+However, it is conclusive that default arguments for Bitwuzla seem to be the most stable for round solvability and solving time.
+
+As for \ref{rq3}, I have explored some basic encodings to provide insights.
+Reasoning about differences by subtraction simply does not work -- it should not be attempted in any future work, since it seems like a dead end and waste of time.
+
+For \ref{rq4}, I have provided a theoretical representation of reasoning about bits in \ref{ssec:base4-encoding}.
+This approach could potentially perform well, and in combination with other encodings could be on par with \cite{li_2024}'s representation.
+
+Using brute-force approaches proved ineffective, as expected, but performed significantly better than previous literature would imply.
+As seen in \ref{tab:historical-collisions}, the magnitude of the attack for 18 rounds is nowhere near the current capabilities.
+By identifying the most promising reasoning tools (\ref{rq1}) and their arguments (\ref{rq2}), I have established a starting point that future research can build upon.
+
+As previously discussed in \ref{sec:smt-performance-claims}, \cite{bellini_2024} claim that MathSAT is always inferior to Yices2.
+While it is plausible for other hash functions in combination with their categorising strategy, my experiments using SHA-2 yielded results that contradict their claim.
+It might potentially hold true under specific encodings; however, the performance gap observed in my benchmarks suggests this is unlikely.
+This is certainly not possible for a larger number of rounds, which was not taken into account with their methodology.
+Consequently, one should not assert that MathSAT is always inferior to Yices2, since this is an eager generalisation.
+
+As stated before in \ref{sec:smt-performance-claims}, no previous work has definitively and quantatively set out a baseline specific to finding the best tool for SHA-2 collisions -- therefore, this is a new and meaningful contribution to the current knowledge.
+
+My theory mentioned in \ref{sssec:sat-theory} seems to hold true, I was unable to find any historical work to prove or disprove this.
+An unsat result is always a worst-case scenario after running all possible combinations.
+Therefore there exists no combinations where a collision is possible with the standard IV for under 8 rounds.
+
+Additionally, throughout the project, I discovered underlying issues with Bitwuzla and the upstream distribution repository.
+I submitted an issue and a pull request (respectively), as mentioned in (\ref{sssec:bitwuzla-issues}), thereby contributing to open-source during this project.
+
+\section{Future Work}
+\subsection{Encoding Based Work}
+\label{ssec:future-encoding}
+To build upon the findings from my research, I propose replicating encodings from \citet{li_2024} or \citet{alamgir_2024}, or a combination of both, and translating them to SMTLIB.
+Running these encodings on Bitwuzla, the most promising SMT solver identified in my research,
+would allow for comparing results with the SAT or SAT + CAS approaches outlined in their respective papers.
+This comparison might reveal improvements due to heuristics at the SMT level.
+To implement this, I suggest adding relevant encodings to the encoding section of the program and generating files for running on SMT solvers.
+
+In addition to this, the \ref{ssec:base4-encoding} could be completed and ran in comparison to these encodings to more effectively answer \ref{rq4}.
+
+\subsection{SMT Argument Exploration Work}
+\label{ssec:future-argument}
+During my research, time constraints limited me to exploring only the most promising solver, Bitwuzla.
+However, it is plausible that other SMT solvers such as MathSAT could outperform Bitwuzla with the right combination of arguments.
+To investigate this, future work could involve benchmarking each argument for interested solvers and comparing results to identify potential improvements over the baseline performance.
+The current software can accommodate these tasks, given sufficient time.
+
+\subsection{Hardware Based Work}
+\label{ssec:future-hardware}
+It is highly possible that processors with increased L3 cache, such as the AMD Ryzen 7 9800X3D \cite{AMD_R7_9800X3D}, may benefit solving performance due to reduced miss penalties.
+SMT solving is very memory heavy, and the locality of memory hierarchy has a major performance impact.
+Even in gaming and certain workstation workloads, larger L3 caches have shown to improve performance significantly. \cite{gamersnexus}
+However, there is a trade-off between cache size and retrieval time. \cite{shanthi_nd}
+To date, no research has quantatively assessed the effects of cache size or core clock speed on SAT/SMT solving time.
+Therefore, potential future work could involve quantifying these effects and plotting correlations between hardware parameters and solving times.
+The current software can run these benchmarks, but it may require additional fields in the Benchmark struct to differentiate hardware-level changes.
+
+\subsection{Rust Language Improvements}
+\label{ssec:rust-improvements}
+As mentioned in \ref{ssec:graph-design}, Rust options for visualisation crates are very limited.
+Additional contributions to open source could improve the situation by making the syntax a lot simpler.
+Functionality, such as different line plot styles could be improved.
+
+The smt crate, mentioned in \ref{sssec:smtlib-generation}, lacks trivial features like the ability to export to files.
+It also has poor documentation compared to the standard of the Rust ecosystem, where everything is verbosely documented.
+This is another potential area to contribute additional work to, helping shape the ecosystem of Rust and cryptography.
 
 
 % Glossary
+\glsaddall
 \printglossaries
-% \glsaddall
 
 
 % References
-% TODO: Harvard-style formatting
 \bibliographystyle{plainnat}
 \bibliography{references}
 
 
 \begin{appendices}
-\section{Notes}
-This report was written in TeX and compiled to PDF.
+	\chapter{Project Definition Document}
+	\label{chap:pdd}
+	The below 14 PDD pages have been included using \texttt{includepdf}.
+	Page numbering, TOC, styling and appendix have remained together, as in the original PDD.
+	\includepdf[pages=-]{../PDD/PDD_V1.0.pdf}
+
+	\chapter{Reuse Summary}
+	No code has been directly reused.
+
+	The codebase bundles Colibri2 and MathSAT with their respective licences, but does not statically or dynamically link to the binaries.
+	Usage of these bundled binaries is optional, and the code assumes nothing exists on the host, thus making checks that an SMT solver is present on the device.
+	For the sake of generating results, these bundled tools, in addition to all previously mentioned SMT solvers, have been used with their respective licences.
+
+	The SHA-2 implementation part of my code, was written fully by me as per guidelines of \cite{NIST_SP_180_4}, and is otherwise an open widely used standard.
+
+	Rust being a streamlined low-level embedded language, provides the basic building blocks, known as the standard (\texttt{std}) library.
+	Similarly, like with other languages, Rust requires the use of other external libraries, known as "crates", to extend functionality.
+	This project makes use of multiple crates to supplement functionality of the \texttt{std} Rust library.
+
+	Unlike C or C++, Rust does not utilise header files which may be provided by libraries, and instead directly links statically these crates built externally of the project target.
+	All provided code is fully written by me using these imported building blocks.
+
+	Full information regarding licences; for all solvers (including bundled ones), as well as crates; can be found in the README.md file of the source code, accessible both on GitHub and via the submission.
+
+
+	\chapter{Produced Output}
+	\section{Notes}
+	This report was written in TeX and compiled to PDF.
+	The tables have been created using an online tool \cite{tables_generator}.
+
+	\section{Result Graphs}
+	\label{sec:full-results}
+	All graph data can be found in the form of tables in \ref{sec:full-results-tables}.
+	\input{result_graphs_appendix}
+	\input{result_tables_appendix}
+
+
+	\chapter{Source Code}
+	\input{source_code_appendix}
+
+
+	\chapter{Screenshots of Product Running}
+	\label{chap:usage-example}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\textwidth]{sha2-collision-help}
+		\caption{Help output of main command.}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\textwidth]{sha2-collision-benchmark-help}
+		\caption{Help output of \texttt{benchmark} subcommand.}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\textwidth]{sha2-fail}
+		\caption{An example output of constraint error, representing an error showing that the user has not installed the solver for the benchmark to run.}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\textwidth]{sha2-smt-err}
+		\caption{An example output of a failed collision due to an SMT error. The error states that the smt2 file does not exist, as thrown by the solver, along with metadata, console output and additional context information.}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\textwidth]{sha2-collision}
+		\caption{An example output of a found collision.}
+	\end{figure}
+
+
+	\chapter{Test Results}
+	\input{test_results_appendix}
+
+
+	\chapter{Software Installation Guide}
+	A comprehensive guide is available in the \texttt{README.md} file of the source code, accessible both on GitHub and via the submission.
 \end{appendices}
-
-\section{Report TODO}
-- Talk about SMT solver choice
-- Talk about how other solvers had other issues.
-- Talk about Bitwuzla issues (3)
-- Talk about figures
-- Talk about settings used to generate figures
-- Talk about results
-- Talk about the code
-- Talk about benchmark methodology
-- Talk about results
-
 \end{document}
+

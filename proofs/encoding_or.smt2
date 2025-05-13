@@ -1,4 +1,3 @@
-
 (set-option :produce-models true)
 (set-logic QF_BV)
 
@@ -50,7 +49,7 @@
 
 
 ; Assert mismatch
-(assert (not (and 
+(assert (not (and
     (= a2 a_XY)
     (= b2 b_XY)
     (= c2 c_XY)
