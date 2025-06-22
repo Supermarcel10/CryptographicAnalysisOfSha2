@@ -9,19 +9,50 @@
 <!-- TOC -->
 * [Improving SHA-2 Collisions Using Satisfiability Modulo Theory (SMT) Solvers](#improving-sha-2-collisions-using-satisfiability-modulo-theory-smt-solvers)
   * [📄 Table of Contents](#-table-of-contents)
+  * [📖 Context](#-context)
+    * [📝 Introduction](#-introduction)
+    * [🎯 Aims and Scope](#-aims-and-scope)
+    * [📊 Results](#-results)
   * [🔨 Building](#-building)
     * [Running](#running)
     * [Subcommands](#subcommands)
   * [🧪 Architectures](#-architectures)
   * [🖥️ Runners](#-runners)
     * [Runner Specifications](#runner-specifications)
+    * [BIOS Settings](#bios-settings)
     * [Solver Versions](#solver-versions)
+    * [Reproducability](#reproducability)
   * [🔬 Testing](#-testing)
   * [📁 Project Structure](#-project-structure)
   * [🔄 Dependencies](#-dependencies)
   * [➕️ Forks & Contributions](#-forks--contributions)
   * [📕 License](#-license)
 <!-- TOC -->
+
+## 📖 Context
+### 📝 Introduction
+
+Inspired by Li et Al. 2024, this dissertation project experimented with practical
+feasibility of finding SHA-2 collisions using SMT (Satisfiability Modulo Theories) solvers.
+While SHA-2 is considered cryptographically secure against collision attacks,
+the theoretical possibility of finding collisions through computational methods remains an active area of research.
+Automated reasoning tools, such as SMT solvers, present a compelling approach for differential cryptanalysis.
+
+### 🎯 Aims and Scope
+
+The primary aim of this project was to evaluate and compare the effectiveness of various SMT
+solvers in finding SHA-2 hash collisions, with specific focus on performance analysis and parameter optimisation.
+
+The scope encompasses both theoretical analysis of SMTLIB representation and empirical evaluation of solver
+performance under controlled benchmarking conditions.
+
+### 📊 Results
+
+The benchmarking revealed significant performance variations between SMT solvers when applied to SHA-2 collision problems.
+Detailed metrics can be found in the `results/` directory. Comparative graphs can be found in `graphs/`.
+
+An extended abstract publication for SMT2025 has been approved, and is awaiting publication.
+A [dissertation specific report](docs/Report/Report.pdf) has been written outlining in-depth analysis and information.
 
 ## 🔨 Building
 > [!IMPORTANT]
@@ -35,7 +66,7 @@
 ### Running
 > [!NOTE]
 > Separate installation of solvers is required to run the `benchmark` subcommand.
-> Ensure that the solvers are exported in CLI path for everything to work properly.
+> Ensure solvers are in CLI PATH to work properly.
 > An error will be thrown if the command does not exist.
 
 To run a specified subcommand, such as `sha2-collision sha2 --help`, you can invoke either:
@@ -56,12 +87,22 @@ Every subcommand and flag has been thorougly documented, with defaults and enume
 
 ## 🖥️ Runners
 ### Runner Specifications
-|            |      **Specification**       |
-|-----------:|:----------------------------:|
-|    **CPU** |      AMD Ryzen 9 5900X       |
-|    **MEM** | 4 x 32GiB DDR4 3600MHz CL 36 |
-|     **OS** | NixOS 25.05 (Warbler) x86_64 |
-| **KERNEL** |  Linux Realtime 6.6.77-rt50  |
+|            |              **Specification**              |
+|-----------:|:-------------------------------------------:|
+|    **CPU** |              AMD Ryzen 9 5900X              |
+|    **MEM** | 4 x 32GiB DDR4 3600MHz 18-22-22-52-64 1.35V |
+|     **OS** |        NixOS 25.05 (Warbler) x86_64         |
+| **KERNEL** |         Linux Realtime 6.6.77-rt50          |
+
+### BIOS Settings
+|                        **Setting** |           **Value**            |
+|-----------------------------------:|:------------------------------:|
+|                      **CPU Clock** |             37.00              |
+|              **CPU Clock Control** |          100.000 MHz           |
+|                            **XMP** | DDR4-3600 18-22-22-52-64 1.35V |
+|                      **CPU VCore** |             0.818V             |
+| **CPU VCore Loadline Calibration** |              LOW               |
+|                    **CSM Support** |            ENABLED             |
 
 ### Solver Versions
 
@@ -76,6 +117,9 @@ Every subcommand and flag has been thorougly documented, with defaults and enume
 |   Colibri2 |       0.4-dirty       |  LGPLv2.1   |   Portable binary in `solvers/`    |
 |    MathSAT | 5.6.11 (1a1154baf0ab) |   Custom    | Binary in `solvers/`, autopatchelf |
 
+### Reproducability
+This runner can be rebuilt at any time, using the [NixOS configuration](https://github.com/Supermarcel10/NixOSConfig/blob/f1d26ec/devices/E01/configuration.nix).
+
 ## 🔬 Testing
 Some segments of code have unit tests in order to assert corectness over changes.
 In order to run these tests invoke `cargo test`.
@@ -84,20 +128,20 @@ In order to run these tests invoke `cargo test`.
 - `docs/`: Source and produced documentation.
 - `graphs/`: Output directory containing produced graphs.
 - `proofs/`: SMT solver proofs for finding a contradiction.
-  - UNSAT implies no contradictions were found, and the encodings are sound.
+	- UNSAT implies no contradictions were found, and the encodings are sound.
 - `reference/`: Reference documentation, which the project bases on.
 - `results/`: Output directory containing deserialized json Benchmark objects, representing each run.
 - `smt/`: (Auto-Generated) Output directory containing produced SMTLIB 2.6 format encoding.
 - `solvers/`: Helper binaries which were patched, or otherwise modified in some manner.
-  - For more details, see the solver version notes.
+	- For more details, see the solver version notes.
 - `src/`: Source code. The code is split into different modules handling each subcommand. Some of these have some overlap, or functions that they share with eachother, but are otherwise independent.
-  - `benchmark/`: Handles running and parsing benchmarks.
-  - `data/`: A shared utility module for retrieving data in a unified manner.
-  - `graphing/`: Handles generation of graphs and any graph components.
-  - `sha/`: A custom sha2 implementation, shadowing the standard, but also exposing compression rounds, initial vectors and such. Primarily used for verification purposes.
-  - `smt_lib/`: Handles everything for generating smt2 files with various encodings. Also exposes a utility to load smt files.
-  - `structs/`: Handles binding structs and traits between modules.
-  - `verification/`: Handles verification and display outputs.
+	- `benchmark/`: Handles running and parsing benchmarks.
+	- `data/`: A shared utility module for retrieving data in a unified manner.
+	- `graphing/`: Handles generation of graphs and any graph components.
+	- `sha/`: A custom sha2 implementation, shadowing the standard, but also exposing compression rounds, initial vectors and such. Primarily used for verification purposes.
+	- `smt_lib/`: Handles everything for generating smt2 files with various encodings. Also exposes a utility to load smt files.
+	- `structs/`: Handles binding structs and traits between modules.
+	- `verification/`: Handles verification and display outputs.
 
 ## 🔄 Dependencies
 All dependencies and feature flags are defined in `Cargo.toml`.
