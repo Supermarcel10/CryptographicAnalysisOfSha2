@@ -155,4 +155,4 @@ If you wish to contribute, make a fork of this repository, and when ready, creat
 ## 📕 License
 This project is licensed under [CC BY-NC-SA](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en).
 You are free to share, modify and copy the code with attribution, as long as it is not for commercial purposes.
-For more information see [the lincense](LICENSE.md).
+For more information see [the license](LICENSE.md).
