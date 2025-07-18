@@ -303,9 +303,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 			let mut graph_renderer = GraphRenderer::new(
 				graph_dir.clone(),
-				(1024, 768),
-				("noto sans", 36),
-				("noto sans", 14),
+				(1920, 1444),
+				("noto sans", 64),
+				("noto sans", 22),
 				Box::from([
 					RGBColor(166, 30, 77), // Maroon
 					RGBColor(24, 100, 171), // Dark Blue
