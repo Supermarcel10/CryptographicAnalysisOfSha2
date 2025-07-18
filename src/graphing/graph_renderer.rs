@@ -14,6 +14,7 @@ pub struct GraphRenderer {
 	pub(super) text_style: (&'static str, u32),
 	pub(super) color_palette: Box<[RGBColor]>,
 	pub(super) line_thickness: u32,
+	pub(super) point_thickness: u32,
 	pub(super) data_retriever: DataRetriever,
 }
 
@@ -25,6 +26,7 @@ impl GraphRenderer {
 		text_style: (&'static str, u32),
 		color_palette: Box<[RGBColor]>,
 		line_thickness: u32,
+		point_thickness: u32,
 		data_retriever: DataRetriever,
 	) -> Result<Self, Box<dyn Error>> {
 		if !output_dir.exists() {
@@ -38,6 +40,7 @@ impl GraphRenderer {
 			text_style,
 			color_palette,
 			line_thickness,
+			point_thickness,
 			data_retriever,
 		})
 	}
@@ -62,6 +65,7 @@ impl GraphRenderer {
 				RGBColor(0, 0, 0), // Black
 			]),
 			line_thickness: 2,
+			point_thickness: 6,
 			data_retriever: DataRetriever::default()?,
 		})
 	}

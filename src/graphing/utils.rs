@@ -1,5 +1,9 @@
 use std::ops::{Add, Range};
 use num_traits::One;
+use plotters::backend::DrawingBackend;
+use plotters::chart::SeriesAnno;
+use plotters::element::PathElement;
+use plotters::prelude::RGBAColor;
 use crate::structs::benchmark::Benchmark;
 
 
@@ -76,4 +80,22 @@ where
 	}
 
 	segments
+}
+
+
+pub(super) fn ensure_defined_only_once<'a, DB>(
+	label: &str,
+	color: RGBAColor,
+	was_legend_defined: &mut bool,
+	series: &mut SeriesAnno<DB>)
+where
+	DB: DrawingBackend + 'a,
+	DB::ErrorType: 'static,
+{
+	if !*was_legend_defined {
+		*was_legend_defined = true;
+		series
+			.label(label)
+			.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
+	}
 }

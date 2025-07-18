@@ -319,6 +319,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 					RGBColor(0, 0, 0),
 				]),
 				2,
+				6,
 				DataRetriever::new(result_dir.clone())?,
 			)?;
 

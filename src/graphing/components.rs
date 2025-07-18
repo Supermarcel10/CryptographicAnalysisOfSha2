@@ -4,8 +4,9 @@ use num_traits::One;
 use plotters::chart::DualCoordChartContext;
 use plotters::coord::ranged1d::ValueFormatter;
 use plotters::prelude::*;
+use crate::graphing::custom_point_styles::PointStyles;
 use crate::graphing::graph_renderer::GraphRenderer;
-use crate::graphing::utils::split_data;
+use crate::graphing::utils::{ensure_defined_only_once, split_data};
 
 /// Generalized components for reuse in graphs.
 impl GraphRenderer {
@@ -126,7 +127,7 @@ impl GraphRenderer {
 	///
 	/// * `chart`: The chart to draw on.
 	/// * `data`: The data to draw.
-	/// * `with_points`: Should circle points be made for each data plot?
+	/// * `with_point_styles`: What type of points should be drawn for each data plot?
 	/// * `discontinue_line`: Should the line be continious/discontinue if part of the data is missing?
 	/// * `label`: Legend label for the charted data.
 	/// * `color`: Color of drawn line, or black by default.
@@ -137,7 +138,7 @@ impl GraphRenderer {
 		&self,
 		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
 		data: Vec<(XT, YT)>,
-		with_points: bool,
+		with_point_styles: PointStyles,
 		discontinue_line: bool,
 		label: &str,
 		color: Option<RGBAColor>,
@@ -152,7 +153,7 @@ impl GraphRenderer {
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
 
-		// Split into data contigious data segments
+		// Split into contigious data segments
 		let data = if discontinue_line {
 			split_data(data)
 		} else {
@@ -172,22 +173,8 @@ impl GraphRenderer {
 					}
 				))?;
 
-			// Define only once
-			if !was_legend_defined {
-				was_legend_defined = true;
-				series
-					.label(label)
-					.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
-			}
-
-			if with_points {
-				chart.draw_series(PointSeries::of_element(
-					split,
-					3,
-					color,
-					&|c, s, st| Circle::new(c, s, st.filled()),
-				))?;
-			}
+			ensure_defined_only_once(label, color, &mut was_legend_defined, series);
+			with_point_styles.draw(chart, split, Some(color), self.point_thickness)?;
 		}
 
 		Ok(())
@@ -228,7 +215,7 @@ impl GraphRenderer {
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
 
-		// Split into data contigious data segments
+		// Split into contigious data segments
 		let data = if discontinue_line {
 			split_data(data)
 		} else {
@@ -248,14 +235,9 @@ impl GraphRenderer {
 					}
 				))?;
 
-			// Define only once
-			if !was_legend_defined {
-				was_legend_defined = true;
-				series
-					.label(label)
-					.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
-			}
+			ensure_defined_only_once(label, color, &mut was_legend_defined, series);
 
+			// TODO: Refactor!
 			if with_points {
 				chart.draw_secondary_series(PointSeries::of_element(
 					split,

@@ -4,6 +4,7 @@ use std::ops::Range;
 use std::path::PathBuf;
 use num_traits::Float;
 use plotters::prelude::*;
+use crate::graphing::custom_point_styles::PointStyles;
 use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
 use crate::graphing::utils::get_range;
@@ -96,7 +97,7 @@ impl GraphRenderer {
 		self.draw_series(
 			&mut chart,
 			time_data,
-			true,
+			PointStyles::Custom,
 			true,
 			"Time",
 			Some(self.color_palette[0].to_rgba())
@@ -300,7 +301,7 @@ impl GraphRenderer {
 			self.draw_series(
 				&mut chart,
 				run.clone(),
-				true,
+				PointStyles::Custom,
 				true,
 				&label,
 				Some(self.color_palette[i].to_rgba()),
@@ -311,7 +312,7 @@ impl GraphRenderer {
 		self.draw_series(
 			&mut chart,
 			baseline.keys().map(|&x| (x, 0.0)).collect(),
-			true,
+			PointStyles::None,
 			true,
 			"Baseline",
 			Some(RGBAColor(0, 0, 0, 0.3)),
@@ -399,7 +400,7 @@ impl GraphRenderer {
 			self.draw_series(
 				&mut chart,
 				data,
-				true,
+				PointStyles::Custom,
 				true,
 				&solver.to_string(),
 				Some(self.color_palette[i].to_rgba())
@@ -488,8 +489,7 @@ impl GraphRenderer {
 		)?
 			.into_iter()
 			.filter(|b| b.result != BenchmarkResult::CPUOut)
-			.collect()
-			;
+			.collect();
 
 		for (category, identifier) in arg_categories {
 			let deviation_data = self.data_retriever.retrieve_with_args(
