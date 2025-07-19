@@ -4,10 +4,11 @@ use std::ops::Range;
 use std::path::PathBuf;
 use std::time::Duration;
 use clap::{Parser, Subcommand};
-use plotters::prelude::RGBColor;
+use plotters::prelude::RGBAColor;
 use crate::benchmark::runner::BenchmarkRunner;
 use crate::data::data_retriever::DataRetriever;
 use crate::graphing::graph_renderer::GraphRenderer;
+use crate::graphing::line_styles::LineStyle::*;
 use crate::sha::{MessageBlock, Sha, StartVector, Word};
 use crate::smt_lib::smt_lib::generate_smtlib_files;
 use crate::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
@@ -298,6 +299,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			graph_dir,
 			result_dir,
 		} => {
+
 			let graph_dir = graph_dir.clone().unwrap_or(PathBuf::from("graphs/"));
 			let result_dir = result_dir.clone().unwrap_or(PathBuf::from("results/"));
 
@@ -307,16 +309,54 @@ fn main() -> Result<(), Box<dyn Error>> {
 				("noto sans", 64),
 				("noto sans", 22),
 				Box::from([
-					RGBColor(166, 30, 77), // Maroon
-					RGBColor(24, 100, 171), // Dark Blue
-					RGBColor(8, 127, 91), // Green
-					RGBColor(250, 176, 5), // Yellow
-					RGBColor(156, 54, 181), // Purple
-					RGBColor(12, 133, 153), // Cyan
-					RGBColor(95, 61, 196), // Light Purple
-					RGBColor(70, 210, 94), // Light Green
-					RGBColor(116, 143, 252), // Light Blue
-					RGBColor(0, 0, 0),
+					// Maroon
+					Normal {
+						color: RGBAColor(166, 30, 77, 1.0),
+					},
+					// Dark Blue
+					Normal {
+						color: RGBAColor(24, 100, 171, 1.0),
+					},
+					// Green
+					Normal {
+						color: RGBAColor(8, 127, 91, 1.0),
+					},
+					// Yellow
+					Normal {
+						color: RGBAColor(250, 176, 5, 1.0),
+					},
+					// Purple
+					Normal {
+						color: RGBAColor(156, 54, 181, 1.0),
+					},
+					// Cyan
+					Dashed {
+						color: RGBAColor(12, 133, 153, 1.0),
+						size: 10,
+						spacing: 20,
+					},
+					// Light Purple
+					Dashed {
+						color: RGBAColor(95, 61, 196, 1.0),
+						size: 10,
+						spacing: 20,
+					},
+					// Light Green
+					Dashed {
+						color: RGBAColor(70, 210, 94, 1.0),
+						size: 10,
+						spacing: 20,
+					},
+					// Light Blue
+					Dashed {
+						color: RGBAColor(116, 143, 252, 1.0),
+						size: 10,
+						spacing: 20,
+					},
+					// Black
+					Normal {
+						color: RGBAColor(0, 0, 0, 1.0),
+					},
 				]),
 				2,
 				6,

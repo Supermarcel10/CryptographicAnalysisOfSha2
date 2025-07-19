@@ -1,8 +1,9 @@
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
-use plotters::prelude::RGBColor;
+use plotters::prelude::RGBAColor;
 use crate::data::data_retriever::DataRetriever;
+use crate::graphing::line_styles::LineStyle;
 use crate::structs::collision_type::CollisionType;
 use crate::structs::hash_function::HashFunction;
 
@@ -12,7 +13,7 @@ pub struct GraphRenderer {
 	pub(super) output_size: (u32, u32),
 	pub(super) title_style: (&'static str, u32),
 	pub(super) text_style: (&'static str, u32),
-	pub(super) color_palette: Box<[RGBColor]>,
+	pub(super) line_styles: Box<[LineStyle]>,
 	pub(super) line_thickness: u32,
 	pub(super) point_thickness: u32,
 	pub(super) data_retriever: DataRetriever,
@@ -24,7 +25,7 @@ impl GraphRenderer {
 		output_size: (u32, u32),
 		title_style: (&'static str, u32),
 		text_style: (&'static str, u32),
-		color_palette: Box<[RGBColor]>,
+		line_styles: Box<[LineStyle]>,
 		line_thickness: u32,
 		point_thickness: u32,
 		data_retriever: DataRetriever,
@@ -38,7 +39,7 @@ impl GraphRenderer {
 			output_size,
 			title_style,
 			text_style,
-			color_palette,
+			line_styles,
 			line_thickness,
 			point_thickness,
 			data_retriever,
@@ -47,22 +48,62 @@ impl GraphRenderer {
 
 	#[allow(dead_code)]
 	pub fn default() -> Result<Self, Box<dyn Error>> {
+		use LineStyle::*;
+
 		Ok(GraphRenderer {
 			output_dir: PathBuf::from("graphs/"),
 			output_size: (1024, 768),
 			title_style: ("noto sans", 36),
 			text_style: ("noto sans", 14),
-			color_palette: Box::from([
-				RGBColor(166, 30, 77), // Maroon
-				RGBColor(24, 100, 171), // Dark Blue
-				RGBColor(8, 127, 91), // Green
-				RGBColor(250, 176, 5), // Yellow
-				RGBColor(156, 54, 181), // Purple
-				RGBColor(12, 133, 153), // Cyan
-				RGBColor(95, 61, 196), // Light Purple
-				RGBColor(70, 210, 94), // Light Green
-				RGBColor(116, 143, 252), // Light Blue
-				RGBColor(0, 0, 0), // Black
+			line_styles: Box::from([
+				// Maroon
+				Normal {
+					color: RGBAColor(166, 30, 77, 1.0),
+				},
+				// Dark Blue
+				Normal {
+					color: RGBAColor(24, 100, 171, 1.0),
+				},
+				// Green
+				Normal {
+					color: RGBAColor(8, 127, 91, 1.0),
+				},
+				// Yellow
+				Normal {
+					color: RGBAColor(250, 176, 5, 1.0),
+				},
+				// Purple
+				Normal {
+					color: RGBAColor(156, 54, 181, 1.0),
+				},
+				// Cyan
+				Dashed {
+					color: RGBAColor(12, 133, 153, 1.0),
+					size: 10,
+					spacing: 20,
+				},
+				// Light Purple
+				Dashed {
+					color: RGBAColor(95, 61, 196, 1.0),
+					size: 10,
+					spacing: 20,
+				},
+				// Light Green
+				Dashed {
+					color: RGBAColor(70, 210, 94, 1.0),
+					size: 10,
+					spacing: 20,
+				},
+				// Light Blue
+				Dashed {
+					color: RGBAColor(116, 143, 252, 1.0),
+					size: 10,
+					spacing: 20,
+				},
+				// Black
+				Normal {
+					color: RGBAColor(0, 0, 0, 1.0),
+				},
 			]),
 			line_thickness: 2,
 			point_thickness: 6,

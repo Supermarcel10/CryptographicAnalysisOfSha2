@@ -5,6 +5,7 @@ use std::error::Error;
 use std::ops::Add;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(dead_code)]
 pub enum CustomShape {
 	None,
 	Circle,

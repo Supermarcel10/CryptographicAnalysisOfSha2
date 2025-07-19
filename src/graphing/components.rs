@@ -6,6 +6,7 @@ use plotters::coord::ranged1d::ValueFormatter;
 use plotters::prelude::*;
 use crate::graphing::custom_point_styles::PointStyles;
 use crate::graphing::graph_renderer::GraphRenderer;
+use crate::graphing::line_styles::LineStyle;
 use crate::graphing::utils::{ensure_defined_only_once, split_data};
 
 /// Generalized components for reuse in graphs.
@@ -141,7 +142,7 @@ impl GraphRenderer {
 		with_point_styles: PointStyles,
 		discontinue_line: bool,
 		label: &str,
-		color: Option<RGBAColor>,
+		line_style: Option<LineStyle>,
 	) -> Result<(), Box<dyn Error>>
 	where
 		DB: DrawingBackend + 'a,
@@ -151,7 +152,10 @@ impl GraphRenderer {
 		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
 		YT: Clone + Add<Output = YT> + One + 'static,
 	{
-		let color = color.unwrap_or(BLACK.to_rgba());
+		let line_style = line_style.unwrap_or(LineStyle::Normal {
+			color: BLACK.to_rgba()
+		});
+		let color = line_style.get_color();
 
 		// Split into contigious data segments
 		let data = if discontinue_line {
@@ -163,18 +167,31 @@ impl GraphRenderer {
 		// Render
 		let mut was_legend_defined = false;
 		for split in data {
-			let series = chart
-				.draw_series(LineSeries::new(
-					split.clone(),
-					ShapeStyle {
-						color: color.to_rgba(),
-						filled: false,
-						stroke_width: self.line_thickness,
-					}
-				))?;
+			let series = match line_style {
+				LineStyle::Normal { .. } => chart
+					.draw_series(LineSeries::new(
+						split.clone(),
+						ShapeStyle {
+							color: color.to_rgba(),
+							filled: false,
+							stroke_width: self.line_thickness,
+						}
+					))?,
+				LineStyle::Dashed { size, spacing, .. } => chart
+					.draw_series(DashedLineSeries::new(
+						split.clone(),
+						size,
+						spacing,
+						ShapeStyle {
+							color: color.to_rgba(),
+							filled: false,
+							stroke_width: self.line_thickness,
+						},
+					))?
+			};
 
-			ensure_defined_only_once(label, color, &mut was_legend_defined, series);
-			with_point_styles.draw(chart, split, Some(color), self.point_thickness)?;
+			ensure_defined_only_once(label, *color, &mut was_legend_defined, series);
+			with_point_styles.draw(chart, split, Some(*color), self.point_thickness)?;
 		}
 
 		Ok(())

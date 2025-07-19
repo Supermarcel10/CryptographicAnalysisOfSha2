@@ -7,6 +7,7 @@ use plotters::prelude::*;
 use crate::graphing::custom_point_styles::PointStyles;
 use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
+use crate::graphing::line_styles::LineStyle::Normal;
 use crate::graphing::utils::{classify_benchmark_results_to_point_styles, get_range};
 use crate::smt_lib::smt_retriever::EncodingType;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
@@ -77,13 +78,13 @@ impl GraphRenderer {
 		self.set_y_axis(
 			&mut chart,
 			"Time (s)",
-			Some(self.color_palette[0].to_rgba()),
+			Some(*self.line_styles[0].get_color()),
 			Some(&|y: &f64| format!("2^{}", y.log2())),
 		)?;
 		self.set_secondary_y_axis(
 			&mut chart,
 			"Memory (MiB)",
-			Some(self.color_palette[1].to_rgba()),
+			Some(*self.line_styles[1].get_color()),
 			None,
 		)?;
 
@@ -100,7 +101,7 @@ impl GraphRenderer {
 			PointStyles::Basic,
 			true,
 			"Time",
-			Some(self.color_palette[0].to_rgba())
+			Some(self.line_styles[0])
 		)?;
 
 		// Draw secondary data
@@ -116,7 +117,7 @@ impl GraphRenderer {
 			true,
 			true,
 			"Memory",
-			Some(self.color_palette[1].to_rgba())
+			Some(*self.line_styles[1].get_color())
 		)?;
 
 		self.draw_legend(&mut chart)?;
@@ -309,7 +310,7 @@ impl GraphRenderer {
 				},
 				true,
 				&label,
-				Some(self.color_palette[i].to_rgba()),
+				Some(self.line_styles[i]),
 			)?
 		}
 
@@ -320,7 +321,9 @@ impl GraphRenderer {
 			PointStyles::None,
 			true,
 			"Baseline",
-			Some(RGBAColor(0, 0, 0, 0.3)),
+			Some(Normal {
+				color: RGBAColor(0, 0, 0, 0.3),
+			}),
 		)?;
 
 		self.draw_legend(&mut chart)?;
@@ -415,7 +418,7 @@ impl GraphRenderer {
 				},
 				true,
 				&solver.to_string(),
-				Some(self.color_palette[i].to_rgba())
+				Some(self.line_styles[i])
 			)?;
 		}
 

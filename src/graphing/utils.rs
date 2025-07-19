@@ -103,9 +103,7 @@ pub(super) fn classify_benchmark_result_to_point_style(result: BenchmarkResult) 
 
 	match result {
 		Sat => Circle,
-		Unsat => Cross,
-		MemOut => Triangle,
-		CPUOut => Triangle,
+		Unsat => Triangle,
 		_ => None,
 	}
 }
