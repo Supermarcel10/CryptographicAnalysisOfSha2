@@ -183,10 +183,10 @@ Time (s)
 Z3
 </text>
 <text x="1810" y="1280" dy="0.76em" text-anchor="start" font-family="noto sans" font-size="17.741935483870968" opacity="1" fill="#000000">
-CVC5
+cvc5
 </text>
 <text x="1810" y="1307" dy="0.76em" text-anchor="start" font-family="noto sans" font-size="17.741935483870968" opacity="1" fill="#000000">
-Yices
+Yices2
 </text>
 <text x="1810" y="1335" dy="0.76em" text-anchor="start" font-family="noto sans" font-size="17.741935483870968" opacity="1" fill="#000000">
 Bitwuzla

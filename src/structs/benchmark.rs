@@ -114,8 +114,8 @@ impl Display for SmtSolver {
 
 		write!(f, "{}", match self {
 			Z3 => "Z3",
-			CVC5 => "CVC5",
-			Yices2 => "Yices",
+			CVC5 => "cvc5",
+			Yices2 => "Yices2",
 			Bitwuzla => "Bitwuzla",
 			Boolector => "Boolector",
 			// STP => "STP",
