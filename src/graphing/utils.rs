@@ -4,7 +4,7 @@ use num_traits::One;
 use plotters::backend::DrawingBackend;
 use plotters::chart::SeriesAnno;
 use plotters::element::PathElement;
-use plotters::prelude::RGBAColor;
+use plotters::prelude::{Color, RGBAColor, Rectangle};
 use std::ops::{Add, Range};
 
 /// Utility method to retrieve the range of a given data set for any numerical data.
@@ -93,7 +93,7 @@ pub(super) fn ensure_defined_only_once<'a, DB>(
 		*was_legend_defined = true;
 		series
 			.label(label)
-			.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
+			.legend(move |(x, y)| Rectangle::new([(x, y - 10), (x + 20, y + 10)], color.filled()));
 	}
 }
 

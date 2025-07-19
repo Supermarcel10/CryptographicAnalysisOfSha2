@@ -297,7 +297,7 @@ impl GraphRenderer {
 				continue;
 			}
 
-			let (cartesian_run, benchmark_results): (Vec<_>, Vec<_>) = run
+			let (cartesian_run, _): (Vec<_>, Vec<_>) = run
 				.into_iter()
 				.map(|(x, y, result)| ((x, y), result))
 				.unzip();
@@ -305,9 +305,7 @@ impl GraphRenderer {
 			self.draw_series(
 				&mut chart,
 				cartesian_run,
-				PointStyles::Custom{
-					shapes: classify_benchmark_results_to_point_styles(benchmark_results)
-				},
+				PointStyles::Basic,
 				true,
 				&label,
 				Some(self.line_styles[i]),
@@ -422,7 +420,6 @@ impl GraphRenderer {
 			)?;
 		}
 
-		// TODO: Add shapes for result types!
 		// TODO: Do secondary legend with the result types
 		self.draw_legend(&mut chart)?;
 
