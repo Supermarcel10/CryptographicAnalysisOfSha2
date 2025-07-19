@@ -190,7 +190,7 @@ impl GraphRenderer {
 					))?
 			};
 
-			ensure_defined_only_once(label, *color, &mut was_legend_defined, series);
+			ensure_defined_only_once(label, line_style, &mut was_legend_defined, series);
 			with_point_styles.draw(chart, split, Some(*color), self.point_thickness)?;
 		}
 
@@ -252,7 +252,12 @@ impl GraphRenderer {
 					}
 				))?;
 
-			ensure_defined_only_once(label, color, &mut was_legend_defined, series);
+			ensure_defined_only_once(
+				label,
+				LineStyle::Normal {color},
+				&mut was_legend_defined,
+				series
+			);
 
 			// TODO: Refactor!
 			if with_points {

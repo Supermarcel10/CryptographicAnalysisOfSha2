@@ -8,7 +8,7 @@ use crate::graphing::custom_point_styles::PointStyles;
 use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
 use crate::graphing::line_styles::LineStyle::Normal;
-use crate::graphing::utils::{classify_benchmark_results_to_point_styles, get_range};
+use crate::graphing::utils::get_range;
 use crate::smt_lib::smt_retriever::EncodingType;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
 
@@ -403,7 +403,7 @@ impl GraphRenderer {
 		}
 
 		for (i, (solver, data)) in split_data.into_iter().enumerate() {
-			let (cartesian_run, benchmark_results): (Vec<_>, Vec<_>) = data
+			let (cartesian_run, _): (Vec<_>, Vec<_>) = data
 				.into_iter()
 				.map(|(x, y, result)| ((x, y), result))
 				.unzip();
@@ -411,9 +411,7 @@ impl GraphRenderer {
 			self.draw_series(
 				&mut chart,
 				cartesian_run,
-				PointStyles::Custom{
-					shapes: classify_benchmark_results_to_point_styles(benchmark_results.clone())
-				},
+				PointStyles::Basic,
 				true,
 				&solver.to_string(),
 				Some(self.line_styles[i])

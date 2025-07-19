@@ -13,6 +13,7 @@ pub enum CustomShape {
 	Triangle,
 }
 
+#[allow(dead_code)]
 pub enum PointStyles {
 	None,
 	Basic,

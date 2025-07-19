@@ -3,9 +3,9 @@ use crate::structs::benchmark::{Benchmark, BenchmarkResult};
 use num_traits::One;
 use plotters::backend::DrawingBackend;
 use plotters::chart::SeriesAnno;
-use plotters::element::PathElement;
-use plotters::prelude::{Color, RGBAColor, Rectangle};
+use plotters::prelude::Rectangle;
 use std::ops::{Add, Range};
+use crate::graphing::line_styles::LineStyle;
 
 /// Utility method to retrieve the range of a given data set for any numerical data.
 ///
@@ -82,7 +82,7 @@ where
 
 pub(super) fn ensure_defined_only_once<'a, DB>(
 	label: &str,
-	color: RGBAColor,
+	line_style: LineStyle,
 	was_legend_defined: &mut bool,
 	series: &mut SeriesAnno<DB>,
 ) where
@@ -93,10 +93,14 @@ pub(super) fn ensure_defined_only_once<'a, DB>(
 		*was_legend_defined = true;
 		series
 			.label(label)
-			.legend(move |(x, y)| Rectangle::new([(x, y - 10), (x + 20, y + 10)], color.filled()));
+			.legend(move |(x, y)| Rectangle::new(
+				[(x, y - 10), (x + 20, y + 10)],
+				line_style.get_legend_style())
+			);
 	}
 }
 
+#[allow(dead_code)]
 pub(super) fn classify_benchmark_result_to_point_style(result: BenchmarkResult) -> CustomShape {
 	use CustomShape::*;
 	use BenchmarkResult::*;
@@ -108,6 +112,7 @@ pub(super) fn classify_benchmark_result_to_point_style(result: BenchmarkResult) 
 	}
 }
 
+#[allow(dead_code)]
 pub(super) fn classify_benchmark_results_to_point_styles(
 	result: Vec<BenchmarkResult>,
 ) -> Vec<CustomShape> {
