@@ -1,15 +1,21 @@
+use num_traits::One;
+use plotters::coord::ranged1d::ValueFormatter;
 use plotters::prelude::*;
 use std::error::Error;
-use num_traits::One;
 use std::ops::Add;
-use plotters::coord::ranged1d::ValueFormatter;
 
-#[derive(PartialEq)]
-#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CustomShape {
+	None,
+	Circle,
+	Cross,
+	Triangle,
+}
+
 pub enum PointStyles {
 	None,
 	Basic,
-	Custom,
+	Custom { shapes: Vec<CustomShape> },
 }
 
 impl PointStyles {
@@ -23,15 +29,17 @@ impl PointStyles {
 	where
 		DB: DrawingBackend + 'a,
 		DB::ErrorType: 'static,
-		X: Ranged<ValueType=XT> + ValueFormatter<XT>,
-		Y: Ranged<ValueType=YT> + ValueFormatter<YT>,
-		XT: Clone + Copy + Add<Output=XT> + PartialOrd + 'static + One,
-		YT: Clone + 'static,
+		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
+		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
+		YT: Clone + Add<Output = YT> + One + 'static,
 	{
 		match self {
 			PointStyles::None => Ok(()), // Do nothing
 			PointStyles::Basic => self.draw_basic(chart, data, color, point_thickness),
-			PointStyles::Custom => self.draw_custom(chart, data, color, point_thickness),
+			PointStyles::Custom { shapes } => {
+				self.draw_with_custom_shapes(chart, data, color, point_thickness, shapes.clone())
+			}
 		}
 	}
 
@@ -45,9 +53,9 @@ impl PointStyles {
 	where
 		DB: DrawingBackend + 'a,
 		DB::ErrorType: 'static,
-		X: Ranged<ValueType=XT> + ValueFormatter<XT>,
-		Y: Ranged<ValueType=YT> + ValueFormatter<YT>,
-		XT: Clone + Copy + Add<Output=XT> + PartialOrd + 'static + One,
+		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
+		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
 		YT: Clone + 'static,
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
@@ -56,35 +64,78 @@ impl PointStyles {
 			data,
 			point_thickness,
 			color,
-			&|coord, size, style| Circle::new(coord, size, style.filled())
+			&|coord, size, style| Circle::new(coord, size, style.filled()),
 		))?;
 
 		Ok(())
 	}
 
-	fn draw_custom<'a, DB, X, Y, XT, YT>(
+	fn draw_with_custom_shapes<'a, DB, X, Y, XT, YT>(
 		&self,
 		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
 		data: Vec<(XT, YT)>,
 		color: Option<RGBAColor>,
 		point_thickness: u32,
+		shapes: Vec<CustomShape>,
 	) -> Result<(), Box<dyn Error>>
 	where
 		DB: DrawingBackend + 'a,
 		DB::ErrorType: 'static,
-		X: Ranged<ValueType=XT> + ValueFormatter<XT>,
-		Y: Ranged<ValueType=YT> + ValueFormatter<YT>,
-		XT: Clone + Copy + Add<Output=XT> + PartialOrd + 'static + One,
-		YT: Clone + 'static,
+		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
+		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
+		YT: Clone + Add<Output = YT> + One + 'static,
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
 
-		chart.draw_series(PointSeries::of_element(
-			data,
-			point_thickness,
-			color,
-			&|coord, size, style| Circle::new(coord, size, style.filled())
-		))?;
+		// Group data points by their shape type
+		let mut circles = Vec::new();
+		let mut crosses = Vec::new();
+		let mut triangles = Vec::new();
+
+		let data_with_shapes: Vec<((XT, YT), CustomShape)> = data
+			.into_iter()
+			.zip(shapes)
+			.collect();
+
+		for ((x, y), shape) in &data_with_shapes {
+			match shape {
+				CustomShape::Circle => circles.push((*x, y.clone())),
+				CustomShape::Cross => crosses.push((*x, y.clone())),
+				CustomShape::Triangle => triangles.push((*x, y.clone())),
+				CustomShape::None => (),
+			}
+		}
+
+		// Draw each shape type as a separate series
+		if !circles.is_empty() {
+			chart.draw_series(PointSeries::of_element(
+				circles,
+				point_thickness,
+				color,
+				&|coord, size, style| Circle::new(coord, size, style.filled()),
+			))?;
+		}
+
+		if !crosses.is_empty() {
+			chart.draw_series(PointSeries::of_element(
+				crosses,
+				point_thickness,
+				color,
+				&|coord, size, style| Cross::new(coord, size * 2, style.filled()),
+			))?;
+		}
+
+		if !triangles.is_empty() {
+			chart.draw_series(PointSeries::of_element(
+				triangles,
+				point_thickness,
+				color,
+				&|coord, size, style| {
+					TriangleMarker::new(coord, (size as f32) * 1.8, style.filled())
+				},
+			))?;
+		}
 
 		Ok(())
 	}

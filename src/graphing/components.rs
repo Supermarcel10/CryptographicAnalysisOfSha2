@@ -149,7 +149,7 @@ impl GraphRenderer {
 		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
 		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
 		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
-		YT: Clone + 'static,
+		YT: Clone + Add<Output = YT> + One + 'static,
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
 
@@ -241,7 +241,7 @@ impl GraphRenderer {
 			if with_points {
 				chart.draw_secondary_series(PointSeries::of_element(
 					split,
-					3,
+					self.point_thickness,
 					color,
 					&|c, s, st| Circle::new(c, s, st.filled()),
 				))?;

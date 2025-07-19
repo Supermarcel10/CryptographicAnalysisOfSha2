@@ -1,11 +1,11 @@
-use std::ops::{Add, Range};
+use crate::graphing::custom_point_styles::CustomShape;
+use crate::structs::benchmark::{Benchmark, BenchmarkResult};
 use num_traits::One;
 use plotters::backend::DrawingBackend;
 use plotters::chart::SeriesAnno;
 use plotters::element::PathElement;
 use plotters::prelude::RGBAColor;
-use crate::structs::benchmark::Benchmark;
-
+use std::ops::{Add, Range};
 
 /// Utility method to retrieve the range of a given data set for any numerical data.
 ///
@@ -30,7 +30,7 @@ pub(super) fn get_range<T: Copy + PartialOrd>(
 		let v = retr(b);
 		(
 			if v < min_agg { v } else { min_agg },
-			if v > max_agg { v } else { max_agg }
+			if v > max_agg { v } else { max_agg },
 		)
 	});
 
@@ -48,9 +48,7 @@ pub(super) fn get_range<T: Copy + PartialOrd>(
 /// Vec<Vec<(XT, YT), Global>, Global>
 ///
 /// A set of continious cartesian data.
-pub(super) fn split_data<XT, YT>(
-	data: Vec<(XT, YT)>
-) -> Vec<Vec<(XT, YT)>>
+pub(super) fn split_data<XT, YT>(data: Vec<(XT, YT)>) -> Vec<Vec<(XT, YT)>>
 where
 	XT: Clone + Copy + Add<Output = XT> + PartialOrd + One + 'static,
 	YT: Clone + 'static,
@@ -82,13 +80,12 @@ where
 	segments
 }
 
-
 pub(super) fn ensure_defined_only_once<'a, DB>(
 	label: &str,
 	color: RGBAColor,
 	was_legend_defined: &mut bool,
-	series: &mut SeriesAnno<DB>)
-where
+	series: &mut SeriesAnno<DB>,
+) where
 	DB: DrawingBackend + 'a,
 	DB::ErrorType: 'static,
 {
@@ -98,4 +95,26 @@ where
 			.label(label)
 			.legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color));
 	}
+}
+
+pub(super) fn classify_benchmark_result_to_point_style(result: BenchmarkResult) -> CustomShape {
+	use CustomShape::*;
+	use BenchmarkResult::*;
+
+	match result {
+		Sat => Circle,
+		Unsat => Cross,
+		MemOut => Triangle,
+		CPUOut => Triangle,
+		_ => None,
+	}
+}
+
+pub(super) fn classify_benchmark_results_to_point_styles(
+	result: Vec<BenchmarkResult>,
+) -> Vec<CustomShape> {
+	result
+		.into_iter()
+		.map(classify_benchmark_result_to_point_style)
+		.collect()
 }

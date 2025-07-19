@@ -7,7 +7,7 @@ use plotters::prelude::*;
 use crate::graphing::custom_point_styles::PointStyles;
 use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
-use crate::graphing::utils::get_range;
+use crate::graphing::utils::{classify_benchmark_results_to_point_styles, get_range};
 use crate::smt_lib::smt_retriever::EncodingType;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
 
@@ -97,7 +97,7 @@ impl GraphRenderer {
 		self.draw_series(
 			&mut chart,
 			time_data,
-			PointStyles::Custom,
+			PointStyles::Basic,
 			true,
 			"Time",
 			Some(self.color_palette[0].to_rgba())
@@ -198,11 +198,9 @@ impl GraphRenderer {
 			baseline.insert(b.rounds as u32, b.execution_time.as_secs_f64());
 		}
 
-		// Convert generic to str
-
 		// Get range & calculate deviation from baseline
 		let mut deviation_range: Range<f64> = f64::MAX..f64::MIN;
-		let mut deviation_data: BTreeMap<String, Vec<(u32, f64)>> = BTreeMap::new();
+		let mut deviation_data: BTreeMap<String, Vec<(u32, f64, BenchmarkResult)>> = BTreeMap::new();
 		for (label, run) in trimmed_data.clone() {
 			let mut data = vec![];
 			for b in run {
@@ -223,7 +221,7 @@ impl GraphRenderer {
 					f64::neg_infinity()
 				};
 
-				data.push((b.rounds as u32, dev_percent))
+				data.push((b.rounds as u32, dev_percent, b.result))
 			}
 
 			data.sort_by_key(|b| b.0);
@@ -298,10 +296,17 @@ impl GraphRenderer {
 				continue;
 			}
 
+			let (cartesian_run, benchmark_results): (Vec<_>, Vec<_>) = run
+				.into_iter()
+				.map(|(x, y, result)| ((x, y), result))
+				.unzip();
+
 			self.draw_series(
 				&mut chart,
-				run.clone(),
-				PointStyles::Custom,
+				cartesian_run,
+				PointStyles::Custom{
+					shapes: classify_benchmark_results_to_point_styles(benchmark_results)
+				},
 				true,
 				&label,
 				Some(self.color_palette[i].to_rgba()),
@@ -393,14 +398,21 @@ impl GraphRenderer {
 			split_data
 				.entry(b.solver)
 				.or_insert_with(Vec::new)
-				.push((b.rounds as u32, b.execution_time.as_secs_f64()));
+				.push((b.rounds as u32, b.execution_time.as_secs_f64(), b.result));
 		}
 
 		for (i, (solver, data)) in split_data.into_iter().enumerate() {
+			let (cartesian_run, benchmark_results): (Vec<_>, Vec<_>) = data
+				.into_iter()
+				.map(|(x, y, result)| ((x, y), result))
+				.unzip();
+
 			self.draw_series(
 				&mut chart,
-				data,
-				PointStyles::Custom,
+				cartesian_run,
+				PointStyles::Custom{
+					shapes: classify_benchmark_results_to_point_styles(benchmark_results.clone())
+				},
 				true,
 				&solver.to_string(),
 				Some(self.color_palette[i].to_rgba())
