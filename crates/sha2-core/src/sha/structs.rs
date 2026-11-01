@@ -56,10 +56,6 @@ impl PartialEq<u32> for Word {
 			Word::W64(_) => false
 		}
 	}
-
-	fn ne(&self, other : &u32) -> bool {
-		!self.eq(other)
-	}
 }
 
 impl PartialEq<u64> for Word {
@@ -68,10 +64,6 @@ impl PartialEq<u64> for Word {
 			Word::W32(_) => false,
 			Word::W64(s) => s == other
 		}
-	}
-
-	fn ne(&self, other : &u64) -> bool {
-		!self.eq(other)
 	}
 }
 
@@ -156,11 +148,11 @@ impl Word {
 	}
 
 	pub fn from_u32_vec(slice : Vec<u32>) -> Vec<Self> {
-		slice.into_iter().map(|x| Word::W32(x)).collect()
+		slice.into_iter().map(Word::W32).collect()
 	}
 
 	pub fn from_u64_vec(slice : Vec<u64>) -> Vec<Self> {
-		slice.into_iter().map(|x| Word::W64(x)).collect()
+		slice.into_iter().map(Word::W64).collect()
 	}
 
 	pub fn from_str_radix(
