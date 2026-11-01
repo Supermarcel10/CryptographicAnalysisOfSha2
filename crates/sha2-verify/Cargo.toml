@@ -6,4 +6,4 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-sha2-core = { path = "../sha2-core" }
+sha2-core.workspace = true
