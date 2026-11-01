@@ -395,6 +395,7 @@ mod tests {
 		assert_eq!(Sha::pad_message(MESSAGE.as_bytes(), SHA256), expected);
 	}
 
+	#[rustfmt::skip]
 	#[test]
 	/// Using 64 rounds should match the standard SHA-224 for "abc".
 	fn test_sha224_correctness() {
@@ -411,6 +412,7 @@ mod tests {
 		assert_eq!(*result.hash.0, expected);
 	}
 
+	#[rustfmt::skip]
 	#[test]
 	/// Using 64 rounds should match the standard SHA-256 for "abc".
 	fn test_sha256_correctness() {
@@ -427,6 +429,7 @@ mod tests {
 		assert_eq!(*result.hash.0, expected);
 	}
 
+	#[rustfmt::skip]
 	#[test]
 	/// Using 80 rounds should match the standard SHA-512 for "abc".
 	fn test_sha512_correctness() {
@@ -473,6 +476,7 @@ mod tests {
 		assert_ne!(result_40r, result_80r);
 	}
 
+	#[rustfmt::skip]
 	#[test]
 	/// Example in Li et al. (p.17, Table 5)
 	fn test_single_cv_collision_sha256() {
@@ -514,6 +518,7 @@ mod tests {
 		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
 	}
 
+	#[rustfmt::skip]
 	#[test]
 	/// Example in Li et al. (p.26, Table 9)
 	fn test_single_cv_collision_sha512() {
@@ -550,6 +555,7 @@ mod tests {
 		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
 	}
 
+	#[rustfmt::skip]
 	#[test]
 	/// Example in Li et al. (p.27, Table 10)
 	fn test_dual_cv_collision_sha224() {

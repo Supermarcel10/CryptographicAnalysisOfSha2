@@ -91,6 +91,7 @@ impl HashFunction {
 	}
 
 	/// Retrieves constant K
+	#[rustfmt::skip]
 	pub fn get_constant(&self) -> Vec<Word> {
 		use HashFunction::*;
 		match self {
