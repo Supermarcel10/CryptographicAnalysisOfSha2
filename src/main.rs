@@ -373,14 +373,12 @@ fn load_mapped(
 		return Ok(map);
 	}
 
-	for dir_entry in fs::read_dir(dir_location)? {
-		if let Ok(entry) = dir_entry {
-			let metadata = entry.metadata()?;
-			if recursive && metadata.is_dir() {
-				map.extend(load_mapped(&entry.path(), true)?);
-			} else if metadata.is_file() {
-				map.push((Benchmark::load(&entry.path())?, entry.path()));
-			}
+	for dir_entry in fs::read_dir(dir_location)?.flatten() {
+		let metadata = dir_entry.metadata()?;
+		if recursive && metadata.is_dir() {
+			map.extend(load_mapped(&dir_entry.path(), true)?);
+		} else if metadata.is_file() {
+			map.push((Benchmark::load(&dir_entry.path())?, dir_entry.path()));
 		}
 	}
 

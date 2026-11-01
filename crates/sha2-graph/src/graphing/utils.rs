@@ -23,10 +23,10 @@ use crate::graphing::line_styles::LineStyle;
 // Potential bug/oversight with plotters.rs?
 // Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
 pub(super) fn get_range<T : Copy + PartialOrd>(
-	data : &Vec<Benchmark>,
+	data : &[Benchmark],
 	retr : &dyn Fn(&Benchmark) -> T
 ) -> Option<Range<T>> {
-	let mut it = data.into_iter();
+	let mut it = data.iter();
 	let first = retr(it.next()?);
 	let (min, max) = it.fold((first, first), |(min_agg, max_agg), b| {
 		let v = retr(b);
@@ -60,16 +60,14 @@ where
 	}
 
 	let mut segments = Vec::new();
-	let mut current_segment = Vec::new();
-	current_segment.push(data[0].clone());
+	let mut current_segment = vec![data[0].clone()];
 
 	for window in data.windows(2) {
 		let (x1, _) = window[0];
 		let (x2, _) = window[1];
 
 		if x2 > x1 + XT::one() {
-			segments.push(current_segment);
-			current_segment = Vec::new();
+			segments.push(std::mem::take(&mut current_segment));
 		}
 
 		current_segment.push(window[1].clone());

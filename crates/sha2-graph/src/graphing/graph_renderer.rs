@@ -21,6 +21,7 @@ pub struct GraphRenderer {
 }
 
 impl GraphRenderer {
+	#[allow(clippy::too_many_arguments)]
 	pub fn new(
 		output_dir : PathBuf,
 		output_size : (u32, u32),
@@ -48,7 +49,7 @@ impl GraphRenderer {
 	}
 
 	#[allow(dead_code)]
-	pub fn default() -> Result<Self, Box<dyn Error>> {
+	pub fn with_defaults() -> Result<Self, Box<dyn Error>> {
 		use LineStyle::*;
 
 		Ok(GraphRenderer {
@@ -108,7 +109,7 @@ impl GraphRenderer {
 			]),
 			line_thickness : 2,
 			point_thickness : 6,
-			data_retriever : DataRetriever::default()?
+			data_retriever : DataRetriever::with_default_dir()?
 		})
 	}
 }

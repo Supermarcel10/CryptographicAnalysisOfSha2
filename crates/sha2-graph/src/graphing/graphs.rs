@@ -30,7 +30,7 @@ impl GraphRenderer {
 		&self,
 		data : Vec<Benchmark>
 	) -> Result<PathBuf, Box<dyn Error>> {
-		if data.len() == 0 {
+		if data.is_empty() {
 			println!(
 				"{}",
 				MissingData {
@@ -164,7 +164,7 @@ impl GraphRenderer {
 	where
 		L : Clone + Ord + Into<String>
 	{
-		if baseline_data.len() == 0 {
+		if baseline_data.is_empty() {
 			return Err(MissingData {
 				graph_name : "baseline",
 				dataset_name : "baseline"
@@ -172,7 +172,7 @@ impl GraphRenderer {
 			.into());
 		}
 
-		if data.len() == 0 {
+		if data.is_empty() {
 			println!(
 				"{}",
 				MissingData {
@@ -255,8 +255,8 @@ impl GraphRenderer {
 		}
 
 		if buffer {
-			deviation_range.start = deviation_range.start - 5.0;
-			deviation_range.end = deviation_range.end + 5.0;
+			deviation_range.start -= 5.0;
+			deviation_range.end += 5.0;
 		}
 
 		// Truncate max range & enforce a minimum
@@ -308,7 +308,7 @@ impl GraphRenderer {
 
 		// Draw deviation data
 		for (i, (label, run)) in deviation_data.into_iter().enumerate() {
-			if run.len() <= 0 {
+			if run.is_empty() {
 				continue;
 			}
 
