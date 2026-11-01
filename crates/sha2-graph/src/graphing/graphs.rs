@@ -128,8 +128,7 @@ impl GraphRenderer {
 		Ok(path)
 	}
 
-	/// Create graph where one solver run is a baseline, and the remaining data is compared against
-	/// it.
+	/// Create graph where one solver run is a baseline, and the remaining data is compared against it.
 	///
 	/// # Arguments
 	///
@@ -576,50 +575,10 @@ impl GraphRenderer {
 		let mut all_encodings : BTreeMap<EncodingType, Vec<Benchmark>> = BTreeMap::new();
 
 		// Retrieve remaining results
-		let bruteforce_simpl = self
-			.data_retriever
-			.retrieve_baseline(
-				SmtSolver::Bitwuzla,
-				SHA256,
-				Standard,
-				BruteForce {
-					simplified_maj_and_ch_functions : true,
-					alternative_add : false
-				},
-				false
-			)
-			.expect("Failed to retrieve bruteforce simplified baseline");
-
-		let bruteforce_alt_add = self
-			.data_retriever
-			.retrieve_baseline(
-				SmtSolver::Bitwuzla,
-				SHA256,
-				Standard,
-				BruteForce {
-					simplified_maj_and_ch_functions : false,
-					alternative_add : true
-				},
-				false
-			)
-			.expect("Failed to retrieve bruteforce alt add baseline");
-
-		let bruteforce_alt_add_simpl = self
-			.data_retriever
-			.retrieve_baseline(
-				SmtSolver::Bitwuzla,
-				SHA256,
-				Standard,
-				BruteForce {
-					simplified_maj_and_ch_functions : true,
-					alternative_add : true
-				},
-				false
-			)
-			.expect("Failed to retrieve bruteforce alt add simplified baseline");
-
-		// Insert baselines
-		all_encodings.insert(
+		let bruteforce_simpl = self.data_retriever.retrieve_baseline(
+			SmtSolver::Bitwuzla,
+			SHA256,
+			Standard,
 			BruteForce {
 				simplified_maj_and_ch_functions : true,
 				alternative_add : false

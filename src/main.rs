@@ -38,30 +38,26 @@ enum Commands {
 
 	/// Run an exhaustive benchmark over all solvers, hash functions, collision types and arguments
 	Benchmark {
-		/// Argument to select solver. Use multiple `--solver <SOLVER>` statements for multiple
-		/// solvers
+		/// Argument to select solver. Use multiple `--solver <SOLVER>` statements for multiple solvers
 		#[arg(required = true, long)]
 		solver : Vec<SmtSolver>,
 
-		/// Argument to select hash function. Use separate `--hash-function <HASH_FUNCTION>`
-		/// statements for multiple hash functions
+		/// Argument to select hash function. Use separate `--hash-function <HASH_FUNCTION>` statements for multiple hash functions
 		#[arg(required = true, long)]
 		hash_function : Vec<HashFunction>,
 
-		/// Argument to select collision type. Use separate `--collision-type <COLLISION_TYPE>`
-		/// statements for multiple collision types
+		/// Argument to select collision type. Use separate `--collision-type <COLLISION_TYPE>` statements for multiple collision types
 		#[arg(required = true, long)]
 		collision_type : Vec<CollisionType>,
 
-		/// Argument to set (non-inclusive) range of compression rounds. Input with `--round-range
-		/// <MIN>..<MAX>`. Default 1..hash function max
+		/// Argument to set (non-inclusive) range of compression rounds. Input with `--round-range <MIN>..<MAX>`. Default 1..hash function max
 		#[arg(long, value_parser = parse_range)]
 		round_range : Option<Range<u8>>,
 
 		/// Argument to set the solver argument sets (combinations of solver arguments).
-		/// An arugment set can contain multiple arguments which will all be executed on the
-		/// solver. To test each argument separately, set each solver argument as a separate
-		/// --arg-set. Use separate `--arg-set "<ARG_SET>"` statements for multiple argument sets.
+		/// An arugment set can contain multiple arguments which will all be executed on the solver.
+		/// To test each argument separately, set each solver argument as a separate --arg-set.
+		/// Use separate `--arg-set "<ARG_SET>"` statements for multiple argument sets.
 		/// Default <No Args>
 		#[arg(long, allow_hyphen_values = true)]
 		arg_set : Option<Vec<String>>,
@@ -78,8 +74,7 @@ enum Commands {
 		#[arg(short = 'S', long)]
 		smt_dir : Option<PathBuf>,
 
-		/// Path to directory where result files will be saved to. `None` to disable output.
-		/// Default `results/`
+		/// Path to directory where result files will be saved to. `None` to disable output. Default `results/`
 		#[arg(short, long)]
 		result_dir : Option<PathBuf>,
 
@@ -98,8 +93,7 @@ enum Commands {
 		#[arg(short = 'E', long)]
 		encoding_type : Option<String>,
 
-		/// Should the benchmark be marked as a rerun. Useful for flagging up anomalies. Default
-		/// false
+		/// Should the benchmark be marked as a rerun. Useful for flagging up anomalies. Default false
 		#[arg(short = 'R', long)]
 		is_rerun : Option<bool>
 	},
@@ -110,8 +104,7 @@ enum Commands {
 		#[arg(short, long)]
 		msg : Option<String>,
 
-		/// Message digest block to hash (pre-padded and pre-processed digest), separated
-		/// word-by-word with spaces
+		/// Message digest block to hash (pre-padded and pre-processed digest), separated word-by-word with spaces
 		#[arg(short = 'M', visible_alias = "mb", long)]
 		msg_block : Option<String>,
 
@@ -122,8 +115,7 @@ enum Commands {
 		#[arg(short, long)]
 		rounds : Option<u8>,
 
-		/// Starting vector for hash function, separated word-by-word with spaces. Default Initial
-		/// Vector (IV)
+		/// Starting vector for hash function, separated word-by-word with spaces. Default Initial Vector (IV)
 		#[arg(long, visible_alias = "sv")]
 		start_vector : Option<String>
 	},

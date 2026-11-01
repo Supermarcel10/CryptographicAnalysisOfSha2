@@ -38,19 +38,19 @@ pub enum SmtSolver {
 //    abce (bool) eliminate blocked clauses using asymmetric literals (default: false)
 //     acce (bool) eliminate covered clauses using asymmetric added literals (default: false)
 //     anf (bool) enable ANF based simplification in-processing (default: false)
-//    binspr (bool) enable SPR inferences of binary propagation redundant clauses. This inprocessing
-// step eliminates models (default: false)    cce (bool) eliminate covered clauses (default: false)
-// 		cut (bool) enable AIG based simplification in-processing (default: false)
+//    binspr (bool) enable SPR inferences of binary propagation redundant clauses. This inprocessing step eliminates models (default: false)
+//    cce (bool) eliminate covered clauses (default: false)
+//		cut (bool) enable AIG based simplification in-processing (default: false)
 //    threads (unsigned int) number of parallel threads to use (default: 1)
-//    cancel_backup_file (symbol) file to save partial search state if search is canceled (default:
-// ) 		enable_sls (bool) enable SLS tuning during weighted maxsat (default: false)
-//    enable (bool) enable parallel solver by default on selected tactics (for QF_BV) (default:
-// false)    check_lemmas (bool) check lemmas on the fly using an independent nlsat solver (default:
-// false)    blast_distinct (bool) expand a distinct predicate into a quadratic number of
-// disequalities (default: false)    blast_eq_value (bool) blast (some) Bit-vector equalities into
-// bits (default: false)    bv_extract_prop (bool) attempt to partially propagate extraction inwards
-// (default: false)    bv_not_simpl (bool) apply simplifications for bvnot (default: false)
-// 		bv_sort_ac (bool) sort the arguments of all AC operators (default: false)
+//    cancel_backup_file (symbol) file to save partial search state if search is canceled (default: )
+//		enable_sls (bool) enable SLS tuning during weighted maxsat (default: false)
+//    enable (bool) enable parallel solver by default on selected tactics (for QF_BV) (default: false)
+//    check_lemmas (bool) check lemmas on the fly using an independent nlsat solver (default: false)
+//    blast_distinct (bool) expand a distinct predicate into a quadratic number of disequalities (default: false)
+//    blast_eq_value (bool) blast (some) Bit-vector equalities into bits (default: false)
+//    bv_extract_prop (bool) attempt to partially propagate extraction inwards (default: false)
+//    bv_not_simpl (bool) apply simplifications for bvnot (default: false)
+//		bv_sort_ac (bool) sort the arguments of all AC operators (default: false)
 //    elim_and (bool) conjunctions are rewritten using negation and disjunctions (default: false)
 //[module] sls, description: Experimental Stochastic Local Search Solver (for QFBV only).
 //
@@ -113,20 +113,16 @@ impl Display for SmtSolver {
 	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		use SmtSolver::*;
 
-		write!(
-			f,
-			"{}",
-			match self {
-				Z3 => "Z3",
-				CVC5 => "cvc5",
-				Yices2 => "Yices2",
-				Bitwuzla => "Bitwuzla",
-				Boolector => "Boolector",
-				// STP => "STP",
-				Colibri2 => "Colibri2",
-				MathSAT => "MathSAT"
-			}
-		)
+		write!(f, "{}", match self {
+			Z3 => "Z3",
+			CVC5 => "cvc5",
+			Yices2 => "Yices2",
+			Bitwuzla => "Bitwuzla",
+			Boolector => "Boolector",
+			// STP => "STP",
+			Colibri2 => "Colibri2",
+			MathSAT => "MathSAT"
+		})
 	}
 }
 
