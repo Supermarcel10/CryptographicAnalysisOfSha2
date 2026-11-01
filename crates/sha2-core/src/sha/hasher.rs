@@ -299,8 +299,8 @@ impl Sha {
 		}
 
 		// Update state
-		for i in 0..8 {
-			self.state[i] = self.state[i].wrapping_add(working_vars[i])?;
+		for (state, working_var) in self.state.iter_mut().zip(working_vars.iter()) {
+			*state = state.wrapping_add(*working_var)?;
 		}
 
 		// Truncate
