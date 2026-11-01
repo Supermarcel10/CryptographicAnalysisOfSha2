@@ -124,16 +124,20 @@ impl Display for SmtSolver {
 	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		use SmtSolver::*;
 
-		write!(f, "{}", match self {
-			Z3 => "Z3",
-			CVC5 => "cvc5",
-			Yices2 => "Yices2",
-			Bitwuzla => "Bitwuzla",
-			Boolector => "Boolector",
-			// STP => "STP",
-			Colibri2 => "Colibri2",
-			MathSAT => "MathSAT"
-		})
+		write!(
+			f,
+			"{}",
+			match self {
+				Z3 => "Z3",
+				CVC5 => "cvc5",
+				Yices2 => "Yices2",
+				Bitwuzla => "Bitwuzla",
+				Boolector => "Boolector",
+				// STP => "STP",
+				Colibri2 => "Colibri2",
+				MathSAT => "MathSAT"
+			}
+		)
 	}
 }
 

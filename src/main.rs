@@ -409,7 +409,6 @@ fn parse_range(s : &str) -> Result<Range<u8>, String> {
 // let benchmarks = result_store.load_results()?;
 // println!("{:?}", benchmarks);
 
-
 // result_store.create_table()?;
 
 // let benchmarks = Benchmark::load_all(&PathBuf::from("results"), true)?;
