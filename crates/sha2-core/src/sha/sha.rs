@@ -97,7 +97,7 @@ impl MessageBlock {
 	pub fn from_str_radix(
 		src : &str,
 		radix : u32,
-		hash_function: HashFunction,
+		hash_function : HashFunction
 	) -> Result<MessageBlock, Box<dyn Error>> {
 		let mut words = Vec::with_capacity(16);
 		for word_str in src.split_whitespace() {
@@ -134,7 +134,7 @@ pub struct Sha {
 	/// Hash function to use
 	hash_function : HashFunction,
 	/// Number of compression rounds
-	rounds: u8,
+	rounds : u8
 }
 
 impl Sha {
@@ -208,7 +208,7 @@ impl Sha {
 		block : MessageBlock,
 		hash_function : HashFunction,
 		rounds : u8,
-		start_vector: StartVector,
+		start_vector : StartVector
 	) -> Result<Self, HashError> {
 		hash_function.validate_rounds(rounds)?;
 
@@ -275,7 +275,7 @@ impl Sha {
 				i : i as u8,
 				w : w[i].clone(),
 				a : working_vars[0],
-				e: working_vars[4],
+				e : working_vars[4]
 			});
 		}
 

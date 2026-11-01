@@ -4,12 +4,12 @@ use plotters::style::ShapeStyle;
 #[derive(Copy, Clone)]
 pub enum LineStyle {
 	Normal {
-		color : RGBAColor,
+		color : RGBAColor
 	},
 	Dashed {
 		color : RGBAColor,
 		size : u32,
-		spacing: u32,
+		spacing : u32
 	}
 }
 

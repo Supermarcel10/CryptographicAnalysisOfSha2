@@ -11,7 +11,7 @@ pub struct MessageData {
 	pub m : MessageBlock,
 	pub cv : StartVector,
 	pub states : Vec<ShaState>,
-	pub expected_hash: OutputHash,
+	pub expected_hash : OutputHash
 }
 
 impl MessageData {
@@ -45,7 +45,7 @@ pub struct CollidingPair {
 	pub m0 : MessageData,
 	pub m1 : MessageData,
 	pub hash_function : HashFunction,
-	pub rounds: u8,
+	pub rounds : u8
 }
 
 impl CollidingPair {

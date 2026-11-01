@@ -22,7 +22,7 @@ use crate::graphing::line_styles::LineStyle;
 // Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
 pub(super) fn get_range<T : Copy + PartialOrd>(
 	data : &Vec<Benchmark>,
-	retr: &dyn Fn(&Benchmark) -> T,
+	retr : &dyn Fn(&Benchmark) -> T
 ) -> Option<Range<T>> {
 	let mut it = data.into_iter();
 	let first = retr(it.next()?);
@@ -51,7 +51,7 @@ pub(super) fn get_range<T : Copy + PartialOrd>(
 pub(super) fn split_data<XT, YT>(data : Vec<(XT, YT)>) -> Vec<Vec<(XT, YT)>>
 where
 	XT : Clone + Copy + Add<Output = XT> + PartialOrd + One + 'static,
-	YT: Clone + 'static,
+	YT : Clone + 'static
 {
 	if data.is_empty() {
 		return vec![];
@@ -84,10 +84,10 @@ pub(super) fn ensure_defined_only_once<'a, DB>(
 	label : &str,
 	line_style : LineStyle,
 	was_legend_defined : &mut bool,
-	series: &mut SeriesAnno<DB>,
+	series : &mut SeriesAnno<DB>
 ) where
 	DB : DrawingBackend + 'a,
-	DB::ErrorType: 'static,
+	DB::ErrorType : 'static
 {
 	if !*was_legend_defined {
 		*was_legend_defined = true;
@@ -114,7 +114,7 @@ pub(super) fn classify_benchmark_result_to_point_style(result : BenchmarkResult)
 
 #[allow(dead_code)]
 pub(super) fn classify_benchmark_results_to_point_styles(
-	result: Vec<BenchmarkResult>,
+	result : Vec<BenchmarkResult>
 ) -> Vec<CustomShape> {
 	result
 		.into_iter()

@@ -11,7 +11,7 @@ use sha2_core::structs::hash_function::HashFunction;
 
 pub struct DataRetriever {
 	data_dir : PathBuf,
-	all_results: Option<Vec<Benchmark>>,
+	all_results : Option<Vec<Benchmark>>
 }
 
 impl DataRetriever {
@@ -22,7 +22,7 @@ impl DataRetriever {
 
 		Ok(DataRetriever {
 			data_dir,
-			all_results: None,
+			all_results : None
 		})
 	}
 
@@ -48,7 +48,7 @@ impl DataRetriever {
 		&mut self,
 		hash_function : HashFunction,
 		collision_type : CollisionType,
-		prefer_test_reruns: bool,
+		prefer_test_reruns : bool
 	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
@@ -82,7 +82,7 @@ impl DataRetriever {
 		hash_function : HashFunction,
 		collision_type : CollisionType,
 		encoding_type : EncodingType,
-		prefer_test_reruns: bool,
+		prefer_test_reruns : bool
 	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
@@ -118,7 +118,7 @@ impl DataRetriever {
 		hash_function : HashFunction,
 		collision_type : CollisionType,
 		encoding_type : EncodingType,
-		prefer_test_reruns: bool,
+		prefer_test_reruns : bool
 	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
 		let all_baselines = self.retrieve_all_baselines(
 			hash_function,
@@ -141,7 +141,7 @@ impl DataRetriever {
 		hash_function : HashFunction,
 		collision_type : CollisionType,
 		prefer_test_reruns : bool,
-		arg_identifier: &str,
+		arg_identifier : &str
 	) -> Result<BTreeMap<SolverArg, Vec<Benchmark>>, Box<dyn Error>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
@@ -187,7 +187,7 @@ impl DataRetriever {
 		solver : SmtSolver,
 		hash_function : HashFunction,
 		collision_type : CollisionType,
-		prefer_test_reruns: bool,
+		prefer_test_reruns : bool
 	) -> Result<BTreeMap<EncodingType, Vec<Benchmark>>, Box<dyn Error>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;

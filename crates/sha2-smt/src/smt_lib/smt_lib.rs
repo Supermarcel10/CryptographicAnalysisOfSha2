@@ -17,7 +17,7 @@ pub struct SmtBuilder {
 	/// The target collision type
 	pub(super) collision_type : CollisionType,
 	/// The target encoding type
-	pub(super) encoding: EncodingType,
+	pub(super) encoding : EncodingType
 }
 
 impl SmtBuilder {

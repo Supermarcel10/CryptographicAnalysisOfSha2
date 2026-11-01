@@ -12,19 +12,19 @@ use sha2_core::structs::hash_function::HashFunction;
 pub enum EncodingType {
 	BruteForce {
 		simplified_maj_and_ch_functions : bool,
-		alternative_add: bool,
+		alternative_add : bool
 	},
 	DeltaXOR {
 		simplified_maj_and_ch_functions : bool,
-		alternative_add: bool,
+		alternative_add : bool
 	},
 	DeltaSub {
 		simplified_maj_and_ch_functions : bool,
-		alternative_add: bool,
+		alternative_add : bool
 	},
 	Base4 {
 		simplified_maj_and_ch_functions : bool,
-		alternative_add: bool,
+		alternative_add : bool
 	}
 }
 
@@ -200,7 +200,7 @@ impl Display for EncodingType {
 }
 
 pub struct SmtRetriever {
-	smt_dir: PathBuf,
+	smt_dir : PathBuf
 }
 
 impl SmtRetriever {
@@ -224,7 +224,7 @@ impl SmtRetriever {
 		hash_function : HashFunction,
 		collision_type : CollisionType,
 		rounds : u8,
-		encoding_type: EncodingType,
+		encoding_type : EncodingType
 	) -> PathBuf {
 		let mut base = format!("{hash_function}_{collision_type}_{rounds}");
 		if encoding_type.to_string().len() > 0 {

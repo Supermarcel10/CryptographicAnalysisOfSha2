@@ -29,7 +29,7 @@ pub struct BenchmarkRunner {
 	benchmark_save_dir : Option<PathBuf>,
 	continue_on_failure : bool,
 	encoding_type : EncodingType,
-	is_rerun: bool,
+	is_rerun : bool
 }
 
 impl BenchmarkRunner {
@@ -40,7 +40,7 @@ impl BenchmarkRunner {
 		benchmark_save_dir : Option<PathBuf>,
 		continue_on_failure : bool,
 		encoding_type : EncodingType,
-		is_rerun: bool,
+		is_rerun : bool
 	) -> Self {
 		BenchmarkRunner {
 			stop_tolerance,
@@ -59,7 +59,7 @@ impl BenchmarkRunner {
 		hash_functions : Vec<HashFunction>,
 		collision_types : Vec<CollisionType>,
 		round_range : Range<u8>,
-		arguments: Vec<SolverArg>,
+		arguments : Vec<SolverArg>
 	) -> Result<(), Box<dyn Error>> {
 		for solver in solvers {
 			for hash_function in &hash_functions {
@@ -100,7 +100,7 @@ impl BenchmarkRunner {
 		collision_type : &CollisionType,
 		round_range : Range<u8>,
 		arg : Option<SolverArg>,
-		sequential_fails: &mut u8,
+		sequential_fails : &mut u8
 	) -> Result<(), Box<dyn Error>> {
 		// Ensure range max does not exceed hash function max rounds.
 		let hash_max = hash_function.max_rounds();
@@ -146,7 +146,7 @@ impl BenchmarkRunner {
 	fn handle_result(
 		&self,
 		result : &mut Result<Benchmark, Box<dyn Error>>,
-		sequential_fails: &mut u8,
+		sequential_fails : &mut u8
 	) -> Result<(), Box<dyn Error>> {
 		match result {
 			Ok(benchmark) => {
@@ -197,7 +197,7 @@ impl BenchmarkRunner {
 		is_rerun : bool,
 		encoding : EncodingType,
 		smt_file : PathBuf,
-		arguments: Option<SolverArg>,
+		arguments : Option<SolverArg>
 	) -> Result<Benchmark, Box<dyn Error>> {
 		if !check_command_present(&solver.command())? {
 			return Err(Box::from(BenchmarkError::SolverNotFound { solver: solver.command() }));
@@ -296,7 +296,7 @@ impl BenchmarkRunner {
 			is_rerun,
 			encoding,
 			stop_tolerance : self.stop_tolerance,
-			timeout: self.timeout,
+			timeout : self.timeout
 		})
 	}
 

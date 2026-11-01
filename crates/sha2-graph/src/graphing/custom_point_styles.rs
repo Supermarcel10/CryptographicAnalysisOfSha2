@@ -17,7 +17,7 @@ pub enum CustomShape {
 pub enum PointStyles {
 	None,
 	Basic,
-	Custom { shapes: Vec<CustomShape> },
+	Custom { shapes : Vec<CustomShape> }
 }
 
 impl PointStyles {
@@ -26,7 +26,7 @@ impl PointStyles {
 		chart : &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
 		data : Vec<(XT, YT)>,
 		color : Option<RGBAColor>,
-		point_thickness: u32,
+		point_thickness : u32
 	) -> Result<(), Box<dyn Error>>
 	where
 		DB : DrawingBackend + 'a,
@@ -34,7 +34,7 @@ impl PointStyles {
 		X : Ranged<ValueType = XT> + ValueFormatter<XT>,
 		Y : Ranged<ValueType = YT> + ValueFormatter<YT>,
 		XT : Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
-		YT: Clone + Add<Output = YT> + One + 'static,
+		YT : Clone + Add<Output = YT> + One + 'static
 	{
 		match self {
 			PointStyles::None => Ok(()), // Do nothing
@@ -50,7 +50,7 @@ impl PointStyles {
 		chart : &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
 		data : Vec<(XT, YT)>,
 		color : Option<RGBAColor>,
-		point_thickness: u32,
+		point_thickness : u32
 	) -> Result<(), Box<dyn Error>>
 	where
 		DB : DrawingBackend + 'a,
@@ -58,7 +58,7 @@ impl PointStyles {
 		X : Ranged<ValueType = XT> + ValueFormatter<XT>,
 		Y : Ranged<ValueType = YT> + ValueFormatter<YT>,
 		XT : Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
-		YT: Clone + 'static,
+		YT : Clone + 'static
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
 
@@ -78,7 +78,7 @@ impl PointStyles {
 		data : Vec<(XT, YT)>,
 		color : Option<RGBAColor>,
 		point_thickness : u32,
-		shapes: Vec<CustomShape>,
+		shapes : Vec<CustomShape>
 	) -> Result<(), Box<dyn Error>>
 	where
 		DB : DrawingBackend + 'a,
@@ -86,7 +86,7 @@ impl PointStyles {
 		X : Ranged<ValueType = XT> + ValueFormatter<XT>,
 		Y : Ranged<ValueType = YT> + ValueFormatter<YT>,
 		XT : Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
-		YT: Clone + Add<Output = YT> + One + 'static,
+		YT : Clone + Add<Output = YT> + One + 'static
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
 

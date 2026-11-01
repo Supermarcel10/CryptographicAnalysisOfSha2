@@ -155,7 +155,7 @@ impl Word {
 	pub fn from_str_radix(
 		src : &str,
 		radix : u32,
-		hash_function: HashFunction,
+		hash_function : HashFunction
 	) -> Result<Word, ParseIntError> {
 		use HashFunction::*;
 		match hash_function {

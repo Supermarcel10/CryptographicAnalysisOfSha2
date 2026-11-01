@@ -16,7 +16,7 @@ pub struct GraphRenderer {
 	pub(super) line_styles : Box<[LineStyle]>,
 	pub(super) line_thickness : u32,
 	pub(super) point_thickness : u32,
-	pub(super) data_retriever: DataRetriever,
+	pub(super) data_retriever : DataRetriever
 }
 
 impl GraphRenderer {
@@ -28,7 +28,7 @@ impl GraphRenderer {
 		line_styles : Box<[LineStyle]>,
 		line_thickness : u32,
 		point_thickness : u32,
-		data_retriever: DataRetriever,
+		data_retriever : DataRetriever
 	) -> Result<Self, Box<dyn Error>> {
 		if !output_dir.exists() {
 			fs::create_dir_all(output_dir.clone())?;
@@ -58,56 +58,56 @@ impl GraphRenderer {
 			line_styles : Box::from([
 				// Maroon
 				Normal {
-					color: RGBAColor(166, 30, 77, 1.0),
+					color : RGBAColor(166, 30, 77, 1.0)
 				},
 				// Dark Blue
 				Normal {
-					color: RGBAColor(24, 100, 171, 1.0),
+					color : RGBAColor(24, 100, 171, 1.0)
 				},
 				// Green
 				Normal {
-					color: RGBAColor(8, 127, 91, 1.0),
+					color : RGBAColor(8, 127, 91, 1.0)
 				},
 				// Yellow
 				Normal {
-					color: RGBAColor(250, 176, 5, 1.0),
+					color : RGBAColor(250, 176, 5, 1.0)
 				},
 				// Purple
 				Normal {
-					color: RGBAColor(156, 54, 181, 1.0),
+					color : RGBAColor(156, 54, 181, 1.0)
 				},
 				// Cyan
 				Dashed {
 					color : RGBAColor(12, 133, 153, 1.0),
 					size : 10,
-					spacing: 20,
+					spacing : 20
 				},
 				// Light Purple
 				Dashed {
 					color : RGBAColor(95, 61, 196, 1.0),
 					size : 10,
-					spacing: 20,
+					spacing : 20
 				},
 				// Light Green
 				Dashed {
 					color : RGBAColor(70, 210, 94, 1.0),
 					size : 10,
-					spacing: 20,
+					spacing : 20
 				},
 				// Light Blue
 				Dashed {
 					color : RGBAColor(116, 143, 252, 1.0),
 					size : 10,
-					spacing: 20,
+					spacing : 20
 				},
 				// Black
 				Normal {
-					color: RGBAColor(0, 0, 0, 1.0),
+					color : RGBAColor(0, 0, 0, 1.0)
 				}
 			]),
 			line_thickness : 2,
 			point_thickness : 6,
-			data_retriever: DataRetriever::default()?,
+			data_retriever : DataRetriever::default()?
 		})
 	}
 }
@@ -122,11 +122,11 @@ pub enum GraphRendererError<'a> {
 	FailedToGenerate {
 		hash_function : HashFunction,
 		collision_type : CollisionType,
-		err: &'a str,
+		err : &'a str
 	},
 	#[error("{graph_name} graph generation - {dataset_name} data cannot be empty!")]
 	MissingData {
 		graph_name : &'a str,
-		dataset_name: &'a str,
+		dataset_name : &'a str
 	}
 }

@@ -83,7 +83,7 @@ impl HashFunction {
 		if rounds > max_rounds {
 			return Err(HashError::TooManyRounds {
 				requested : rounds,
-				maximum: max_rounds,
+				maximum : max_rounds
 			});
 		}
 

@@ -6,7 +6,7 @@ pub struct ShaState {
 	pub i : u8,
 	pub w : Word,
 	pub a : Word,
-	pub e: Word,
+	pub e : Word
 }
 
 impl BitDifferential for ShaState {

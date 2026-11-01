@@ -27,7 +27,7 @@ impl GraphRenderer {
 	/// Returns path of saved graph file, or error.
 	fn create_time_and_memory_chart(
 		&self,
-		data: Vec<Benchmark>,
+		data : Vec<Benchmark>
 	) -> Result<PathBuf, Box<dyn Error>> {
 		if data.len() == 0 {
 			println!("{}", MissingData { graph_name: "Time & Memory", dataset_name: "data" });
@@ -79,7 +79,7 @@ impl GraphRenderer {
 			&mut chart,
 			"Time (s)",
 			Some(*self.line_styles[0].get_color()),
-			Some(&|y: &f64| format!("2^{}", y.log2())),
+			Some(&|y : &f64| format!("2^{}", y.log2()))
 		)?;
 		self.set_secondary_y_axis(
 			&mut chart,
@@ -148,10 +148,10 @@ impl GraphRenderer {
 		title_str : &str,
 		buffer : bool,
 		enforce : bool,
-		draw_background: bool,
+		draw_background : bool
 	) -> Result<PathBuf, Box<dyn Error>>
 	where
-		L: Clone + Ord + Into<String>,
+		L : Clone + Ord + Into<String>
 	{
 		if baseline_data.len() == 0 {
 			return Err(MissingData { graph_name: "baseline", dataset_name: "baseline" }.into());
@@ -320,7 +320,7 @@ impl GraphRenderer {
 			true,
 			"Baseline",
 			Some(Normal {
-				color: RGBAColor(0, 0, 0, 0.3),
+				color : RGBAColor(0, 0, 0, 0.3)
 			})
 		)?;
 
@@ -390,7 +390,7 @@ impl GraphRenderer {
 			&mut chart,
 			"Time (s)",
 			None,
-			Some(&|y: &f64| format!("2^{}", y.log2())),
+			Some(&|y : &f64| format!("2^{}", y.log2()))
 		)?;
 
 		// Draw data
@@ -439,7 +439,7 @@ impl GraphRenderer {
 					collision_type,
 					BruteForce {
 						simplified_maj_and_ch_functions : false,
-						alternative_add: false,
+						alternative_add : false
 					},
 					false
 				)?;
@@ -581,7 +581,7 @@ impl GraphRenderer {
 			Standard,
 			BruteForce {
 				simplified_maj_and_ch_functions : true,
-				alternative_add: false,
+				alternative_add : false
 			},
 			false
 		).expect("Failed to retrieve bruteforce simplified baseline");
@@ -592,7 +592,7 @@ impl GraphRenderer {
 			Standard,
 			BruteForce {
 				simplified_maj_and_ch_functions : false,
-				alternative_add: true,
+				alternative_add : true
 			},
 			false
 		).expect("Failed to retrieve bruteforce alt add baseline");
@@ -603,7 +603,7 @@ impl GraphRenderer {
 			Standard,
 			BruteForce {
 				simplified_maj_and_ch_functions : true,
-				alternative_add: true,
+				alternative_add : true
 			},
 			false
 		).expect("Failed to retrieve bruteforce alt add simplified baseline");

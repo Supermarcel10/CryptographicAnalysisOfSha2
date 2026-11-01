@@ -23,7 +23,7 @@ compile_error!("This crate supports only Unix-like operating systems");
 #[command(author, version, about, long_about = None)]
 struct Cli {
 	#[command(subcommand)]
-	command: Commands,
+	command : Commands
 }
 
 #[derive(Subcommand, Debug)]
@@ -32,7 +32,7 @@ enum Commands {
 	Generate {
 		/// Directory where smt2 files will be saved. Default `smt/`
 		#[arg(short = 'S', long)]
-		smt_dir: Option<PathBuf>,
+		smt_dir : Option<PathBuf>
 	},
 
 	/// Run an exhaustive benchmark over all solvers, hash functions, collision types and arguments
@@ -94,7 +94,7 @@ enum Commands {
 
 		/// Should the benchmark be marked as a rerun. Useful for flagging up anomalies. Default false
 		#[arg(short = 'R', long)]
-		is_rerun: Option<bool>,
+		is_rerun : Option<bool>
 	},
 
 	/// Run the underlying sha2 function
@@ -116,7 +116,7 @@ enum Commands {
 
 		/// Starting vector for hash function, separated word-by-word with spaces. Default Initial Vector (IV)
 		#[arg(long, visible_alias = "sv")]
-		start_vector: Option<String>,
+		start_vector : Option<String>
 	},
 
 	/// Load, verify and display result files
@@ -127,7 +127,7 @@ enum Commands {
 
 		/// Should directory scan be recursive. Default true
 		#[arg(short, long)]
-		recursive: Option<bool>,
+		recursive : Option<bool>
 	},
 
 	/// Render result graphs
@@ -138,7 +138,7 @@ enum Commands {
 
 		/// Directory where all benchmark results are stored. Default `results/`
 		#[arg(long)]
-		result_dir: Option<PathBuf>,
+		result_dir : Option<PathBuf>
 	}
 }
 
@@ -175,7 +175,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			let encoding_type : EncodingType = encoding_type.as_deref().map_or(
 				EncodingType::BruteForce {
 					simplified_maj_and_ch_functions : false,
-					alternative_add: false,
+					alternative_add : false
 				},
 				|s| s.parse().expect("Failed to parse encoding type")
 			);
@@ -278,7 +278,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 					Ok(output) => match output {
 						None => println!("UNSAT\n"),
 						Some(colliding_pair) => println!("{}\n", colliding_pair)
-					}
+					},
 					Err(err) => println!("{err}")
 				}
 
@@ -302,51 +302,51 @@ fn main() -> Result<(), Box<dyn Error>> {
 				Box::from([
 					// Maroon
 					Normal {
-						color: RGBAColor(166, 30, 77, 1.0),
+						color : RGBAColor(166, 30, 77, 1.0)
 					},
 					// Dark Blue
 					Normal {
-						color: RGBAColor(24, 100, 171, 1.0),
+						color : RGBAColor(24, 100, 171, 1.0)
 					},
 					// Green
 					Normal {
-						color: RGBAColor(8, 127, 91, 1.0),
+						color : RGBAColor(8, 127, 91, 1.0)
 					},
 					// Yellow
 					Normal {
-						color: RGBAColor(250, 176, 5, 1.0),
+						color : RGBAColor(250, 176, 5, 1.0)
 					},
 					// Purple
 					Normal {
-						color: RGBAColor(156, 54, 181, 1.0),
+						color : RGBAColor(156, 54, 181, 1.0)
 					},
 					// Cyan
 					Dashed {
 						color : RGBAColor(12, 133, 153, 1.0),
 						size : 10,
-						spacing: 20,
+						spacing : 20
 					},
 					// Light Purple
 					Dashed {
 						color : RGBAColor(95, 61, 196, 1.0),
 						size : 10,
-						spacing: 20,
+						spacing : 20
 					},
 					// Light Green
 					Dashed {
 						color : RGBAColor(70, 210, 94, 1.0),
 						size : 10,
-						spacing: 20,
+						spacing : 20
 					},
 					// Light Blue
 					Dashed {
 						color : RGBAColor(116, 143, 252, 1.0),
 						size : 10,
-						spacing: 20,
+						spacing : 20
 					},
 					// Black
 					Normal {
-						color: RGBAColor(0, 0, 0, 1.0),
+						color : RGBAColor(0, 0, 0, 1.0)
 					}
 				]),
 				2,
@@ -363,7 +363,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn load_mapped(
 	dir_location : &PathBuf,
-	recursive: bool,
+	recursive : bool
 ) -> Result<Vec<(Benchmark, PathBuf)>, Box<dyn Error>> {
 	let mut map = Vec::new();
 

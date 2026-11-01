@@ -189,7 +189,7 @@ impl SmtBuilder {
 
 				let state_update_add = self.add(vec![
 					&format!("{msg_round0}{var}0"),
-					&format!("{msg}{var}{round}", round = self.rounds)
+					&format!("{msg}{var}{round}", round = self.rounds),
 				])?;
 
 				self.smt += &format!("(define-fun m{m}_hash{i} () Word {state_update_add})\n");

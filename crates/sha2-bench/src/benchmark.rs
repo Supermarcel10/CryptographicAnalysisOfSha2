@@ -205,7 +205,7 @@ pub struct MutableShaState {
 	pub i : u8,
 	pub w : Option<Word>,
 	pub a : Option<Word>,
-	pub e: Option<Word>,
+	pub e : Option<Word>
 }
 
 impl Default for MutableShaState {
@@ -214,7 +214,7 @@ impl Default for MutableShaState {
 			i : 0,
 			w : None,
 			a : None,
-			e: None,
+			e : None
 		}
 	}
 }
@@ -225,7 +225,7 @@ impl MutableShaState {
 			i : self.i,
 			w : self.w?,
 			a : self.a?,
-			e: self.e?,
+			e : self.e?
 		})
 	}
 
@@ -256,7 +256,7 @@ pub struct Benchmark {
 	pub is_rerun : bool,
 	pub encoding : EncodingType,
 	pub stop_tolerance : u8,
-	pub timeout: Duration,
+	pub timeout : Duration
 }
 
 impl Benchmark {
@@ -423,7 +423,7 @@ impl Benchmark {
 				m : MessageBlock(start_blocks[i]),
 				cv : StartVector::CV(start_vectors[i]),
 				states,
-				expected_hash: OutputHash(Box::from(trimmed_hash.clone())),
+				expected_hash : OutputHash(Box::from(trimmed_hash.clone()))
 			});
 		}
 
@@ -432,7 +432,7 @@ impl Benchmark {
 			m0,
 			m1,
 			hash_function : self.hash_function,
-			rounds: self.rounds,
+			rounds : self.rounds
 		};
 
 		// Verify benchmark
@@ -451,7 +451,7 @@ impl Benchmark {
 		start_blocks : &mut [[Word; 16]; 2],
 		start_vectors : &mut [[Word; 8]; 2],
 		states : &mut [BTreeMap<usize, MutableShaState>; 2],
-		differential: bool,
+		differential : bool
 	) -> Result<(), Box<dyn Error>> {
 		// Special handling if differential
 		let (var, val) = if differential {
