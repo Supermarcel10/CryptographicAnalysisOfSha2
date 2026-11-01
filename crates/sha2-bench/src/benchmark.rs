@@ -244,7 +244,7 @@ impl SmtOutputFormat {
 	}
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct MutableShaState {
 	pub i : u8,
 	pub w : Option<Word>,
@@ -252,19 +252,8 @@ pub struct MutableShaState {
 	pub e : Option<Word>
 }
 
-impl Default for MutableShaState {
-	fn default() -> Self {
-		MutableShaState {
-			i : 0,
-			w : None,
-			a : None,
-			e : None
-		}
-	}
-}
-
 impl MutableShaState {
-	fn to_immutable(self) -> Option<ShaState> {
+	fn to_immutable(&self) -> Option<ShaState> {
 		Some(ShaState {
 			i : self.i,
 			w : self.w?,
@@ -339,14 +328,12 @@ impl Benchmark {
 			return Ok(benchmarks);
 		}
 
-		for dir_entry in fs::read_dir(dir_location)? {
-			if let Ok(entry) = dir_entry {
-				let metadata = entry.metadata()?;
-				if recursively && metadata.is_dir() {
-					benchmarks.extend(Self::load_all(&entry.path(), recursively)?)
-				} else if metadata.is_file() {
-					benchmarks.push(Self::load(&entry.path())?);
-				}
+		for dir_entry in fs::read_dir(dir_location)?.flatten() {
+			let metadata = dir_entry.metadata()?;
+			if recursively && metadata.is_dir() {
+				benchmarks.extend(Self::load_all(&dir_entry.path(), recursively)?)
+			} else if metadata.is_file() {
+				benchmarks.push(Self::load(&dir_entry.path())?);
 			}
 		}
 
@@ -478,6 +465,7 @@ impl Benchmark {
 		Ok(Some(colliding_pair))
 	}
 
+	#[allow(clippy::too_many_arguments)]
 	fn parse_update_for_msg(
 		&self,
 		msg : usize,
@@ -512,7 +500,7 @@ impl Benchmark {
 
 			// Parse H constants (CV/IV)
 			if !differential && round == 0 && var_char != 'w' {
-				let i = (var_char as u8) - ('a' as u8);
+				let i = (var_char as u32 - u32::from(b'a')) as u8;
 				start_vectors[msg][i as usize] = val;
 			}
 
@@ -528,8 +516,10 @@ impl Benchmark {
 					state.update_state_variable(var_char, val);
 				})
 				.or_insert_with(|| {
-					let mut state = MutableShaState::default();
-					state.i = round as u8;
+					let mut state = MutableShaState {
+						i : round as u8,
+						..Default::default()
+					};
 					state.update_state_variable(var_char, val);
 					state
 				});
