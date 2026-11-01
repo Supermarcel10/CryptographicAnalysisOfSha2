@@ -1,20 +1,20 @@
 #[derive(Debug, Eq, PartialEq)]
 enum DiffType {
-	INCREASE,
-	DECREASE,
-	EQUAL,
-	FALSE,
-	TRUE
+	Increase,
+	Decrease,
+	Equal,
+	False,
+	True
 }
 
 impl DiffType {
 	fn represent(&self) -> char {
 		match self {
-			DiffType::INCREASE => 'n',
-			DiffType::DECREASE => 'u',
-			DiffType::EQUAL => '=',
-			DiffType::FALSE => '0',
-			DiffType::TRUE => '1'
+			DiffType::Increase => 'n',
+			DiffType::Decrease => 'u',
+			DiffType::Equal => '=',
+			DiffType::False => '0',
+			DiffType::True => '1'
 		}
 	}
 }
@@ -36,11 +36,11 @@ macro_rules! impl_bit_differential_for {
 						let bit_other = (other >> i) & 1 == 1;
 
 						let representation = match (bit_self, bit_other) {
-							(false, true) => DiffType::INCREASE,
-							(true, false) => DiffType::DECREASE,
-							_ if bit_self == bit_other => DiffType::EQUAL,
-							(false, false) => DiffType::FALSE,
-							(true, true) => DiffType::TRUE,
+							(false, true) => DiffType::Increase,
+							(true, false) => DiffType::Decrease,
+							_ if bit_self == bit_other => DiffType::Equal,
+							(false, false) => DiffType::False,
+							(true, true) => DiffType::True,
 						}.represent();
 
 						s.push(representation);
@@ -66,7 +66,7 @@ impl<T : BitDifferential + Copy, const N: usize> BitDifferential for [T; N] {
 
 impl<T : BitDifferential + Copy> BitDifferential for &[T] {
 	fn bit_diff(self, other : Self) -> String {
-		self.into_iter()
+		self.iter()
 			.zip(other)
 			.map(|(s, o)| s.bit_diff(*o))
 			.collect::<String>()
