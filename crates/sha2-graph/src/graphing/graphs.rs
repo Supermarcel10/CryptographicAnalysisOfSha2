@@ -128,7 +128,8 @@ impl GraphRenderer {
 		Ok(path)
 	}
 
-	/// Create graph where one solver run is a baseline, and the remaining data is compared against it.
+	/// Create graph where one solver run is a baseline, and the remaining data is compared against
+	/// it.
 	///
 	/// # Arguments
 	///
