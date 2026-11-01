@@ -1,10 +1,12 @@
-use crate::graphing::custom_point_styles::CustomShape;
-use sha2_bench::benchmark::{Benchmark, BenchmarkResult};
+use std::ops::{Add, Range};
+
 use num_traits::One;
 use plotters::backend::DrawingBackend;
 use plotters::chart::SeriesAnno;
 use plotters::prelude::Rectangle;
-use std::ops::{Add, Range};
+use sha2_bench::benchmark::{Benchmark, BenchmarkResult};
+
+use crate::graphing::custom_point_styles::CustomShape;
 use crate::graphing::line_styles::LineStyle;
 
 /// Utility method to retrieve the range of a given data set for any numerical data.
@@ -20,9 +22,9 @@ use crate::graphing::line_styles::LineStyle;
 /// Returns `None` if length 0 data provided, otherwise provides a range of the retrieved data type.
 // Potential bug/oversight with plotters.rs?
 // Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
-pub(super) fn get_range<T: Copy + PartialOrd>(
-	data: &Vec<Benchmark>,
-	retr: &dyn Fn(&Benchmark) -> T,
+pub(super) fn get_range<T : Copy + PartialOrd>(
+	data : &Vec<Benchmark>,
+	retr : &dyn Fn(&Benchmark) -> T
 ) -> Option<Range<T>> {
 	let mut it = data.into_iter();
 	let first = retr(it.next()?);
@@ -30,7 +32,7 @@ pub(super) fn get_range<T: Copy + PartialOrd>(
 		let v = retr(b);
 		(
 			if v < min_agg { v } else { min_agg },
-			if v > max_agg { v } else { max_agg },
+			if v > max_agg { v } else { max_agg }
 		)
 	});
 
@@ -48,10 +50,10 @@ pub(super) fn get_range<T: Copy + PartialOrd>(
 /// Vec<Vec<(XT, YT), Global>, Global>
 ///
 /// A set of continious cartesian data.
-pub(super) fn split_data<XT, YT>(data: Vec<(XT, YT)>) -> Vec<Vec<(XT, YT)>>
+pub(super) fn split_data<XT, YT>(data : Vec<(XT, YT)>) -> Vec<Vec<(XT, YT)>>
 where
-	XT: Clone + Copy + Add<Output = XT> + PartialOrd + One + 'static,
-	YT: Clone + 'static,
+	XT : Clone + Copy + Add<Output = XT> + PartialOrd + One + 'static,
+	YT : Clone + 'static
 {
 	if data.is_empty() {
 		return vec![];
@@ -81,40 +83,40 @@ where
 }
 
 pub(super) fn ensure_defined_only_once<'a, DB>(
-	label: &str,
-	line_style: LineStyle,
-	was_legend_defined: &mut bool,
-	series: &mut SeriesAnno<DB>,
+	label : &str,
+	line_style : LineStyle,
+	was_legend_defined : &mut bool,
+	series : &mut SeriesAnno<DB>
 ) where
-	DB: DrawingBackend + 'a,
-	DB::ErrorType: 'static,
+	DB : DrawingBackend + 'a,
+	DB::ErrorType : 'static
 {
 	if !*was_legend_defined {
 		*was_legend_defined = true;
-		series
-			.label(label)
-			.legend(move |(x, y)| Rectangle::new(
+		series.label(label).legend(move |(x, y)| {
+			Rectangle::new(
 				[(x, y - 10), (x + 20, y + 10)],
-				line_style.get_legend_style())
-			);
+				line_style.get_legend_style()
+			)
+		});
 	}
 }
 
 #[allow(dead_code)]
-pub(super) fn classify_benchmark_result_to_point_style(result: BenchmarkResult) -> CustomShape {
-	use CustomShape::*;
+pub(super) fn classify_benchmark_result_to_point_style(result : BenchmarkResult) -> CustomShape {
 	use BenchmarkResult::*;
+	use CustomShape::*;
 
 	match result {
 		Sat => Circle,
 		Unsat => Triangle,
-		_ => None,
+		_ => None
 	}
 }
 
 #[allow(dead_code)]
 pub(super) fn classify_benchmark_results_to_point_styles(
-	result: Vec<BenchmarkResult>,
+	result : Vec<BenchmarkResult>
 ) -> Vec<CustomShape> {
 	result
 		.into_iter()

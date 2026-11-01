@@ -3,18 +3,19 @@ use std::fs;
 use std::ops::Range;
 use std::path::PathBuf;
 use std::time::Duration;
+
 use clap::{Parser, Subcommand};
 use plotters::prelude::RGBAColor;
-use sha2_bench::runner::BenchmarkRunner;
-use sha2_bench::data_retriever::DataRetriever;
-use sha2_graph::graphing::graph_renderer::GraphRenderer;
-use sha2_graph::graphing::line_styles::LineStyle::*;
-use sha2_core::sha::{MessageBlock, Sha, StartVector, Word};
-use sha2_smt::smt_lib::smt_lib::generate_smtlib_files;
-use sha2_smt::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
 use sha2_bench::benchmark::{Benchmark, SmtSolver};
+use sha2_bench::data_retriever::DataRetriever;
+use sha2_bench::runner::BenchmarkRunner;
+use sha2_core::sha::{MessageBlock, Sha, StartVector, Word};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
+use sha2_graph::graphing::graph_renderer::GraphRenderer;
+use sha2_graph::graphing::line_styles::LineStyle::*;
+use sha2_smt::smt_lib::smt_lib::generate_smtlib_files;
+use sha2_smt::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
 
 #[cfg(not(unix))]
 compile_error!("This crate supports only Unix-like operating systems");
@@ -23,7 +24,7 @@ compile_error!("This crate supports only Unix-like operating systems");
 #[command(author, version, about, long_about = None)]
 struct Cli {
 	#[command(subcommand)]
-	command: Commands,
+	command : Commands
 }
 
 #[derive(Subcommand, Debug)]
@@ -32,54 +33,58 @@ enum Commands {
 	Generate {
 		/// Directory where smt2 files will be saved. Default `smt/`
 		#[arg(short = 'S', long)]
-		smt_dir: Option<PathBuf>,
+		smt_dir : Option<PathBuf>
 	},
 
 	/// Run an exhaustive benchmark over all solvers, hash functions, collision types and arguments
 	Benchmark {
-		/// Argument to select solver. Use multiple `--solver <SOLVER>` statements for multiple solvers
+		/// Argument to select solver. Use `--solver <SOLVER>` statements for multiple solvers.
 		#[arg(required = true, long)]
-		solver: Vec<SmtSolver>,
+		solver : Vec<SmtSolver>,
 
-		/// Argument to select hash function. Use separate `--hash-function <HASH_FUNCTION>` statements for multiple hash functions
+		/// Argument to select hash function. Use separate `--hash-function <HASH_FUNCTION>`
+		/// statements for multiple hash functions
 		#[arg(required = true, long)]
-		hash_function: Vec<HashFunction>,
+		hash_function : Vec<HashFunction>,
 
-		/// Argument to select collision type. Use separate `--collision-type <COLLISION_TYPE>` statements for multiple collision types
+		/// Argument to select collision type. Use separate `--collision-type <COLLISION_TYPE>`
+		/// statements for multiple collision types
 		#[arg(required = true, long)]
-		collision_type: Vec<CollisionType>,
+		collision_type : Vec<CollisionType>,
 
-		/// Argument to set (non-inclusive) range of compression rounds. Input with `--round-range <MIN>..<MAX>`. Default 1..hash function max
+		/// Argument to set (non-inclusive) range of compression rounds. Input with `--round-range
+		/// <MIN>..<MAX>`. Default 1..hash function max
 		#[arg(long, value_parser = parse_range)]
-		round_range: Option<Range<u8>>,
+		round_range : Option<Range<u8>>,
 
 		/// Argument to set the solver argument sets (combinations of solver arguments).
-		/// An arugment set can contain multiple arguments which will all be executed on the solver.
-		/// To test each argument separately, set each solver argument as a separate --arg-set.
-		/// Use separate `--arg-set "<ARG_SET>"` statements for multiple argument sets.
+		/// An arugment set can contain multiple arguments which will all be executed on the
+		/// solver. To test each argument separately, set each solver argument as a separate
+		/// --arg-set. Use separate `--arg-set "<ARG_SET>"` statements for multiple argument sets.
 		/// Default <No Args>
 		#[arg(long, allow_hyphen_values = true)]
-		arg_set: Option<Vec<String>>,
+		arg_set : Option<Vec<String>>,
 
 		/// The number of required sequential failures to stop. Default 3
 		#[arg(short, long)]
-		stop_tolerance:  Option<u8>,
+		stop_tolerance : Option<u8>,
 
 		/// Duration after which run is marked as timed out. Default 15 mins
 		#[arg(short, long)]
-		timeout_sec: Option<u64>,
+		timeout_sec : Option<u64>,
 
 		/// Path to directory containing SMT files. Default `smt/`
 		#[arg(short = 'S', long)]
-		smt_dir: Option<PathBuf>,
+		smt_dir : Option<PathBuf>,
 
-		/// Path to directory where result files will be saved to. `None` to disable output. Default `results/`
+		/// Path to directory where result files will be saved to. `None` to disable output.
+		/// Default `results/`
 		#[arg(short, long)]
-		result_dir: Option<PathBuf>,
+		result_dir : Option<PathBuf>,
 
 		/// Should remaining benchmark runs continue despite error on one. Default false
 		#[arg(short = 'C', visible_alias = "cof", long)]
-		continue_on_fail: Option<bool>,
+		continue_on_fail : Option<bool>,
 
 		/// Type of encoding to benchmark.
 		/// Format `<encoding_type>:[simplified_maj_and_ch_functions]:[alternative_add]`,
@@ -90,55 +95,56 @@ enum Commands {
 		///
 		/// [encoding_type possible values: bruteforce, dxor, dsub, base4]
 		#[arg(short = 'E', long)]
-		encoding_type: Option<String>,
+		encoding_type : Option<String>,
 
-		/// Should the benchmark be marked as a rerun. Useful for flagging up anomalies. Default false
+		/// Should the benchmark be marked as a rerun. Useful for flagging anomalies. Default false
 		#[arg(short = 'R', long)]
-		is_rerun: Option<bool>,
+		is_rerun : Option<bool>
 	},
 
 	/// Run the underlying sha2 function
 	Sha2 {
 		/// Message to hash
 		#[arg(short, long)]
-		msg: Option<String>,
+		msg : Option<String>,
 
-		/// Message digest block to hash (pre-padded and pre-processed digest), separated word-by-word with spaces
+		/// Message digest block to hash (pre-padded and pre-processed digest), separated
+		/// word-by-word with spaces
 		#[arg(short = 'M', visible_alias = "mb", long)]
-		msg_block: Option<String>,
+		msg_block : Option<String>,
 
 		/// Hash function
-		hash_function: HashFunction,
+		hash_function : HashFunction,
 
 		/// Number of compression rounds. Default hash function max
 		#[arg(short, long)]
-		rounds: Option<u8>,
+		rounds : Option<u8>,
 
-		/// Starting vector for hash function, separated word-by-word with spaces. Default Initial Vector (IV)
+		/// Starting vector for hash function, separated word-by-word. Default Initial Vector (IV)
 		#[arg(long, visible_alias = "sv")]
-		start_vector: Option<String>,
+		start_vector : Option<String>
 	},
 
 	/// Load, verify and display result files
 	Load {
 		/// Path to a result file, or a directory. Default `results/`
 		#[arg(short = 'R', long)]
-		result_path: Option<PathBuf>,
+		result_path : Option<PathBuf>,
 
 		/// Should directory scan be recursive. Default true
 		#[arg(short, long)]
-		recursive: Option<bool>,
+		recursive : Option<bool>
 	},
 
 	/// Render result graphs
 	Graph {
 		/// Directory where graphs will be saved. Default `graphs/`
 		#[arg(long)]
-		graph_dir: Option<PathBuf>,
+		graph_dir : Option<PathBuf>,
 
 		/// Directory where all benchmark results are stored. Default `results/`
 		#[arg(long)]
-		result_dir: Option<PathBuf>,
+		result_dir : Option<PathBuf>
 	}
 }
 
@@ -146,12 +152,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let cli = Cli::parse();
 
 	match &cli.command {
-		Commands::Generate { smt_dir } => {
+		Commands::Generate {
+			smt_dir
+		} => {
 			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
-			generate_smtlib_files(
-				SmtRetriever::new(smt_dir)?
-			)?;
-		},
+			generate_smtlib_files(SmtRetriever::new(smt_dir)?)?;
+		}
 
 		Commands::Benchmark {
 			solver: solvers,
@@ -165,17 +171,17 @@ fn main() -> Result<(), Box<dyn Error>> {
 			result_dir,
 			continue_on_fail,
 			encoding_type,
-			is_rerun,
+			is_rerun
 		} => {
 			let round_range = round_range.clone().unwrap_or(1..80);
 			let arg_set = arg_set.clone().unwrap_or(Vec::with_capacity(0));
 			let stop_tolerance = (*stop_tolerance).unwrap_or(3);
 			let timeout = Duration::from_secs((*timeout_sec).unwrap_or(15 * 60));
 			let continue_on_fail = (*continue_on_fail).unwrap_or(false);
-			let encoding_type: EncodingType = encoding_type.as_deref().map_or(
+			let encoding_type : EncodingType = encoding_type.as_deref().map_or(
 				EncodingType::BruteForce {
-					simplified_maj_and_ch_functions: false,
-					alternative_add: false,
+					simplified_maj_and_ch_functions : false,
+					alternative_add : false
 				},
 				|s| s.parse().expect("Failed to parse encoding type")
 			);
@@ -200,7 +206,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 				save_dir,
 				continue_on_fail,
 				encoding_type,
-				is_rerun,
+				is_rerun
 			);
 
 			runner.run_benchmarks(
@@ -208,7 +214,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 				hash_functions.clone(),
 				collision_types.clone(),
 				round_range,
-				arg_set,
+				arg_set
 			)?;
 		}
 
@@ -217,16 +223,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 			msg_block,
 			hash_function,
 			rounds,
-			start_vector,
+			start_vector
 		} => {
 			let rounds = rounds.unwrap_or(hash_function.max_rounds());
 
 			let start_vector = match start_vector {
 				None => StartVector::IV,
 				Some(start_vector) => {
-					let mut words= Vec::with_capacity(8);
+					let mut words = Vec::with_capacity(8);
 					for word in start_vector.split_whitespace() {
-						 words.push(Word::from_str_radix(word, 16, *hash_function)?);
+						words.push(Word::from_str_radix(word, 16, *hash_function)?);
 					}
 
 					StartVector::CV(<[Word; 8]>::try_from(words).unwrap())
@@ -234,29 +240,25 @@ fn main() -> Result<(), Box<dyn Error>> {
 			};
 
 			let result = if let Some(msg) = msg {
-				Sha::from_string(
-					msg,
-					*hash_function,
-					rounds,
-					start_vector,
-				)?.execute()?
+				Sha::from_string(msg, *hash_function, rounds, start_vector)?.execute()?
 			} else if let Some(msg_block) = msg_block {
 				Sha::from_message_block(
 					MessageBlock::from_str_radix(msg_block, 16, *hash_function)?,
 					*hash_function,
 					rounds,
-					start_vector,
-				)?.execute()?
+					start_vector
+				)?
+				.execute()?
 			} else {
 				return Err(Box::from("Either msg or msg_block must be provided"));
 			};
 
 			println!("{}", result.hash);
-		},
+		}
 
 		Commands::Load {
 			result_path,
-			recursive,
+			recursive
 		} => {
 			let result_path = result_path.clone().unwrap_or(PathBuf::from("results/"));
 			let recursive = recursive.unwrap_or(true);
@@ -277,9 +279,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 				match benchmark.parse_output() {
 					Ok(output) => match output {
 						None => println!("UNSAT\n"),
-						Some(colliding_pair) => println!("{}\n", colliding_pair),
-					}
-					Err(err) => println!("{err}"),
+						Some(colliding_pair) => println!("{}\n", colliding_pair)
+					},
+					Err(err) => println!("{err}")
 				}
 
 				println!("---\n")
@@ -288,9 +290,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 		Commands::Graph {
 			graph_dir,
-			result_dir,
+			result_dir
 		} => {
-
 			let graph_dir = graph_dir.clone().unwrap_or(PathBuf::from("graphs/"));
 			let result_dir = result_dir.clone().unwrap_or(PathBuf::from("results/"));
 
@@ -302,68 +303,68 @@ fn main() -> Result<(), Box<dyn Error>> {
 				Box::from([
 					// Maroon
 					Normal {
-						color: RGBAColor(166, 30, 77, 1.0),
+						color : RGBAColor(166, 30, 77, 1.0)
 					},
 					// Dark Blue
 					Normal {
-						color: RGBAColor(24, 100, 171, 1.0),
+						color : RGBAColor(24, 100, 171, 1.0)
 					},
 					// Green
 					Normal {
-						color: RGBAColor(8, 127, 91, 1.0),
+						color : RGBAColor(8, 127, 91, 1.0)
 					},
 					// Yellow
 					Normal {
-						color: RGBAColor(250, 176, 5, 1.0),
+						color : RGBAColor(250, 176, 5, 1.0)
 					},
 					// Purple
 					Normal {
-						color: RGBAColor(156, 54, 181, 1.0),
+						color : RGBAColor(156, 54, 181, 1.0)
 					},
 					// Cyan
 					Dashed {
-						color: RGBAColor(12, 133, 153, 1.0),
-						size: 10,
-						spacing: 20,
+						color : RGBAColor(12, 133, 153, 1.0),
+						size : 10,
+						spacing : 20
 					},
 					// Light Purple
 					Dashed {
-						color: RGBAColor(95, 61, 196, 1.0),
-						size: 10,
-						spacing: 20,
+						color : RGBAColor(95, 61, 196, 1.0),
+						size : 10,
+						spacing : 20
 					},
 					// Light Green
 					Dashed {
-						color: RGBAColor(70, 210, 94, 1.0),
-						size: 10,
-						spacing: 20,
+						color : RGBAColor(70, 210, 94, 1.0),
+						size : 10,
+						spacing : 20
 					},
 					// Light Blue
 					Dashed {
-						color: RGBAColor(116, 143, 252, 1.0),
-						size: 10,
-						spacing: 20,
+						color : RGBAColor(116, 143, 252, 1.0),
+						size : 10,
+						spacing : 20
 					},
 					// Black
 					Normal {
-						color: RGBAColor(0, 0, 0, 1.0),
-					},
+						color : RGBAColor(0, 0, 0, 1.0)
+					}
 				]),
 				2,
 				6,
-				DataRetriever::new(result_dir.clone())?,
+				DataRetriever::new(result_dir.clone())?
 			)?;
 
 			graph_renderer.generate_all_graphs()?;
-		},
+		}
 	}
 
 	Ok(())
 }
 
 fn load_mapped(
-	dir_location: &PathBuf,
-	recursive: bool,
+	dir_location : &PathBuf,
+	recursive : bool
 ) -> Result<Vec<(Benchmark, PathBuf)>, Box<dyn Error>> {
 	let mut map = Vec::new();
 
@@ -386,13 +387,14 @@ fn load_mapped(
 	Ok(map)
 }
 
-fn parse_range(s: &str) -> Result<Range<u8>, String> {
-	let (start, end) = s.split_once("..")
+fn parse_range(s : &str) -> Result<Range<u8>, String> {
+	let (start, end) = s
+		.split_once("..")
 		.ok_or_else(|| format!("Invalid range format: '{}'", s))?;
 
 	Ok(Range {
-		start: start.parse().map_err(|e| format!("Start: {}", e))?,
-		end: end.parse().map_err(|e| format!("End: {}", e))?
+		start : start.parse().map_err(|e| format!("Start: {}", e))?,
+		end : end.parse().map_err(|e| format!("End: {}", e))?
 	})
 }
 
@@ -403,7 +405,6 @@ fn parse_range(s: &str) -> Result<Range<u8>, String> {
 
 // let benchmarks = result_store.load_results()?;
 // println!("{:?}", benchmarks);
-
 
 // result_store.create_table()?;
 

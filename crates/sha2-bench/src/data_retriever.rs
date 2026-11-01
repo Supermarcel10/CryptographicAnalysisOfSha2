@@ -2,27 +2,28 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
-use sha2_smt::smt_lib::smt_retriever::EncodingType;
-use sha2_smt::smt_lib::smt_retriever::EncodingType::BruteForce;
-use crate::benchmark::{Benchmark, SmtSolver, SolverArg};
+
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
+use sha2_smt::smt_lib::smt_retriever::EncodingType;
+use sha2_smt::smt_lib::smt_retriever::EncodingType::BruteForce;
 
+use crate::benchmark::{Benchmark, SmtSolver, SolverArg};
 
 pub struct DataRetriever {
-	data_dir: PathBuf,
-	all_results: Option<Vec<Benchmark>>,
+	data_dir : PathBuf,
+	all_results : Option<Vec<Benchmark>>
 }
 
 impl DataRetriever {
-	pub fn new(data_dir: PathBuf) -> Result<Self, Box<dyn Error>> {
+	pub fn new(data_dir : PathBuf) -> Result<Self, Box<dyn Error>> {
 		if !data_dir.exists() {
 			fs::create_dir_all(data_dir.clone())?;
 		}
 
 		Ok(DataRetriever {
 			data_dir,
-			all_results: None,
+			all_results : None
 		})
 	}
 
@@ -32,7 +33,7 @@ impl DataRetriever {
 	}
 
 	fn cache_all(&mut self) -> Result<(), Box<dyn Error>> {
-		let benchmarks: Vec<_> = Benchmark::load_all(&self.data_dir, true)?
+		let benchmarks : Vec<_> = Benchmark::load_all(&self.data_dir, true)?
 			.into_iter()
 			.filter(|b| b.is_valid != Some(false))
 			.collect();
@@ -46,9 +47,9 @@ impl DataRetriever {
 
 	pub fn retrieve_all_baselines(
 		&mut self,
-		hash_function: HashFunction,
-		collision_type: CollisionType,
-		prefer_test_reruns: bool,
+		hash_function : HashFunction,
+		collision_type : CollisionType,
+		prefer_test_reruns : bool
 	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
@@ -79,10 +80,10 @@ impl DataRetriever {
 
 	pub fn retrieve_all_baselines_with_encoding(
 		&mut self,
-		hash_function: HashFunction,
-		collision_type: CollisionType,
-		encoding_type: EncodingType,
-		prefer_test_reruns: bool,
+		hash_function : HashFunction,
+		collision_type : CollisionType,
+		encoding_type : EncodingType,
+		prefer_test_reruns : bool
 	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
@@ -114,41 +115,39 @@ impl DataRetriever {
 
 	pub fn retrieve_baseline(
 		&mut self,
-		solver: SmtSolver,
-		hash_function: HashFunction,
-		collision_type: CollisionType,
-		encoding_type: EncodingType,
-		prefer_test_reruns: bool,
+		solver : SmtSolver,
+		hash_function : HashFunction,
+		collision_type : CollisionType,
+		encoding_type : EncodingType,
+		prefer_test_reruns : bool
 	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
-		let all_baselines = self.retrieve_all_baselines(
-			hash_function,
-			collision_type,
-			prefer_test_reruns
-		)?;
+		let all_baselines =
+			self.retrieve_all_baselines(hash_function, collision_type, prefer_test_reruns)?;
 
-		Ok(
-			all_baselines
-				.into_iter()
-				.filter(|b| b.solver == solver)
-				.filter(|b| b.encoding == encoding_type)
-				.collect()
-		)
+		Ok(all_baselines
+			.into_iter()
+			.filter(|b| b.solver == solver)
+			.filter(|b| b.encoding == encoding_type)
+			.collect())
 	}
 
 	pub fn retrieve_with_args(
 		&mut self,
-		solver: SmtSolver,
-		hash_function: HashFunction,
-		collision_type: CollisionType,
-		prefer_test_reruns: bool,
-		arg_identifier: &str,
+		solver : SmtSolver,
+		hash_function : HashFunction,
+		collision_type : CollisionType,
+		prefer_test_reruns : bool,
+		arg_identifier : &str
 	) -> Result<BTreeMap<SolverArg, Vec<Benchmark>>, Box<dyn Error>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
 		}
 
-		fn has_similar_arg(benchmark: &Benchmark, identifier: &str) -> bool {
-			benchmark.arguments.iter().any(|arg| arg.contains(identifier))
+		fn has_similar_arg(benchmark : &Benchmark, identifier : &str) -> bool {
+			benchmark
+				.arguments
+				.iter()
+				.any(|arg| arg.contains(identifier))
 		}
 
 		let mut baselines = Vec::new();
@@ -174,9 +173,7 @@ impl DataRetriever {
 		let mut map = BTreeMap::new();
 		for benchmark in baselines {
 			let key = benchmark.arguments.clone().unwrap_or("".into());
-			map.entry(key)
-				.or_insert_with(Vec::new)
-				.push(benchmark);
+			map.entry(key).or_insert_with(Vec::new).push(benchmark);
 		}
 
 		Ok(map)
@@ -184,10 +181,10 @@ impl DataRetriever {
 
 	pub fn retrieve_non_bruteforce_encodings(
 		&mut self,
-		solver: SmtSolver,
-		hash_function: HashFunction,
-		collision_type: CollisionType,
-		prefer_test_reruns: bool,
+		solver : SmtSolver,
+		hash_function : HashFunction,
+		collision_type : CollisionType,
+		prefer_test_reruns : bool
 	) -> Result<BTreeMap<EncodingType, Vec<Benchmark>>, Box<dyn Error>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
@@ -199,7 +196,7 @@ impl DataRetriever {
 			if b.solver == solver
 				&& b.hash_function == hash_function
 				&& b.collision_type == collision_type
-				&& !matches!(b.encoding, BruteForce {..})
+				&& !matches!(b.encoding, BruteForce { .. })
 			{
 				if b.is_rerun {
 					reruns.push(b);
@@ -216,19 +213,14 @@ impl DataRetriever {
 		let mut map = BTreeMap::new();
 		for benchmark in baselines {
 			let key = benchmark.encoding.clone();
-			map.entry(key)
-				.or_insert_with(Vec::new)
-				.push(benchmark);
+			map.entry(key).or_insert_with(Vec::new).push(benchmark);
 		}
 
 		Ok(map)
 	}
 }
 
-fn substitute_reruns(
-	baselines: &mut Vec<Benchmark>,
-	reruns: Vec<Benchmark>,
-) {
+fn substitute_reruns(baselines : &mut Vec<Benchmark>, reruns : Vec<Benchmark>) {
 	for rerun in reruns.into_iter() {
 		for baseline in baselines.iter_mut() {
 			if baseline.rounds == rerun.rounds
