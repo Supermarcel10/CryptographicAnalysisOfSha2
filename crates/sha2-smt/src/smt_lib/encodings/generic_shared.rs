@@ -3,7 +3,7 @@ use std::error::Error;
 use sha2_core::sha::StartVector;
 use sha2_core::structs::collision_type::CollisionType;
 
-use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::smt_lib::builder::SmtBuilder;
 use crate::smt_lib::utilities::{get_previous_var, msg_prefix, smt_hex};
 
 impl SmtBuilder {

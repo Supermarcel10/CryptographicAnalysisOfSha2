@@ -2,7 +2,7 @@ use std::error::Error;
 
 use sha2_core::structs::collision_type::CollisionType;
 
-use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::smt_lib::builder::SmtBuilder;
 
 impl SmtBuilder {
 	pub(super) fn define_calculated_differential_initial_vector(

@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::smt_lib::builder::SmtBuilder;
 
 fn bvadd(exprs : Vec<&str>) -> String {
 	let mut s = String::from("(bvadd");

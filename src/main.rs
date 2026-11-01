@@ -14,7 +14,7 @@ use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 use sha2_graph::graphing::graph_renderer::GraphRenderer;
 use sha2_graph::graphing::line_styles::LineStyle::*;
-use sha2_smt::smt_lib::smt_lib::generate_smtlib_files;
+use sha2_smt::smt_lib::builder::generate_smtlib_files;
 use sha2_smt::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
 
 #[cfg(not(unix))]
