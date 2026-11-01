@@ -1,6 +1,7 @@
 use std::cmp::PartialEq;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
+
 use crate::sha::structs::{HashError, Word};
 use crate::structs::hash_function::HashFunction;
 use crate::structs::hash_result::HashResult;

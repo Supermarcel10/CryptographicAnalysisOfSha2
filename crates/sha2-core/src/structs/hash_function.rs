@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+
 use crate::sha::{HashError, Word};
 use crate::structs::size::Size;
 

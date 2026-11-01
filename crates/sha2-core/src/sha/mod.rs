@@ -1,5 +1,7 @@
 mod sha;
 mod structs;
 
-#[allow(unused_imports)] pub use sha::{Sha, StartVector, MessageBlock, OutputHash};
-#[allow(unused_imports)] pub use structs::{Word, HashError};
+#[allow(unused_imports)]
+pub use sha::{MessageBlock, OutputHash, Sha, StartVector};
+#[allow(unused_imports)]
+pub use structs::{HashError, Word};

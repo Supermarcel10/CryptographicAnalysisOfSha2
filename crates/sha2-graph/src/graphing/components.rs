@@ -1,9 +1,11 @@
 use std::error::Error;
 use std::ops::Add;
+
 use num_traits::One;
 use plotters::chart::DualCoordChartContext;
 use plotters::coord::ranged1d::ValueFormatter;
 use plotters::prelude::*;
+
 use crate::graphing::custom_point_styles::PointStyles;
 use crate::graphing::graph_renderer::GraphRenderer;
 use crate::graphing::line_styles::LineStyle;
