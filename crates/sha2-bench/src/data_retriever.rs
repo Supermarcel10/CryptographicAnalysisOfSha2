@@ -28,7 +28,7 @@ impl DataRetriever {
 	}
 
 	#[allow(dead_code)]
-	pub fn default() -> Result<Self, Box<dyn Error>> {
+	pub fn with_default_dir() -> Result<Self, Box<dyn Error>> {
 		DataRetriever::new(PathBuf::from("results/"))
 	}
 
@@ -212,7 +212,7 @@ impl DataRetriever {
 
 		let mut map = BTreeMap::new();
 		for benchmark in baselines {
-			let key = benchmark.encoding.clone();
+			let key = benchmark.encoding;
 			map.entry(key).or_insert_with(Vec::new).push(benchmark);
 		}
 
@@ -220,7 +220,7 @@ impl DataRetriever {
 	}
 }
 
-fn substitute_reruns(baselines : &mut Vec<Benchmark>, reruns : Vec<Benchmark>) {
+fn substitute_reruns(baselines : &mut [Benchmark], reruns : Vec<Benchmark>) {
 	for rerun in reruns.into_iter() {
 		for baseline in baselines.iter_mut() {
 			if baseline.rounds == rerun.rounds
