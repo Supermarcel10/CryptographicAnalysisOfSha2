@@ -15,7 +15,7 @@ hex_literal_case = "Upper"
 match_block_trailing_comma = false
 trailing_comma = "Never"
 merge_derives = false
-overflow_delimited_expr = true
+overflow_delimited_expr = false
 
 reorder_impl_items = true
 
