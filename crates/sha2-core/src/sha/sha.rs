@@ -212,10 +212,10 @@ impl Sha {
 	///
 	/// ```ignore
 	/// let message: [u32; 16] = [
-	/// 	0xc61d6de7, 0x755336e8, 0x5e61d618, 0x18036de6,
-	/// 	0xa79f2f1d, 0xf2b44c7b, 0x4c0ef36b, 0xa85d45cf,
-	/// 	0xf72b8c2f, 0x0def947c, 0xa0eab159, 0x8021370c,
-	/// 	0x4b0d8011, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
+	///     0xc61d6de7, 0x755336e8, 0x5e61d618, 0x18036de6,
+	///     0xa79f2f1d, 0xf2b44c7b, 0x4c0ef36b, 0xa85d45cf,
+	///     0xf72b8c2f, 0x0def947c, 0xa0eab159, 0x8021370c,
+	///     0x4b0d8011, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
 	/// ];
 	///
 	/// let sha_digest = Sha::from_hash(message, SHA256, 64, IV);
@@ -269,7 +269,7 @@ impl Sha {
 		}
 
 		// Initialize working variables
-		let mut working_vars = self.state.clone();
+		let mut working_vars = self.state;
 
 		// Compression loop
 		for i in 0..self.rounds as usize {
@@ -292,7 +292,7 @@ impl Sha {
 
 			states.push(ShaState {
 				i : i as u8,
-				w : w[i].clone(),
+				w : w[i],
 				a : working_vars[0],
 				e : working_vars[4]
 			});
@@ -307,8 +307,7 @@ impl Sha {
 		let truncate_to_length = self
 			.hash_function
 			.truncate_to_length()
-			.or(Some(self.state.len()))
-			.unwrap();
+			.unwrap_or(self.state.len());
 
 		let hash = OutputHash(Box::from(&self.state[..truncate_to_length]));
 
@@ -513,7 +512,7 @@ mod tests {
 			0xa79f2f1d, 0xf2b44c7b, 0x4c0ef36b, 0xa85d45cf,
 			0xf72b8c2f, 0x0def947c, 0xa0eab159, 0x8021370c,
 			0x4b0d8011, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
-		].into();
+		];
 
 		let m_prime : [u32; 16] = [
 			0xc61d6de7, 0x755336e8, 0x5e61d618, 0x18036de6,
