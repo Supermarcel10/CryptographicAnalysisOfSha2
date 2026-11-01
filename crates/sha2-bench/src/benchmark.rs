@@ -26,7 +26,7 @@ pub enum SmtSolver {
 	Boolector,
 	// STP, // STP Does not support SMTLIB 2.6!
 	Colibri2,
-	MathSAT,
+	MathSAT
 }
 
 // TODO: TO TEST:
@@ -120,7 +120,7 @@ impl Display for SmtSolver {
 			Boolector => "Boolector",
 			// STP => "STP",
 			Colibri2 => "Colibri2",
-			MathSAT => "MathSAT",
+			MathSAT => "MathSAT"
 		})
 	}
 }
@@ -137,7 +137,7 @@ impl SmtSolver {
 			Boolector => "boolector",
 			// STP => "stp",
 			Colibri2 => "./solvers/colibri2",
-			MathSAT => "./solvers/mathsat",
+			MathSAT => "./solvers/mathsat"
 		}.into()
 	}
 }
@@ -152,7 +152,7 @@ pub enum BenchmarkResult {
 	CPUOut,
 	Aborted,
 	SMTError,
-	Unknown,
+	Unknown
 }
 
 impl Display for BenchmarkResult {
@@ -164,7 +164,7 @@ impl Display for BenchmarkResult {
 			BenchmarkResult::CPUOut => "OUT OF CPU TIME",
 			BenchmarkResult::Aborted => "ABORTED",
 			BenchmarkResult::SMTError => "SMT ERROR",
-			BenchmarkResult::Unknown => "UNKNOWN",
+			BenchmarkResult::Unknown => "UNKNOWN"
 		})
 	}
 }
@@ -173,7 +173,7 @@ impl Display for BenchmarkResult {
 enum SmtOutputFormat {
 	Boolean,
 	Hex,
-	Decimal,
+	Decimal
 }
 
 impl SmtOutputFormat {
@@ -181,7 +181,7 @@ impl SmtOutputFormat {
 		match self {
 			SmtOutputFormat::Boolean => "#b([01]*)",
 			SmtOutputFormat::Hex => "#x([0-9a-fA-F]*)",
-			SmtOutputFormat::Decimal => "([0-9]*)",
+			SmtOutputFormat::Decimal => "([0-9]*)"
 		}.to_string()
 	}
 
@@ -193,7 +193,7 @@ impl SmtOutputFormat {
 		let radix_size = match self {
 			SmtOutputFormat::Boolean => 2,
 			SmtOutputFormat::Hex => 16,
-			SmtOutputFormat::Decimal => 10,
+			SmtOutputFormat::Decimal => 10
  		};
 
 		Ok(Word::from_str_radix(capture, radix_size, hash_function)?)
@@ -234,7 +234,7 @@ impl MutableShaState {
 			'a' => self.a = Some(value),
 			'e' => self.e = Some(value),
 			'w' => self.w = Some(value),
-			_ => {},
+			_ => {}
 		}
 	}
 }
@@ -362,7 +362,7 @@ impl Benchmark {
 						&mut start_blocks,
 						&mut start_vectors,
 						&mut states,
-						is_differential,
+						is_differential
 					)?;
 				}
 				None => {
@@ -375,7 +375,7 @@ impl Benchmark {
 						&mut start_blocks,
 						&mut start_vectors,
 						&mut states,
-						is_differential,
+						is_differential
 					)?;
 					self.parse_update_for_msg(
 						1,
@@ -386,7 +386,7 @@ impl Benchmark {
 						&mut start_blocks,
 						&mut start_vectors,
 						&mut states,
-						is_differential,
+						is_differential
 					)?;
 				}
 			}

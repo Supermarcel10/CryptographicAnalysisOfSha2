@@ -66,14 +66,14 @@ impl Display for CollidingPair {
 		if !is_m0_hash_same {
 			match self.m0.run_sha(self.hash_function, self.rounds) {
 				Ok(result) => mismatch_info += &format!("\nActual Hash: {}", result.hash),
-				Err(_) => mismatch_info += "\nUnable to retrieve actual hash for M!",
+				Err(_) => mismatch_info += "\nUnable to retrieve actual hash for M!"
 			}
 		}
 
 		if !is_m1_hash_same {
 			match self.m1.run_sha(self.hash_function, self.rounds) {
 				Ok(result) => mismatch_info += &format!("\nActual Hash': {}", result.hash),
-				Err(_) => mismatch_info += "\nUnable to retrieve actual hash for M'!",
+				Err(_) => mismatch_info += "\nUnable to retrieve actual hash for M'!"
 			}
 		}
 

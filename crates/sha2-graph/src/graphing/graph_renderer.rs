@@ -42,7 +42,7 @@ impl GraphRenderer {
 			line_styles,
 			line_thickness,
 			point_thickness,
-			data_retriever,
+			data_retriever
 		})
 	}
 
@@ -103,7 +103,7 @@ impl GraphRenderer {
 				// Black
 				Normal {
 					color: RGBAColor(0, 0, 0, 1.0),
-				},
+				}
 			]),
 			line_thickness: 2,
 			point_thickness: 6,
@@ -128,5 +128,5 @@ pub enum GraphRendererError<'a> {
 	MissingData {
 		graph_name: &'a str,
 		dataset_name: &'a str,
-	},
+	}
 }

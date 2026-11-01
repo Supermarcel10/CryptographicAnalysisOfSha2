@@ -265,7 +265,7 @@ impl GraphRenderer {
 					split,
 					self.point_thickness,
 					color,
-					&|c, s, st| Circle::new(c, s, st.filled()),
+					&|c, s, st| Circle::new(c, s, st.filled())
 				))?;
 			}
 		}

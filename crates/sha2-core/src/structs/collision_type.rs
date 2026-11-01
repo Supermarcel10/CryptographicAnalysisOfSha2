@@ -10,7 +10,7 @@ pub enum CollisionType {
 	SemiFreeStart,
 	/// Use cv0 for m0, cv1 for m1, where cv0 != cv1 and m0 ?= m1
 	#[value(name = "fs")]
-	FreeStart,
+	FreeStart
 }
 
 impl Display for CollisionType {
@@ -18,7 +18,7 @@ impl Display for CollisionType {
 		match self {
 			CollisionType::Standard => f.write_str("STD"),
 			CollisionType::SemiFreeStart => f.write_str("SFS"),
-			CollisionType::FreeStart => f.write_str("FS"),
+			CollisionType::FreeStart => f.write_str("FS")
 		}
 	}
 }

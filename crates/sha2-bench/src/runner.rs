@@ -49,7 +49,7 @@ impl BenchmarkRunner {
 			benchmark_save_dir,
 			continue_on_failure,
 			encoding_type,
-			is_rerun,
+			is_rerun
 		}
 	}
 
@@ -72,7 +72,7 @@ impl BenchmarkRunner {
 							collision_type,
 							round_range.clone(),
 							None,
-							&mut sequential_fails,
+							&mut sequential_fails
 						)?;
 					} else {
 						for arg in arguments.clone() {
@@ -82,7 +82,7 @@ impl BenchmarkRunner {
 								collision_type,
 								round_range.clone(),
 								Some(arg),
-								&mut sequential_fails,
+								&mut sequential_fails
 							)?;
 						}
 					}
@@ -112,7 +112,7 @@ impl BenchmarkRunner {
 				*hash_function,
 				*collision_type,
 				rounds,
-				self.encoding_type.clone(),
+				self.encoding_type.clone()
 			);
 
 			let mut result = self.run_solver_with_benchmark(
@@ -123,7 +123,7 @@ impl BenchmarkRunner {
 				self.is_rerun,
 				self.encoding_type.clone(),
 				smt_path,
-				arg.clone(),
+				arg.clone()
 			);
 
 			if let Err(err) = self.handle_result(&mut result, sequential_fails) {
@@ -164,7 +164,7 @@ impl BenchmarkRunner {
 					BenchmarkResult::Sat | BenchmarkResult::Unsat => {
 						match benchmark.parse_output()? {
 							None => println!("UNSAT\n"),
-							Some(colliding_pair) => println!("{}\n", colliding_pair),
+							Some(colliding_pair) => println!("{}\n", colliding_pair)
 						}
 
 						*sequential_fails = 0;
@@ -247,7 +247,7 @@ impl BenchmarkRunner {
 				killpg(Pid::from_raw(pid as i32), Signal::SIGKILL)?;
 				child.wait()?;
 				(String::new(), String::new())
-			},
+			}
 			Some(_) => {
 				let cout = if let Some(stdout) = child.stdout.take() {
 					let mut cout = String::new();
@@ -325,7 +325,7 @@ impl BenchmarkRunner {
 						SIGABRT | SIGKILL | SIGSEGV => MemOut,
 						SIGALRM | SIGTERM | SIGXCPU => CPUOut,
 						SIGHUP | SIGILL | SIGSYS => SMTError,
-						_ => Unknown,
+						_ => Unknown
 					}
 				}
 			}

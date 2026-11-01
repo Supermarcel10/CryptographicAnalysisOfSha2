@@ -6,7 +6,7 @@ use crate::structs::size::Size;
 pub enum HashFunction {
 	SHA224,
 	SHA256,
-	SHA512,
+	SHA512
 }
 
 impl Display for HashFunction {
@@ -14,7 +14,7 @@ impl Display for HashFunction {
 		match self {
 			HashFunction::SHA224 => f.write_str("SHA224"),
 			HashFunction::SHA256 => f.write_str("SHA256"),
-			HashFunction::SHA512 => f.write_str("SHA512"),
+			HashFunction::SHA512 => f.write_str("SHA512")
 		}
 	}
 }
@@ -24,7 +24,7 @@ impl HashFunction {
 		use HashFunction::*;
 		match self {
 			SHA224 | SHA256 => 64,
-			SHA512 => 80,
+			SHA512 => 80
 		}
 	}
 
@@ -32,7 +32,7 @@ impl HashFunction {
 		use HashFunction::*;
 		match self {
 			SHA224 | SHA256 => Size::from_bits(64),
-			SHA512 => Size::from_bits(128),
+			SHA512 => Size::from_bits(128)
 		}
 	}
 
@@ -40,7 +40,7 @@ impl HashFunction {
 		use HashFunction::*;
 		match self {
 			SHA224 | SHA256 => Size::from_bits(512),
-			SHA512 => Size::from_bits(1024),
+			SHA512 => Size::from_bits(1024)
 		}
 	}
 
@@ -48,7 +48,7 @@ impl HashFunction {
 		use HashFunction::*;
 		match self {
 			SHA224 | SHA256 => Word::W32(0),
-			SHA512 => Word::W64(0),
+			SHA512 => Word::W64(0)
 		}
 	}
 
@@ -56,7 +56,7 @@ impl HashFunction {
 		use HashFunction::*;
 		match self {
 			SHA224 | SHA256 => Size::from_bits(32),
-			SHA512 => Size::from_bits(64),
+			SHA512 => Size::from_bits(64)
 		}
 	}
 
@@ -64,7 +64,7 @@ impl HashFunction {
 		use HashFunction::*;
 		match self {
 			SHA224 => Some(7),
-			_ => None,
+			_ => None
 		}
 	}
 
@@ -133,7 +133,7 @@ impl HashFunction {
 				0x06f067aa72176fba, 0x0a637dc5a2c898a6, 0x113f9804bef90dae, 0x1b710b35131c471b,
 				0x28db77f523047d84, 0x32caab7b40c72493, 0x3c9ebe0a15c9bebc, 0x431d67c49c100d4c,
 				0x4cc5d4becb3e42b6, 0x597f299cfc657e2a, 0x5fcb6fab3ad6faec, 0x6c44198c4a475817,
-			]),
+			])
 		}
 	}
 }

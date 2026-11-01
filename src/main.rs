@@ -151,7 +151,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			generate_smtlib_files(
 				SmtRetriever::new(smt_dir)?
 			)?;
-		},
+		}
 
 		Commands::Benchmark {
 			solver: solvers,
@@ -165,7 +165,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			result_dir,
 			continue_on_fail,
 			encoding_type,
-			is_rerun,
+			is_rerun
 		} => {
 			let round_range = round_range.clone().unwrap_or(1..80);
 			let arg_set = arg_set.clone().unwrap_or(Vec::with_capacity(0));
@@ -200,7 +200,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 				save_dir,
 				continue_on_fail,
 				encoding_type,
-				is_rerun,
+				is_rerun
 			);
 
 			runner.run_benchmarks(
@@ -208,7 +208,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 				hash_functions.clone(),
 				collision_types.clone(),
 				round_range,
-				arg_set,
+				arg_set
 			)?;
 		}
 
@@ -217,7 +217,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			msg_block,
 			hash_function,
 			rounds,
-			start_vector,
+			start_vector
 		} => {
 			let rounds = rounds.unwrap_or(hash_function.max_rounds());
 
@@ -245,18 +245,18 @@ fn main() -> Result<(), Box<dyn Error>> {
 					MessageBlock::from_str_radix(msg_block, 16, *hash_function)?,
 					*hash_function,
 					rounds,
-					start_vector,
+					start_vector
 				)?.execute()?
 			} else {
 				return Err(Box::from("Either msg or msg_block must be provided"));
 			};
 
 			println!("{}", result.hash);
-		},
+		}
 
 		Commands::Load {
 			result_path,
-			recursive,
+			recursive
 		} => {
 			let result_path = result_path.clone().unwrap_or(PathBuf::from("results/"));
 			let recursive = recursive.unwrap_or(true);
@@ -277,9 +277,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 				match benchmark.parse_output() {
 					Ok(output) => match output {
 						None => println!("UNSAT\n"),
-						Some(colliding_pair) => println!("{}\n", colliding_pair),
+						Some(colliding_pair) => println!("{}\n", colliding_pair)
 					}
-					Err(err) => println!("{err}"),
+					Err(err) => println!("{err}")
 				}
 
 				println!("---\n")
@@ -288,7 +288,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 		Commands::Graph {
 			graph_dir,
-			result_dir,
+			result_dir
 		} => {
 
 			let graph_dir = graph_dir.clone().unwrap_or(PathBuf::from("graphs/"));
@@ -347,15 +347,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 					// Black
 					Normal {
 						color: RGBAColor(0, 0, 0, 1.0),
-					},
+					}
 				]),
 				2,
 				6,
-				DataRetriever::new(result_dir.clone())?,
+				DataRetriever::new(result_dir.clone())?
 			)?;
 
 			graph_renderer.generate_all_graphs()?;
-		},
+		}
 	}
 
 	Ok(())

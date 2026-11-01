@@ -34,7 +34,7 @@ impl SmtBuilder {
 			hash_function,
 			rounds,
 			collision_type,
-			encoding,
+			encoding
 		})
 	}
 

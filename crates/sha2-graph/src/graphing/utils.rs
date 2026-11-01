@@ -30,7 +30,7 @@ pub(super) fn get_range<T: Copy + PartialOrd>(
 		let v = retr(b);
 		(
 			if v < min_agg { v } else { min_agg },
-			if v > max_agg { v } else { max_agg },
+			if v > max_agg { v } else { max_agg }
 		)
 	});
 
@@ -108,7 +108,7 @@ pub(super) fn classify_benchmark_result_to_point_style(result: BenchmarkResult) 
 	match result {
 		Sat => Circle,
 		Unsat => Triangle,
-		_ => None,
+		_ => None
 	}
 }
 

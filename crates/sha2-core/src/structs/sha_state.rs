@@ -25,7 +25,7 @@ impl BitDifferential for Vec<ShaState> {
 		let padding = if let Some(state) = self.get(0) {
 			match state.w {
 				Word::W32(_) => 32,
-				Word::W64(_) => 64,
+				Word::W64(_) => 64
 			}
 		} else { return output };
 

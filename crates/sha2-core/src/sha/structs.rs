@@ -49,7 +49,7 @@ impl PartialEq<u32> for Word {
 	fn eq(&self, other: &u32) -> bool {
 		match self {
 			Word::W32(s) => s == other,
-			Word::W64(_) => false,
+			Word::W64(_) => false
 		}
 	}
 
@@ -62,7 +62,7 @@ impl PartialEq<u64> for Word {
 	fn eq(&self, other: &u64) -> bool {
 		match self {
 			Word::W32(_) => false,
-			Word::W64(s) => s == other,
+			Word::W64(s) => s == other
 		}
 	}
 
@@ -75,7 +75,7 @@ impl LowerHex for Word {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
 			Word::W32(w) => f.write_str(&format!("{w:08x}")),
-			Word::W64(w) => f.write_str(&format!("{w:016x}")),
+			Word::W64(w) => f.write_str(&format!("{w:016x}"))
 		}?;
 
 		Ok(())
@@ -116,7 +116,7 @@ impl Word {
 		use Word::*;
 		match a {
 			W32(a) => W32(a.rotate_right(2) ^ a.rotate_right(13) ^ a.rotate_right(22)),
-			W64(a) => W64(a.rotate_right(28) ^ a.rotate_right(34) ^ a.rotate_right(39)),
+			W64(a) => W64(a.rotate_right(28) ^ a.rotate_right(34) ^ a.rotate_right(39))
 		}
 	}
 
@@ -124,7 +124,7 @@ impl Word {
 		use Word::*;
 		match e {
 			W32(e) => W32(e.rotate_right(6) ^ e.rotate_right(11) ^ e.rotate_right(25)),
-			W64(e) => W64(e.rotate_right(14) ^ e.rotate_right(18) ^ e.rotate_right(41)),
+			W64(e) => W64(e.rotate_right(14) ^ e.rotate_right(18) ^ e.rotate_right(41))
 		}
 	}
 
@@ -132,7 +132,7 @@ impl Word {
 		use Word::*;
 		match x {
 			W32(x) => W32(x.rotate_right(7) ^ x.rotate_right(18) ^ (x >> 3)),
-			W64(x) => W64(x.rotate_right(1) ^ x.rotate_right(8) ^ (x >> 7)),
+			W64(x) => W64(x.rotate_right(1) ^ x.rotate_right(8) ^ (x >> 7))
 		}
 	}
 
@@ -140,7 +140,7 @@ impl Word {
 		use Word::*;
 		match x {
 			W32(x) => W32(x.rotate_right(17) ^ x.rotate_right(19) ^ (x >> 10)),
-			W64(x) => W64(x.rotate_right(19) ^ x.rotate_right(61) ^ (x >> 6)),
+			W64(x) => W64(x.rotate_right(19) ^ x.rotate_right(61) ^ (x >> 6))
 		}
 	}
 
@@ -160,7 +160,7 @@ impl Word {
 		use HashFunction::*;
 		match hash_function {
 			SHA224 | SHA256 => Ok(Word::W32(u32::from_str_radix(src, radix)?)),
-			SHA512 => Ok(Word::W64(u64::from_str_radix(src, radix)?)),
+			SHA512 => Ok(Word::W64(u64::from_str_radix(src, radix)?))
 		}
 	}
 
@@ -176,7 +176,7 @@ impl Word {
 		match bytes.len() {
 			4 => Ok(Word::W32(u32::from_be_bytes(bytes.try_into().unwrap()))),
 			8 => Ok(Word::W64(u64::from_be_bytes(bytes.try_into().unwrap()))),
-			_ => Err(HashError::FailedToConvertBytes),
+			_ => Err(HashError::FailedToConvertBytes)
 		}
 	}
 
@@ -184,7 +184,7 @@ impl Word {
 	pub fn to_be_bytes(self) -> Box<[u8]> {
 		match self {
 			Word::W32(w) => Box::from(w.to_be_bytes()),
-			Word::W64(w) => Box::from(w.to_be_bytes()),
+			Word::W64(w) => Box::from(w.to_be_bytes())
 		}
 	}
 }

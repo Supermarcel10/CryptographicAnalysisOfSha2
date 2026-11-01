@@ -25,7 +25,7 @@ pub enum EncodingType {
 	Base4 {
 		simplified_maj_and_ch_functions: bool,
 		alternative_add: bool,
-	},
+	}
 }
 
 impl Into<String> for EncodingType {
@@ -55,7 +55,7 @@ impl EncodingType {
 		match self {
 			DeltaXOR { .. } => Ok("bvxor"),
 			DeltaSub { .. } => Ok("bvsub"),
-			_ => Err(Box::from("get_diff not supported for encoding type")),
+			_ => Err(Box::from("get_diff not supported for encoding type"))
 		}
 	}
 
@@ -86,15 +86,15 @@ impl EncodingType {
 			for alternative_add in [false, true] {
 				vec.push(BruteForce {
 					simplified_maj_and_ch_functions,
-					alternative_add,
+					alternative_add
 				});
 				vec.push(DeltaXOR {
 					simplified_maj_and_ch_functions,
-					alternative_add,
+					alternative_add
 				});
 				vec.push(DeltaSub {
 					simplified_maj_and_ch_functions,
-					alternative_add,
+					alternative_add
 				});
 				// TODO: Uncomment once implemented
 				// vec.push(Base4 {
@@ -111,7 +111,7 @@ impl EncodingType {
 fn parse_bool(s: &str) -> bool {
 	match s.to_lowercase().as_str() {
 		"true" | "1" | "yes" | "y" => true,
-		_ => false,
+		_ => false
 	}
 }
 
@@ -157,7 +157,7 @@ impl FromStr for EncodingType {
 					alternative_add,
 				})
 			},
-			_ => Err(format!("Unknown encoding type: {}", encoding_type_str)),
+			_ => Err(format!("Unknown encoding type: {}", encoding_type_str))
 		}
 	}
 }
@@ -210,7 +210,7 @@ impl SmtRetriever {
 		}
 
 		Ok(SmtRetriever {
-			smt_dir,
+			smt_dir
 		})
 	}
 

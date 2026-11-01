@@ -10,7 +10,7 @@ pub enum CustomShape {
 	None,
 	Circle,
 	Cross,
-	Triangle,
+	Triangle
 }
 
 #[allow(dead_code)]
@@ -66,7 +66,7 @@ impl PointStyles {
 			data,
 			point_thickness,
 			color,
-			&|coord, size, style| Circle::new(coord, size, style.filled()),
+			&|coord, size, style| Circle::new(coord, size, style.filled())
 		))?;
 
 		Ok(())
@@ -105,7 +105,7 @@ impl PointStyles {
 				CustomShape::Circle => circles.push((*x, y.clone())),
 				CustomShape::Cross => crosses.push((*x, y.clone())),
 				CustomShape::Triangle => triangles.push((*x, y.clone())),
-				CustomShape::None => (),
+				CustomShape::None => ()
 			}
 		}
 
@@ -115,7 +115,7 @@ impl PointStyles {
 				circles,
 				point_thickness,
 				color,
-				&|coord, size, style| Circle::new(coord, size, style.filled()),
+				&|coord, size, style| Circle::new(coord, size, style.filled())
 			))?;
 		}
 
@@ -124,7 +124,7 @@ impl PointStyles {
 				crosses,
 				point_thickness,
 				color,
-				&|coord, size, style| Cross::new(coord, size * 2, style.filled()),
+				&|coord, size, style| Cross::new(coord, size * 2, style.filled())
 			))?;
 		}
 
@@ -135,7 +135,7 @@ impl PointStyles {
 				color,
 				&|coord, size, style| {
 					TriangleMarker::new(coord, (size as f32) * 1.8, style.filled())
-				},
+				}
 			))?;
 		}
 

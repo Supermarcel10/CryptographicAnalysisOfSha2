@@ -85,7 +85,7 @@ impl GraphRenderer {
 			&mut chart,
 			"Memory (MiB)",
 			Some(*self.line_styles[1].get_color()),
-			None,
+			None
 		)?;
 
 		// Draw primary data
@@ -288,7 +288,7 @@ impl GraphRenderer {
 			&mut chart,
 			"Time (%dev)",
 			None,
-			Some(&|v| format!("{:+.0}%", v)),
+			Some(&|v| format!("{:+.0}%", v))
 		)?;
 
 		// Draw deviation data
@@ -308,7 +308,7 @@ impl GraphRenderer {
 				PointStyles::Basic,
 				true,
 				&label,
-				Some(self.line_styles[i]),
+				Some(self.line_styles[i])
 			)?
 		}
 
@@ -321,7 +321,7 @@ impl GraphRenderer {
 			"Baseline",
 			Some(Normal {
 				color: RGBAColor(0, 0, 0, 0.3),
-			}),
+			})
 		)?;
 
 		self.draw_legend(&mut chart)?;
@@ -441,7 +441,7 @@ impl GraphRenderer {
 						simplified_maj_and_ch_functions: false,
 						alternative_add: false,
 					},
-					false,
+					false
 				)?;
 
 				if baselines.is_empty() {
@@ -454,7 +454,7 @@ impl GraphRenderer {
 								graph_name: "Time & Memory",
 								dataset_name: "Bitwuzla",
 							}.to_string(),
-						},
+						}
 					);
 					continue;
 				}
@@ -472,7 +472,7 @@ impl GraphRenderer {
 				simplified_maj_and_ch_functions: false,
 				alternative_add: false
 			},
-			true,
+			true
 		)?;
 		self.create_time_and_memory_chart(bitwuzla_baseline_with_anomalies.clone())?;
 
@@ -484,7 +484,7 @@ impl GraphRenderer {
 			("Propagation", "-prop"),
 			("Rewrite Level", "-rwl"),
 			("SAT Solver", "--sat-solver"),
-			("Solver Engine", "--bv-solver"),
+			("Solver Engine", "--bv-solver")
 		]);
 
 		let bitwuzla_baseline: Vec<_> = self.data_retriever.retrieve_baseline(
@@ -507,7 +507,7 @@ impl GraphRenderer {
 				SHA256,
 				Standard,
 				false,
-				identifier,
+				identifier
 			)?;
 
 			let deviation_data = deviation_data
@@ -526,7 +526,7 @@ impl GraphRenderer {
 				&format!("{category} Args"),
 				true,
 				true,
-				true,
+				true
 			)?;
 		}
 
@@ -536,7 +536,7 @@ impl GraphRenderer {
 			SmtSolver::Bitwuzla,
 			SHA256,
 			Standard,
-			false,
+			false
 		)?;
 
 		// DXOR
@@ -552,7 +552,7 @@ impl GraphRenderer {
 			"Delta XOR Encoding Comparison",
 			true,
 			true,
-			true,
+			true
 		)?;
 
 		// DSUB
@@ -568,7 +568,7 @@ impl GraphRenderer {
 			"Delta Sub Encoding Comparison",
 			true,
 			true,
-			true,
+			true
 		)?;
 
 		// Pure encoding comparison graph
@@ -628,7 +628,7 @@ impl GraphRenderer {
 			"Bruteforce Encoding Comparison",
 			true,
 			true,
-			true,
+			true
 		)?;
 
 		Ok(())

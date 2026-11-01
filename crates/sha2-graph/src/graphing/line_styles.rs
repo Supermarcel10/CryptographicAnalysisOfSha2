@@ -10,7 +10,7 @@ pub enum LineStyle {
 		color: RGBAColor,
 		size: u32,
 		spacing: u32,
-	},
+	}
 }
 
 impl LineStyle {

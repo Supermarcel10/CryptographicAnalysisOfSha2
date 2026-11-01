@@ -4,7 +4,7 @@ enum DiffType {
 	DECREASE,
 	EQUAL,
 	FALSE,
-	TRUE,
+	TRUE
 }
 
 impl DiffType {
@@ -14,7 +14,7 @@ impl DiffType {
 			DiffType::DECREASE => 'u',
 			DiffType::EQUAL => '=',
 			DiffType::FALSE => '0',
-			DiffType::TRUE => '1',
+			DiffType::TRUE => '1'
 		}
 	}
 }
