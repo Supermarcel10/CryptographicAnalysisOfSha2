@@ -419,7 +419,6 @@ name = "sha2-collision"
 version = "0.1.2"
 dependencies = [
  "clap",
- "num-traits",
  "plotters",
  "sha2-bench",
  "sha2-core",
