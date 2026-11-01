@@ -166,16 +166,29 @@ impl GraphRenderer {
 		L : Clone + Ord + Into<String>
 	{
 		if baseline_data.len() == 0 {
-			return Err(MissingData { graph_name: "baseline", dataset_name: "baseline" }.into());
+			return Err(MissingData {
+				graph_name : "baseline",
+				dataset_name : "baseline"
+			}
+			.into());
 		}
 
 		if data.len() == 0 {
-			println!("{}", MissingData { graph_name: "baseline", dataset_name: "data" });
+			println!(
+				"{}",
+				MissingData {
+					graph_name : "baseline",
+					dataset_name : "data"
+				}
+			);
 		}
 
 		// Define x range
-		let x_range = get_range(&baseline_data, &|b| b.rounds as u32)
-			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range" })?;
+		let x_range = get_range(&baseline_data, &|b| b.rounds as u32).ok_or(
+			GraphRendererError::GetRangeFailed {
+				variable : "x_range"
+			}
+		)?;
 
 		// Trim data
 		let mut trimmed_data : BTreeMap<L, Vec<Benchmark>> = BTreeMap::new();
@@ -213,7 +226,8 @@ impl GraphRenderer {
 
 		// Get range & calculate deviation from baseline
 		let mut deviation_range : Range<f64> = f64::MAX..f64::MIN;
-		let mut deviation_data: BTreeMap<String, Vec<(u32, f64, BenchmarkResult)>> = BTreeMap::new();
+		let mut deviation_data : BTreeMap<String, Vec<(u32, f64, BenchmarkResult)>> =
+			BTreeMap::new();
 		for (label, run) in trimmed_data.clone() {
 			let mut data = vec![];
 			for b in run {
@@ -256,8 +270,7 @@ impl GraphRenderer {
 		let y_range = deviation_range;
 
 		let path_clone_bind = path.clone();
-		let root = SVGBackend::new(&path_clone_bind, self.output_size)
-			.into_drawing_area();
+		let root = SVGBackend::new(&path_clone_bind, self.output_size).into_drawing_area();
 		root.fill(&WHITE)?;
 
 		let mut chart = ChartBuilder::on(&root)
@@ -269,29 +282,20 @@ impl GraphRenderer {
 
 		// Draw background
 		if draw_background {
-			chart
-				.draw_series(std::iter::once(
-					Rectangle::new(
-						[(x_range.start, -2.0), (x_range.end, y_range.start)],
-						RGBAColor(182, 255, 182, 0.4).filled(),
-					)
-				))?;
+			chart.draw_series(std::iter::once(Rectangle::new(
+				[(x_range.start, -2.0), (x_range.end, y_range.start)],
+				RGBAColor(182, 255, 182, 0.4).filled()
+			)))?;
 
-			chart
-				.draw_series(std::iter::once(
-					Rectangle::new(
-						[(x_range.start, 2.0), (x_range.end, -2.0)],
-						RGBAColor(182, 182, 182, 0.2).filled(),
-					)
-				))?;
+			chart.draw_series(std::iter::once(Rectangle::new(
+				[(x_range.start, 2.0), (x_range.end, -2.0)],
+				RGBAColor(182, 182, 182, 0.2).filled()
+			)))?;
 
-			chart
-				.draw_series(std::iter::once(
-					Rectangle::new(
-						[(x_range.start, 2.0), (x_range.end, y_range.end)],
-						RGBAColor(255, 182, 182, 0.4).filled(),
-					)
-				))?;
+			chart.draw_series(std::iter::once(Rectangle::new(
+				[(x_range.start, 2.0), (x_range.end, y_range.end)],
+				RGBAColor(255, 182, 182, 0.4).filled()
+			)))?;
 		}
 
 		// Draw axis
@@ -353,24 +357,23 @@ impl GraphRenderer {
 	/// `Result<PathBuf, Box<dyn Error>>`
 	///
 	/// Returns path of saved graph file, or error.
-	fn solver_comparison(
-		&self,
-		data: Vec<Benchmark>,
-	) -> Result<PathBuf, Box<dyn Error>> {
+	fn solver_comparison(&self, data : Vec<Benchmark>) -> Result<PathBuf, Box<dyn Error>> {
 		if data.is_empty() {
-			return Err(MissingData { graph_name: "comparison", dataset_name: "data" }.into());
+			return Err(MissingData {
+				graph_name : "comparison",
+				dataset_name : "data"
+			}
+			.into());
 		}
 
 		let title = format!(
 			"{} {} Solver Comparison",
-			data[0].hash_function,
-			data[0].collision_type,
+			data[0].hash_function, data[0].collision_type,
 		);
 
 		let file_name = format!(
 			"solver_comparison_{}_{}.svg",
-			data[0].hash_function,
-			data[0].collision_type,
+			data[0].hash_function, data[0].collision_type,
 		);
 
 		let path = self.output_dir.join(file_name);
@@ -379,14 +382,18 @@ impl GraphRenderer {
 		sorted_data.sort_by_key(|b| b.rounds);
 
 		// Define ranges
-		let x_range = get_range(&data, &|b| b.rounds as u32)
-			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range"})?;
-		let y_range = get_range(&data, &|b| b.execution_time.as_secs_f64())
-			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range"})?;
+		let x_range =
+			get_range(&data, &|b| b.rounds as u32).ok_or(GraphRendererError::GetRangeFailed {
+				variable : "x_range"
+			})?;
+		let y_range = get_range(&data, &|b| b.execution_time.as_secs_f64()).ok_or(
+			GraphRendererError::GetRangeFailed {
+				variable : "y_range"
+			}
+		)?;
 
 		let path_clone_bind = path.clone();
-		let root = SVGBackend::new(&path_clone_bind, self.output_size)
-			.into_drawing_area();
+		let root = SVGBackend::new(&path_clone_bind, self.output_size).into_drawing_area();
 		root.fill(&WHITE)?;
 
 		let mut chart = ChartBuilder::on(&root)
@@ -408,10 +415,11 @@ impl GraphRenderer {
 		// Draw data
 		let mut split_data = BTreeMap::new();
 		for b in sorted_data {
-			split_data
-				.entry(b.solver)
-				.or_insert_with(Vec::new)
-				.push((b.rounds as u32, b.execution_time.as_secs_f64(), b.result));
+			split_data.entry(b.solver).or_insert_with(Vec::new).push((
+				b.rounds as u32,
+				b.execution_time.as_secs_f64(),
+				b.result
+			));
 		}
 
 		for (i, (solver, data)) in split_data.into_iter().enumerate() {
@@ -461,10 +469,11 @@ impl GraphRenderer {
 						FailedToGenerate {
 							hash_function,
 							collision_type,
-							err: &MissingData {
-								graph_name: "Time & Memory",
-								dataset_name: "Bitwuzla",
-							}.to_string(),
+							err : &MissingData {
+								graph_name : "Time & Memory",
+								dataset_name : "Bitwuzla"
+							}
+							.to_string()
 						}
 					);
 					continue;
@@ -472,7 +481,6 @@ impl GraphRenderer {
 				self.solver_comparison(baselines)?;
 			}
 		}
-
 
 		// Generate Bitwuzla detail chart
 		let bitwuzla_baseline_with_anomalies = self.data_retriever.retrieve_baseline(
@@ -487,7 +495,6 @@ impl GraphRenderer {
 		)?;
 		self.create_time_and_memory_chart(bitwuzla_baseline_with_anomalies.clone())?;
 
-
 		// Generate Bitwuzla argument Graphs
 		let arg_categories = BTreeMap::from([
 			("Abstraction", "-abstraction"),
@@ -498,16 +505,18 @@ impl GraphRenderer {
 			("Solver Engine", "--bv-solver")
 		]);
 
-		let bitwuzla_baseline: Vec<_> = self.data_retriever.retrieve_baseline(
-			SmtSolver::Bitwuzla,
-			SHA256,
-			Standard,
-			BruteForce {
-				simplified_maj_and_ch_functions: false,
-				alternative_add: false
-			},
-			false,
-		)?
+		let bitwuzla_baseline : Vec<_> = self
+			.data_retriever
+			.retrieve_baseline(
+				SmtSolver::Bitwuzla,
+				SHA256,
+				Standard,
+				BruteForce {
+					simplified_maj_and_ch_functions : false,
+					alternative_add : false
+				},
+				false
+			)?
 			.into_iter()
 			.filter(|b| b.result != BenchmarkResult::CPUOut)
 			.collect();
@@ -523,8 +532,9 @@ impl GraphRenderer {
 
 			let deviation_data = deviation_data
 				.into_iter()
-				.map(|(a, runs)|{
-					let runs = runs.into_iter()
+				.map(|(a, runs)| {
+					let runs = runs
+						.into_iter()
 						.filter(|b| b.result != BenchmarkResult::CPUOut)
 						.collect();
 					(a, runs)
@@ -540,7 +550,6 @@ impl GraphRenderer {
 				true
 			)?;
 		}
-
 
 		// Generate Bitwuzla encoding graphs
 		let encoding_data = self.data_retriever.retrieve_non_bruteforce_encodings(
@@ -594,44 +603,22 @@ impl GraphRenderer {
 				simplified_maj_and_ch_functions : true,
 				alternative_add : false
 			},
-			false
-		).expect("Failed to retrieve bruteforce simplified baseline");
-
-		let bruteforce_alt_add = self.data_retriever.retrieve_baseline(
-			SmtSolver::Bitwuzla,
-			SHA256,
-			Standard,
+			bruteforce_simpl
+		);
+		all_encodings.insert(
 			BruteForce {
 				simplified_maj_and_ch_functions : false,
 				alternative_add : true
 			},
-			false
-		).expect("Failed to retrieve bruteforce alt add baseline");
-
-		let bruteforce_alt_add_simpl = self.data_retriever.retrieve_baseline(
-			SmtSolver::Bitwuzla,
-			SHA256,
-			Standard,
+			bruteforce_alt_add
+		);
+		all_encodings.insert(
 			BruteForce {
 				simplified_maj_and_ch_functions : true,
 				alternative_add : true
 			},
-			false
-		).expect("Failed to retrieve bruteforce alt add simplified baseline");
-
-		// Insert baselines
-		all_encodings.insert(BruteForce {
-			simplified_maj_and_ch_functions: true,
-			alternative_add: false,
-		}, bruteforce_simpl);
-		all_encodings.insert(BruteForce {
-			simplified_maj_and_ch_functions: false,
-			alternative_add: true,
-		}, bruteforce_alt_add);
-		all_encodings.insert(BruteForce {
-			simplified_maj_and_ch_functions: true,
-			alternative_add: true,
-		}, bruteforce_alt_add_simpl);
+			bruteforce_alt_add_simpl
+		);
 
 		self.create_baseline_graph(
 			bitwuzla_baseline.clone(),

@@ -319,11 +319,7 @@ impl BenchmarkRunner {
 			None => CPUOut,
 			Some(status) => {
 				let code = status.code().ok_or("Failed to retrieve status code!")?;
-				let outcome = cout
-					.lines()
-					.next()
-					.unwrap_or("unknown")
-					.to_lowercase();
+				let outcome = cout.lines().next().unwrap_or("unknown").to_lowercase();
 
 				if outcome.contains("unsat") {
 					Unsat

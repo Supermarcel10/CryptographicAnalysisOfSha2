@@ -78,21 +78,13 @@ pub fn generate_smtlib_files(smt_retriever : SmtRetriever) -> Result<(), Box<dyn
 		for collision_type in [Standard, SemiFreeStart, FreeStart] {
 			for encoding in EncodingType::get_all_permutations() {
 				for rounds in 1..=hash_function.max_rounds() {
-					let mut builder = SmtBuilder::new(
-						hash_function,
-						rounds,
-						collision_type,
-						encoding,
-					)?;
+					let mut builder =
+						SmtBuilder::new(hash_function, rounds, collision_type, encoding)?;
 
 					builder.write_encoding()?;
 
-					let file_path = smt_retriever.get_file(
-						hash_function,
-						collision_type,
-						rounds,
-						encoding,
-					);
+					let file_path =
+						smt_retriever.get_file(hash_function, collision_type, rounds, encoding);
 
 					builder.to_file(file_path)?;
 				}

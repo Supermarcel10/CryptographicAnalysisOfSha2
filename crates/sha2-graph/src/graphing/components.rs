@@ -171,26 +171,30 @@ impl GraphRenderer {
 		let mut was_legend_defined = false;
 		for split in data {
 			let series = match line_style {
-				LineStyle::Normal { .. } => chart
-					.draw_series(LineSeries::new(
-						split.clone(),
-						ShapeStyle {
-							color: color.to_rgba(),
-							filled: false,
-							stroke_width: self.line_thickness,
-						}
-					))?,
-				LineStyle::Dashed { size, spacing, .. } => chart
-					.draw_series(DashedLineSeries::new(
-						split.clone(),
-						size,
-						spacing,
-						ShapeStyle {
-							color: color.to_rgba(),
-							filled: false,
-							stroke_width: self.line_thickness,
-						},
-					))?
+				LineStyle::Normal {
+					..
+				} => chart.draw_series(LineSeries::new(
+					split.clone(),
+					ShapeStyle {
+						color : color.to_rgba(),
+						filled : false,
+						stroke_width : self.line_thickness
+					}
+				))?,
+				LineStyle::Dashed {
+					size,
+					spacing,
+					..
+				} => chart.draw_series(DashedLineSeries::new(
+					split.clone(),
+					size,
+					spacing,
+					ShapeStyle {
+						color : color.to_rgba(),
+						filled : false,
+						stroke_width : self.line_thickness
+					}
+				))?
 			};
 
 			ensure_defined_only_once(label, line_style, &mut was_legend_defined, series);
@@ -246,19 +250,20 @@ impl GraphRenderer {
 		// Render
 		let mut was_legend_defined = false;
 		for split in data {
-			let series = chart
-				.draw_secondary_series(LineSeries::new(
-					split.clone(),
-					ShapeStyle {
-						color: color.to_rgba(),
-						filled: false,
-						stroke_width: self.line_thickness,
-					}
-				))?;
+			let series = chart.draw_secondary_series(LineSeries::new(
+				split.clone(),
+				ShapeStyle {
+					color : color.to_rgba(),
+					filled : false,
+					stroke_width : self.line_thickness
+				}
+			))?;
 
 			ensure_defined_only_once(
 				label,
-				LineStyle::Normal {color},
+				LineStyle::Normal {
+					color
+				},
 				&mut was_legend_defined,
 				series
 			);

@@ -68,7 +68,7 @@ enum Commands {
 
 		/// The number of required sequential failures to stop. Default 3
 		#[arg(short, long)]
-		stop_tolerance:  Option<u8>,
+		stop_tolerance : Option<u8>,
 
 		/// Duration after which run is marked as timed out. Default 15 mins
 		#[arg(short, long)]
@@ -155,11 +155,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let cli = Cli::parse();
 
 	match &cli.command {
-		Commands::Generate { smt_dir } => {
+		Commands::Generate {
+			smt_dir
+		} => {
 			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
-			generate_smtlib_files(
-				SmtRetriever::new(smt_dir)?
-			)?;
+			generate_smtlib_files(SmtRetriever::new(smt_dir)?)?;
 		}
 
 		Commands::Benchmark {
@@ -233,9 +233,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 			let start_vector = match start_vector {
 				None => StartVector::IV,
 				Some(start_vector) => {
-					let mut words= Vec::with_capacity(8);
+					let mut words = Vec::with_capacity(8);
 					for word in start_vector.split_whitespace() {
-						 words.push(Word::from_str_radix(word, 16, *hash_function)?);
+						words.push(Word::from_str_radix(word, 16, *hash_function)?);
 					}
 
 					StartVector::CV(<[Word; 8]>::try_from(words).unwrap())
@@ -243,19 +243,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 			};
 
 			let result = if let Some(msg) = msg {
-				Sha::from_string(
-					msg,
-					*hash_function,
-					rounds,
-					start_vector,
-				)?.execute()?
+				Sha::from_string(msg, *hash_function, rounds, start_vector)?.execute()?
 			} else if let Some(msg_block) = msg_block {
 				Sha::from_message_block(
 					MessageBlock::from_str_radix(msg_block, 16, *hash_function)?,
 					*hash_function,
 					rounds,
 					start_vector
-				)?.execute()?
+				)?
+				.execute()?
 			} else {
 				return Err(Box::from("Either msg or msg_block must be provided"));
 			};
@@ -299,7 +295,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 			graph_dir,
 			result_dir
 		} => {
-
 			let graph_dir = graph_dir.clone().unwrap_or(PathBuf::from("graphs/"));
 			let result_dir = result_dir.clone().unwrap_or(PathBuf::from("results/"));
 
@@ -396,7 +391,8 @@ fn load_mapped(
 }
 
 fn parse_range(s : &str) -> Result<Range<u8>, String> {
-	let (start, end) = s.split_once("..")
+	let (start, end) = s
+		.split_once("..")
 		.ok_or_else(|| format!("Invalid range format: '{}'", s))?;
 
 	Ok(Range {
