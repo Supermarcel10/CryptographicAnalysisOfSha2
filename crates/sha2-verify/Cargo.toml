@@ -1,0 +1,9 @@
+[package]
+name = "sha2-verify"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+sha2-core = { path = "../sha2-core" }

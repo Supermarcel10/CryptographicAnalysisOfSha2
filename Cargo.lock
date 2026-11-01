@@ -398,19 +398,70 @@ dependencies = [
 ]
 
 [[package]]
-name = "sha2-collision"
+name = "sha2-bench"
 version = "0.1.2"
 dependencies = [
  "chrono",
  "clap",
  "nix",
- "num-traits",
- "plotters",
  "regex",
  "serde",
  "serde_json",
+ "sha2-core",
+ "sha2-smt",
+ "sha2-verify",
  "thiserror",
  "wait-timeout",
+]
+
+[[package]]
+name = "sha2-collision"
+version = "0.1.2"
+dependencies = [
+ "clap",
+ "plotters",
+ "sha2-bench",
+ "sha2-core",
+ "sha2-graph",
+ "sha2-smt",
+ "sha2-verify",
+ "thiserror",
+]
+
+[[package]]
+name = "sha2-core"
+version = "0.1.2"
+dependencies = [
+ "clap",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "sha2-graph"
+version = "0.1.2"
+dependencies = [
+ "num-traits",
+ "plotters",
+ "sha2-bench",
+ "sha2-core",
+ "sha2-smt",
+ "thiserror",
+]
+
+[[package]]
+name = "sha2-smt"
+version = "0.1.2"
+dependencies = [
+ "serde",
+ "sha2-core",
+]
+
+[[package]]
+name = "sha2-verify"
+version = "0.1.2"
+dependencies = [
+ "sha2-core",
 ]
 
 [[package]]

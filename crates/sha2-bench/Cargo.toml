@@ -1,0 +1,19 @@
+[package]
+name = "sha2-bench"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror = "2.0.11"
+serde = { version = "1.0.218", features = ["derive"] }
+serde_json = "1.0.139"
+regex = "1.11.1"
+nix = { version = "0.29.0", features = ["signal"] }
+wait-timeout = "0.2.1"
+chrono = { version = "0.4.39", features = ["serde"] }
+clap = { version = "4.5.36", features = ["derive"] }
+sha2-core = { path = "../sha2-core" }
+sha2-verify = { path = "../sha2-verify" }
+sha2-smt = { path = "../sha2-smt" }

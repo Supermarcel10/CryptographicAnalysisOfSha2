@@ -1,0 +1,10 @@
+[package]
+name = "sha2-smt"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { version = "1.0.218", features = ["derive"] }
+sha2-core = { path = "../sha2-core" }
