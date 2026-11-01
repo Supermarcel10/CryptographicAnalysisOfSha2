@@ -1,17 +1,18 @@
 use std::error::Error;
+
 use sha2_core::sha::StartVector;
-use crate::smt_lib::smt_lib::SmtBuilder;
-use crate::smt_lib::utilities::{get_previous_var, msg_prefix, smt_hex};
 use sha2_core::structs::collision_type::CollisionType;
 
+use crate::smt_lib::builder::SmtBuilder;
+use crate::smt_lib::utilities::{get_previous_var, msg_prefix, smt_hex};
 
 impl SmtBuilder {
-	pub(super)  fn title(&mut self, title: &str) {
-		let break_like = if self.smt.len() != 0 {"\n\n"} else {""};
+	pub(super) fn title(&mut self, title : &str) {
+		let break_like = if !self.smt.is_empty() { "\n\n" } else { "" };
 		self.smt += format!("{break_like};; {title}\n").as_str();
 	}
 
-	pub(super) fn comment(&mut self, comment: &str) {
+	pub(super) fn comment(&mut self, comment : &str) {
 		self.smt += format!("; {comment}\n").as_str();
 	}
 
@@ -58,13 +59,23 @@ impl SmtBuilder {
 
 		let sigma0 = "(define-fun sigma0 ((a Word)) Word\n\t(bvxor ((_ rotate_right 2) a) ((_ rotate_right 13) a) ((_ rotate_right 22) a))\n)";
 		let sigma1 = "(define-fun sigma1 ((e Word)) Word\n\t(bvxor ((_ rotate_right 6) e) ((_ rotate_right 11) e) ((_ rotate_right 25) e))\n)";
-		let gamma0 = format!("(define-fun gamma0 ((x Word)) Word\n\t(bvxor ((_ rotate_right 7) x) ((_ rotate_right 18) x) (bvlshr x (_ bv3 {word_size})))\n)");
-		let gamma1 = format!("(define-fun gamma1 ((x Word)) Word\n\t(bvxor ((_ rotate_right 17) x) ((_ rotate_right 19) x) (bvlshr x (_ bv10 {word_size})))\n)");
-		let t1 = format!("(define-fun t1 ((h Word) (e Word) (f Word) (g Word) (k Word) (w Word)) Word\n\t{t1_add}\n)");
+		let gamma0 = format!(
+			"(define-fun gamma0 ((x Word)) Word\n\t(bvxor ((_ rotate_right 7) x) ((_ rotate_right 18) x) (bvlshr x (_ bv3 {word_size})))\n)"
+		);
+		let gamma1 = format!(
+			"(define-fun gamma1 ((x Word)) Word\n\t(bvxor ((_ rotate_right 17) x) ((_ rotate_right 19) x) (bvlshr x (_ bv10 {word_size})))\n)"
+		);
+		let t1 = format!(
+			"(define-fun t1 ((h Word) (e Word) (f Word) (g Word) (k Word) (w Word)) Word\n\t{t1_add}\n)"
+		);
 		let t2 = format!("(define-fun t2 ((a Word) (b Word) (c Word)) Word\n\t{t2_add}\n)");
-		let expand_message = format!("(define-fun expandMessage ((a Word) (b Word) (c Word) (d Word)) Word\n\t{expand_message_add}\n)");
+		let expand_message = format!(
+			"(define-fun expandMessage ((a Word) (b Word) (c Word) (d Word)) Word\n\t{expand_message_add}\n)"
+		);
 
-		self.smt += &format!("{ch}\n{maj}\n{sigma0}\n{sigma1}\n{gamma0}\n{gamma1}\n{t1}\n{t2}\n{expand_message}");
+		self.smt += &format!(
+			"{ch}\n{maj}\n{sigma0}\n{sigma1}\n{gamma0}\n{gamma1}\n{t1}\n{t2}\n{expand_message}"
+		);
 		Ok(())
 	}
 
@@ -82,13 +93,16 @@ impl SmtBuilder {
 
 		let mut s = String::new();
 		for (i, val) in k.iter().take(self.rounds as usize).enumerate() {
-			s += &format!("(define-fun k{i} () Word {})\n", smt_hex(*val, &self.hash_function))
-		};
+			s += &format!(
+				"(define-fun k{i} () Word {})\n",
+				smt_hex(*val, &self.hash_function)
+			)
+		}
 
 		self.smt += &s;
 	}
 
-	pub(super) fn define_expansion_for_message(&mut self, message: u8) {
+	pub(super) fn define_expansion_for_message(&mut self, message : u8) {
 		self.comment(&format!("MESSAGE {message}"));
 		let msg = format!("m{message}_w");
 
@@ -111,20 +125,29 @@ impl SmtBuilder {
 		self.smt += &s;
 
 		if self.rounds <= 16 {
-			self.comment(&format!("Message expansion irrelevant for {} rounds", self.rounds));
+			self.comment(&format!(
+				"Message expansion irrelevant for {} rounds",
+				self.rounds
+			));
 		} else {
 			self.break_line();
 			self.comment("Message expansion");
 			for i in 16..self.rounds {
 				self.smt += &format!(
 					"(define-fun {msg}{i} () Word (expandMessage {msg}{} {msg}{} {msg}{} {msg}{}))\n",
-					i - 16, i - 15, i - 7, i - 2
+					i - 16,
+					i - 15,
+					i - 7,
+					i - 2
 				)
 			}
 		}
 	}
 
-	pub(super) fn define_compression_for_message(&mut self, message: u8) -> Result<(), Box<dyn Error>> {
+	pub(super) fn define_compression_for_message(
+		&mut self,
+		message : u8
+	) -> Result<(), Box<dyn Error>> {
 		self.comment(&format!("MESSAGE {message}"));
 
 		let mut s = String::new();
@@ -142,17 +165,23 @@ impl SmtBuilder {
 						&format!("m{message}_t2_{i}"),
 					])?;
 
-					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word {a_add})\n"))
+					s.push_str(&format!(
+						"(define-fun m{message}_{var}{i} () Word {a_add})\n"
+					))
 				} else if var == 'e' {
 					let e_add = self.add(vec![
 						&format!("{msg}d{prev}"),
 						&format!("m{message}_t1_{i}"),
 					])?;
 
-					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word {e_add})\n"))
+					s.push_str(&format!(
+						"(define-fun m{message}_{var}{i} () Word {e_add})\n"
+					))
 				} else {
 					let prev_var = get_previous_var(var);
-					s.push_str(&format!("(define-fun m{message}_{var}{i} () Word {msg}{prev_var}{prev})\n"))
+					s.push_str(&format!(
+						"(define-fun m{message}_{var}{i} () Word {msg}{prev_var}{prev})\n"
+					))
 				}
 			}
 		}
@@ -169,9 +198,14 @@ impl SmtBuilder {
 		let mut s = String::new();
 		for (i, var) in ('a'..='h').enumerate() {
 			s += &match self.collision_type {
-				Standard => format!("(define-fun {var}0 () Word {})\n", smt_hex(iv_vec[i], &self.hash_function)),
+				Standard => format!(
+					"(define-fun {var}0 () Word {})\n",
+					smt_hex(iv_vec[i], &self.hash_function)
+				),
 				SemiFreeStart => format!("(declare-fun {var}0 () Word)\n"),
-				FreeStart => format!("(declare-fun m0_{var}0 () Word)\n(declare-fun m1_{var}0 () Word)\n"),
+				FreeStart => {
+					format!("(declare-fun m0_{var}0 () Word)\n(declare-fun m1_{var}0 () Word)\n")
+				}
 			}
 		}
 
@@ -189,7 +223,7 @@ impl SmtBuilder {
 
 				let state_update_add = self.add(vec![
 					&format!("{msg_round0}{var}0"),
-					&format!("{msg}{var}{round}", round = self.rounds)
+					&format!("{msg}{var}{round}", round = self.rounds),
 				])?;
 
 				self.smt += &format!("(define-fun m{m}_hash{i} () Word {state_update_add})\n");

@@ -21,9 +21,6 @@ jobs:
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
-    # Advisory only until pre-existing lints are cleaned up;
-    # then remove continue-on-error to make it a hard gate.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

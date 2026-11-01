@@ -1,8 +1,8 @@
 use std::error::Error;
-use crate::smt_lib::smt_lib::SmtBuilder;
 
+use crate::smt_lib::builder::SmtBuilder;
 
-fn bvadd(exprs: Vec<&str>) -> String {
+fn bvadd(exprs : Vec<&str>) -> String {
 	let mut s = String::from("(bvadd");
 	for expr in exprs {
 		s.push_str(&format!(" {expr}"))
@@ -11,12 +11,12 @@ fn bvadd(exprs: Vec<&str>) -> String {
 	s
 }
 
-fn bitwise_add(exprs: Vec<&str>) -> String {
+fn bitwise_add(exprs : Vec<&str>) -> String {
 	if exprs.len() > 6 {
 		unimplemented!("Bitwise add only implemented up to 6 expressions.")
 	}
 
-	let mut s = String::from(format!("(bitadd-{} ", exprs.len()));
+	let mut s = format!("(bitadd-{} ", exprs.len());
 
 	for (i, expr) in exprs.iter().enumerate() {
 		if i != 0 {
@@ -119,10 +119,7 @@ impl SmtBuilder {
 	)")
 	}
 
-	pub(super) fn add(
-		&self,
-		exprs: Vec<&str>,
-	) -> Result<String, Box<dyn Error>> {
+	pub(super) fn add(&self, exprs : Vec<&str>) -> Result<String, Box<dyn Error>> {
 		if exprs.len() < 2 {
 			return Err(Box::from("Add requires at least 2 expressions!"));
 		}
@@ -134,4 +131,3 @@ impl SmtBuilder {
 		}
 	}
 }
-

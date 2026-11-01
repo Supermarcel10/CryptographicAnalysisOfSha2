@@ -1,10 +1,11 @@
 #[cfg(test)]
 mod tests {
-	use sha2_core::sha::{Sha, StartVector};
-	use sha2_core::sha::StartVector::IV;
-	use sha2_core::structs::hash_function::HashFunction::*;
 	use sha2_core::bit_differential::BitDifferential;
+	use sha2_core::sha::StartVector::IV;
+	use sha2_core::sha::{Sha, StartVector};
+	use sha2_core::structs::hash_function::HashFunction::*;
 
+	#[rustfmt::skip]
 	#[test]
 	/// Example in Li et al. (p.17, Table 4)
 	fn test_sha256_state_collision_table() {
@@ -48,6 +49,7 @@ mod tests {
 		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
 	}
 
+	#[rustfmt::skip]
 	#[test]
 	/// Example in Li et al. (p.25, Table 8)
 	fn test_sha512_state_collision_table() {
@@ -86,6 +88,7 @@ mod tests {
 		assert_eq!(*result_m.hash.0, *result_m_prime.hash.0);
 	}
 
+	#[rustfmt::skip]
 	#[test]
 	/// Example in Li et al. (p.27, Table 10)
 	fn test_sha224_state_collision_table() {

@@ -4,13 +4,13 @@ use plotters::style::ShapeStyle;
 #[derive(Copy, Clone)]
 pub enum LineStyle {
 	Normal {
-		color: RGBAColor,
+		color : RGBAColor
 	},
 	Dashed {
-		color: RGBAColor,
-		size: u32,
-		spacing: u32,
-	},
+		color : RGBAColor,
+		size : u32,
+		spacing : u32
+	}
 }
 
 impl LineStyle {
@@ -18,8 +18,12 @@ impl LineStyle {
 		use LineStyle::*;
 
 		match self {
-			Normal { color, .. } => color,
-			Dashed { color, .. } => color,
+			Normal {
+				color, ..
+			} => color,
+			Dashed {
+				color, ..
+			} => color
 		}
 	}
 
@@ -27,8 +31,12 @@ impl LineStyle {
 		use LineStyle::*;
 
 		match self {
-			Normal { color, .. } => color.filled(),
-			Dashed { color, .. } => color.into(),
+			Normal {
+				color, ..
+			} => color.filled(),
+			Dashed {
+				color, ..
+			} => color.into()
 		}
 	}
 }

@@ -7,18 +7,29 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
+
 use chrono::{DateTime, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sha2_core::sha::{MessageBlock, OutputHash, StartVector, Word};
-use sha2_smt::smt_lib::smt_retriever::EncodingType;
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 use sha2_core::structs::sha_state::ShaState;
+use sha2_smt::smt_lib::smt_retriever::EncodingType;
 use sha2_verify::colliding_pair::{CollidingPair, MessageData};
 
-
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(
+	Copy,
+	Clone,
+	Debug,
+	Serialize,
+	Deserialize,
+	Eq,
+	PartialEq,
+	Hash,
+	Ord,
+	PartialOrd
+)]
 pub enum SmtSolver {
 	Z3,
 	CVC5,
@@ -27,13 +38,13 @@ pub enum SmtSolver {
 	Boolector,
 	// STP, // STP Does not support SMTLIB 2.6!
 	Colibri2,
-	MathSAT,
+	MathSAT
 }
 
 impl FromStr for SmtSolver {
 	type Err = ParseSmtSolverError;
 
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
+	fn from_str(s : &str) -> Result<Self, Self::Err> {
 		match s {
 			"z3" => Ok(SmtSolver::Z3),
 			"cvc5" => Ok(SmtSolver::CVC5),
@@ -42,13 +53,15 @@ impl FromStr for SmtSolver {
 			"boolector" => Ok(SmtSolver::Boolector),
 			"colibri2" => Ok(SmtSolver::Colibri2),
 			"math-sat" => Ok(SmtSolver::MathSAT),
-			_ => Err(ParseSmtSolverError(s.to_string())),
+			_ => Err(ParseSmtSolverError(s.to_string()))
 		}
 	}
 }
 
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
-#[error("unknown solver '{0}', expected one of: z3, cvc5, yices2, bitwuzla, boolector, colibri2, math-sat")]
+#[error(
+	"unknown solver '{0}', expected one of: z3, cvc5, yices2, bitwuzla, boolector, colibri2, math-sat"
+)]
 pub struct ParseSmtSolverError(String);
 
 #[cfg(test)]
@@ -77,25 +90,47 @@ mod tests {
 // TODO: TO TEST:
 // Z3:
 // core.minimize (bool) minimize computed core (default: false)
+//
 //    bce (bool) eliminate blocked clauses (default: false)
+//
 //    ate (bool) asymmetric tautology elimination (default: true)
+//
 //    abce (bool) eliminate blocked clauses using asymmetric literals (default: false)
+//
 //     acce (bool) eliminate covered clauses using asymmetric added literals (default: false)
+//
 //     anf (bool) enable ANF based simplification in-processing (default: false)
-//    binspr (bool) enable SPR inferences of binary propagation redundant clauses. This inprocessing step eliminates models (default: false)
+//
+//    binspr (bool) enable SPR inferences of binary propagation redundant clauses. This inprocessing
+// step eliminates models (default: false)
+//
 //    cce (bool) eliminate covered clauses (default: false)
-//		cut (bool) enable AIG based simplification in-processing (default: false)
+//
+// 		cut (bool) enable AIG based simplification in-processing (default: false)
+//
 //    threads (unsigned int) number of parallel threads to use (default: 1)
-//    cancel_backup_file (symbol) file to save partial search state if search is canceled (default: )
-//		enable_sls (bool) enable SLS tuning during weighted maxsat (default: false)
-//    enable (bool) enable parallel solver by default on selected tactics (for QF_BV) (default: false)
+//
+//    cancel_backup_file (symbol) file to save partial search state if search is canceled
+//
+// 		enable_sls (bool) enable SLS tuning during weighted maxsat (default: false)
+//
+//    enable (bool) enable parallel solver by default on selected tactics (QF_BV) (default: false)
+//
 //    check_lemmas (bool) check lemmas on the fly using an independent nlsat solver (default: false)
-//    blast_distinct (bool) expand a distinct predicate into a quadratic number of disequalities (default: false)
+//
+//    blast_distinct (bool) expand a distinct predicate into a quadratic number of disequalities
+// (default: false)
+//
 //    blast_eq_value (bool) blast (some) Bit-vector equalities into bits (default: false)
+//
 //    bv_extract_prop (bool) attempt to partially propagate extraction inwards (default: false)
+//
 //    bv_not_simpl (bool) apply simplifications for bvnot (default: false)
-//		bv_sort_ac (bool) sort the arguments of all AC operators (default: false)
+//
+// 		bv_sort_ac (bool) sort the arguments of all AC operators (default: false)
+//
 //    elim_and (bool) conjunctions are rewritten using negation and disjunctions (default: false)
+//
 //[module] sls, description: Experimental Stochastic Local Search Solver (for QFBV only).
 //
 
@@ -154,19 +189,23 @@ mod tests {
 // TODO: Boolector
 
 impl Display for SmtSolver {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		use SmtSolver::*;
 
-		write!(f, "{}", match self {
-			Z3 => "Z3",
-			CVC5 => "cvc5",
-			Yices2 => "Yices2",
-			Bitwuzla => "Bitwuzla",
-			Boolector => "Boolector",
-			// STP => "STP",
-			Colibri2 => "Colibri2",
-			MathSAT => "MathSAT",
-		})
+		write!(
+			f,
+			"{}",
+			match self {
+				Z3 => "Z3",
+				CVC5 => "cvc5",
+				Yices2 => "Yices2",
+				Bitwuzla => "Bitwuzla",
+				Boolector => "Boolector",
+				// STP => "STP",
+				Colibri2 => "Colibri2",
+				MathSAT => "MathSAT"
+			}
+		)
 	}
 }
 
@@ -182,8 +221,9 @@ impl SmtSolver {
 			Boolector => "boolector",
 			// STP => "stp",
 			Colibri2 => "./solvers/colibri2",
-			MathSAT => "./solvers/mathsat",
-		}.into()
+			MathSAT => "./solvers/mathsat"
+		}
+		.into()
 	}
 }
 
@@ -197,20 +237,24 @@ pub enum BenchmarkResult {
 	CPUOut,
 	Aborted,
 	SMTError,
-	Unknown,
+	Unknown
 }
 
 impl Display for BenchmarkResult {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{}", match self {
-			BenchmarkResult::Sat => "SAT",
-			BenchmarkResult::Unsat => "UNSAT",
-			BenchmarkResult::MemOut => "OUT OF MEMORY",
-			BenchmarkResult::CPUOut => "OUT OF CPU TIME",
-			BenchmarkResult::Aborted => "ABORTED",
-			BenchmarkResult::SMTError => "SMT ERROR",
-			BenchmarkResult::Unknown => "UNKNOWN",
-		})
+	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
+		write!(
+			f,
+			"{}",
+			match self {
+				BenchmarkResult::Sat => "SAT",
+				BenchmarkResult::Unsat => "UNSAT",
+				BenchmarkResult::MemOut => "OUT OF MEMORY",
+				BenchmarkResult::CPUOut => "OUT OF CPU TIME",
+				BenchmarkResult::Aborted => "ABORTED",
+				BenchmarkResult::SMTError => "SMT ERROR",
+				BenchmarkResult::Unknown => "UNKNOWN"
+			}
+		)
 	}
 }
 
@@ -218,7 +262,7 @@ impl Display for BenchmarkResult {
 enum SmtOutputFormat {
 	Boolean,
 	Hex,
-	Decimal,
+	Decimal
 }
 
 impl SmtOutputFormat {
@@ -226,99 +270,84 @@ impl SmtOutputFormat {
 		match self {
 			SmtOutputFormat::Boolean => "#b([01]*)",
 			SmtOutputFormat::Hex => "#x([0-9a-fA-F]*)",
-			SmtOutputFormat::Decimal => "([0-9]*)",
-		}.to_string()
+			SmtOutputFormat::Decimal => "([0-9]*)"
+		}
+		.to_string()
 	}
 
 	fn get_base_size(
 		self,
-		capture: &str,
-		hash_function: HashFunction
+		capture : &str,
+		hash_function : HashFunction
 	) -> Result<Word, Box<dyn Error>> {
 		let radix_size = match self {
 			SmtOutputFormat::Boolean => 2,
 			SmtOutputFormat::Hex => 16,
-			SmtOutputFormat::Decimal => 10,
- 		};
+			SmtOutputFormat::Decimal => 10
+		};
 
 		Ok(Word::from_str_radix(capture, radix_size, hash_function)?)
 	}
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct MutableShaState {
-	pub i: u8,
-	pub w: Option<Word>,
-	pub a: Option<Word>,
-	pub e: Option<Word>,
-}
-
-impl Default for MutableShaState {
-	fn default() -> Self {
-		MutableShaState {
-			i: 0,
-			w: None,
-			a: None,
-			e: None,
-		}
-	}
+	pub i : u8,
+	pub w : Option<Word>,
+	pub a : Option<Word>,
+	pub e : Option<Word>
 }
 
 impl MutableShaState {
-	fn to_immutable(self) -> Option<ShaState> {
+	fn to_immutable(&self) -> Option<ShaState> {
 		Some(ShaState {
-			i: self.i,
-			w: self.w?,
-			a: self.a?,
-			e: self.e?,
+			i : self.i,
+			w : self.w?,
+			a : self.a?,
+			e : self.e?
 		})
 	}
 
-	fn update_state_variable(&mut self, variable: char, value: Word) {
+	fn update_state_variable(&mut self, variable : char, value : Word) {
 		match variable {
 			'a' => self.a = Some(value),
 			'e' => self.e = Some(value),
 			'w' => self.w = Some(value),
-			_ => {},
+			_ => {}
 		}
 	}
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Benchmark {
-	pub date_time: DateTime<Utc>,
-	pub solver: SmtSolver,
-	pub arguments: Option<SolverArg>,
-	pub hash_function: HashFunction,
-	pub rounds: u8,
-	pub collision_type: CollisionType,
-	pub execution_time: Duration,
-	pub memory_bytes: u64,
-	pub result: BenchmarkResult,
-	pub console_output: (String, String),
-	pub is_valid: Option<bool>,
-	pub is_baseline: bool,
-	pub is_rerun: bool,
-	pub encoding: EncodingType,
-	pub stop_tolerance: u8,
-	pub timeout: Duration,
+	pub date_time : DateTime<Utc>,
+	pub solver : SmtSolver,
+	pub arguments : Option<SolverArg>,
+	pub hash_function : HashFunction,
+	pub rounds : u8,
+	pub collision_type : CollisionType,
+	pub execution_time : Duration,
+	pub memory_bytes : u64,
+	pub result : BenchmarkResult,
+	pub console_output : (String, String),
+	pub is_valid : Option<bool>,
+	pub is_baseline : bool,
+	pub is_rerun : bool,
+	pub encoding : EncodingType,
+	pub stop_tolerance : u8,
+	pub timeout : Duration
 }
 
 impl Benchmark {
-	pub fn save(&self, path: &Path) -> Result<PathBuf, Box<dyn Error>> {
+	pub fn save(&self, path : &Path) -> Result<PathBuf, Box<dyn Error>> {
 		if !path.exists() {
 			fs::create_dir_all(path)?;
 		}
 
-		let path = path.join(
-			format!("{}_{}_{}_{}_{}.json",
-					self.hash_function,
-					self.collision_type,
-					self.solver,
-					self.rounds,
-					self.date_time,
-			)
-		);
+		let path = path.join(format!(
+			"{}_{}_{}_{}_{}.json",
+			self.hash_function, self.collision_type, self.solver, self.rounds, self.date_time,
+		));
 
 		let mut file = File::options()
 			.create_new(true)
@@ -331,13 +360,13 @@ impl Benchmark {
 		Ok(path)
 	}
 
-	pub fn load(file: &Path) -> Result<Self, Box<dyn Error>> {
+	pub fn load(file : &Path) -> Result<Self, Box<dyn Error>> {
 		let contents = fs::read(file)?;
-		let benchmark: Self = serde_json::from_slice(&contents)?;
+		let benchmark : Self = serde_json::from_slice(&contents)?;
 		Ok(benchmark)
 	}
 
-	pub fn load_all(dir_location: &Path, recursively: bool) -> Result<Vec<Self>, Box<dyn Error>> {
+	pub fn load_all(dir_location : &Path, recursively : bool) -> Result<Vec<Self>, Box<dyn Error>> {
 		let mut benchmarks = vec![];
 
 		if dir_location.is_file() {
@@ -345,14 +374,12 @@ impl Benchmark {
 			return Ok(benchmarks);
 		}
 
-		for dir_entry in fs::read_dir(dir_location)? {
-			if let Ok(entry) = dir_entry {
-				let metadata = entry.metadata()?;
-				if recursively && metadata.is_dir() {
-					benchmarks.extend(Self::load_all(&entry.path(), recursively)?)
-				} else if metadata.is_file() {
-					benchmarks.push(Self::load(&entry.path())?);
-				}
+		for dir_entry in fs::read_dir(dir_location)?.flatten() {
+			let metadata = dir_entry.metadata()?;
+			if recursively && metadata.is_dir() {
+				benchmarks.extend(Self::load_all(&dir_entry.path(), recursively)?)
+			} else if metadata.is_file() {
+				benchmarks.push(Self::load(&dir_entry.path())?);
 			}
 		}
 
@@ -366,11 +393,9 @@ impl Benchmark {
 
 		let output_format = self.get_output_format()?;
 		let number_format = output_format.output_string();
-		let re = Regex::new(
-			&format!(
-				r"\((?:m([01])_|)(delta_[aew]|[a-hw]|hash)([0-9]+) (?:\(_ bv{number_format} (?:32|64)\)|{number_format})\)",
-			)
-		)?;
+		let re = Regex::new(&format!(
+			r"\((?:m([01])_|)(delta_[aew]|[a-hw]|hash)([0-9]+) (?:\(_ bv{number_format} (?:32|64)\)|{number_format})\)",
+		))?;
 
 		let (smt_output, _) = self.console_output.clone();
 		let default_word = self.hash_function.default_word();
@@ -381,9 +406,9 @@ impl Benchmark {
 		let mut states = [BTreeMap::new(), BTreeMap::new()];
 
 		for capture in re.captures_iter(&smt_output) {
-			let msg= capture.get(1);
+			let msg = capture.get(1);
 			let var = &capture[2];
-			let round: usize = capture[3].parse()?;
+			let round : usize = capture[3].parse()?;
 
 			let val = match (capture.get(4), capture.get(5)) {
 				(Some(val), _) => val,
@@ -407,7 +432,7 @@ impl Benchmark {
 						&mut start_blocks,
 						&mut start_vectors,
 						&mut states,
-						is_differential,
+						is_differential
 					)?;
 				}
 				None => {
@@ -420,7 +445,7 @@ impl Benchmark {
 						&mut start_blocks,
 						&mut start_vectors,
 						&mut states,
-						is_differential,
+						is_differential
 					)?;
 					self.parse_update_for_msg(
 						1,
@@ -431,7 +456,7 @@ impl Benchmark {
 						&mut start_blocks,
 						&mut start_vectors,
 						&mut states,
-						is_differential,
+						is_differential
 					)?;
 				}
 			}
@@ -465,10 +490,10 @@ impl Benchmark {
 			}
 
 			messages.push(MessageData {
-				m: MessageBlock(start_blocks[i]),
-				cv: StartVector::CV(start_vectors[i]),
+				m : MessageBlock(start_blocks[i]),
+				cv : StartVector::CV(start_vectors[i]),
 				states,
-				expected_hash: OutputHash(Box::from(trimmed_hash.clone())),
+				expected_hash : OutputHash(Box::from(trimmed_hash.clone()))
 			});
 		}
 
@@ -476,8 +501,8 @@ impl Benchmark {
 		let colliding_pair = CollidingPair {
 			m0,
 			m1,
-			hash_function: self.hash_function,
-			rounds: self.rounds,
+			hash_function : self.hash_function,
+			rounds : self.rounds
 		};
 
 		// Verify benchmark
@@ -486,17 +511,18 @@ impl Benchmark {
 		Ok(Some(colliding_pair))
 	}
 
+	#[allow(clippy::too_many_arguments)]
 	fn parse_update_for_msg(
 		&self,
-		msg: usize,
-		var: &str,
-		round: usize,
-		val: Word,
-		hash: &mut Box<[Option<Word>; 8]>,
-		start_blocks: &mut [[Word; 16]; 2],
-		start_vectors: &mut [[Word; 8]; 2],
-		states: &mut [BTreeMap<usize, MutableShaState>; 2],
-		differential: bool,
+		msg : usize,
+		var : &str,
+		round : usize,
+		val : Word,
+		hash : &mut Box<[Option<Word>; 8]>,
+		start_blocks : &mut [[Word; 16]; 2],
+		start_vectors : &mut [[Word; 8]; 2],
+		states : &mut [BTreeMap<usize, MutableShaState>; 2],
+		differential : bool
 	) -> Result<(), Box<dyn Error>> {
 		// Special handling if differential
 		let (var, val) = if differential {
@@ -508,17 +534,19 @@ impl Benchmark {
 			};
 
 			(var, val)
-		} else { (var, val) };
+		} else {
+			(var, val)
+		};
 
 		// Parse
 		if var == "hash" {
 			hash[round] = Some(val);
 		} else {
-			let var_char: char = var.parse()?;
+			let var_char : char = var.parse()?;
 
 			// Parse H constants (CV/IV)
 			if !differential && round == 0 && var_char != 'w' {
-				let i = (var_char as u8) - ('a' as u8);
+				let i = (var_char as u32 - u32::from(b'a')) as u8;
 				start_vectors[msg][i as usize] = val;
 			}
 
@@ -528,14 +556,19 @@ impl Benchmark {
 			}
 
 			// Upsert updated state
-			states[msg].entry(round).and_modify(|state| {
-				state.update_state_variable(var_char, val);
-			}).or_insert_with(|| {
-				let mut state = MutableShaState::default();
-				state.i = round as u8;
-				state.update_state_variable(var_char, val);
-				state
-			});
+			states[msg]
+				.entry(round)
+				.and_modify(|state| {
+					state.update_state_variable(var_char, val);
+				})
+				.or_insert_with(|| {
+					let mut state = MutableShaState {
+						i : round as u8,
+						..Default::default()
+					};
+					state.update_state_variable(var_char, val);
+					state
+				});
 		}
 		Ok(())
 	}

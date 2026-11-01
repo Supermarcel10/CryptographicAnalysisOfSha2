@@ -5,42 +5,42 @@ use std::os::unix::prelude::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
+
 use chrono::Local;
-use nix::sys::signal::{killpg, Signal};
+use nix::sys::signal::{Signal, killpg};
 use nix::unistd::Pid;
-use wait_timeout::ChildExt;
-use sha2_smt::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
-use crate::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
+use sha2_smt::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
+use wait_timeout::ChildExt;
+
+use crate::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
 
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
 pub enum BenchmarkError {
 	#[error("solver {solver} was not found on the host system")]
-	SolverNotFound {
-		solver: String,
-	},
+	SolverNotFound { solver : String }
 }
 
 pub struct BenchmarkRunner {
-	stop_tolerance: u8,
-	timeout: Duration,
-	smt_retriever: SmtRetriever,
-	benchmark_save_dir: Option<PathBuf>,
-	continue_on_failure: bool,
-	encoding_type: EncodingType,
-	is_rerun: bool,
+	stop_tolerance : u8,
+	timeout : Duration,
+	smt_retriever : SmtRetriever,
+	benchmark_save_dir : Option<PathBuf>,
+	continue_on_failure : bool,
+	encoding_type : EncodingType,
+	is_rerun : bool
 }
 
 impl BenchmarkRunner {
 	pub fn new(
-		stop_tolerance: u8,
-		timeout: Duration,
-		smt_retriever: SmtRetriever,
-		benchmark_save_dir: Option<PathBuf>,
-		continue_on_failure: bool,
-		encoding_type: EncodingType,
-		is_rerun: bool,
+		stop_tolerance : u8,
+		timeout : Duration,
+		smt_retriever : SmtRetriever,
+		benchmark_save_dir : Option<PathBuf>,
+		continue_on_failure : bool,
+		encoding_type : EncodingType,
+		is_rerun : bool
 	) -> Self {
 		BenchmarkRunner {
 			stop_tolerance,
@@ -49,30 +49,30 @@ impl BenchmarkRunner {
 			benchmark_save_dir,
 			continue_on_failure,
 			encoding_type,
-			is_rerun,
+			is_rerun
 		}
 	}
 
 	pub fn run_benchmarks(
 		&self,
-		solvers: Vec<SmtSolver>,
-		hash_functions: Vec<HashFunction>,
-		collision_types: Vec<CollisionType>,
-		round_range: Range<u8>,
-		arguments: Vec<SolverArg>,
+		solvers : Vec<SmtSolver>,
+		hash_functions : Vec<HashFunction>,
+		collision_types : Vec<CollisionType>,
+		round_range : Range<u8>,
+		arguments : Vec<SolverArg>
 	) -> Result<(), Box<dyn Error>> {
 		for solver in solvers {
 			for hash_function in &hash_functions {
 				for collision_type in &collision_types {
 					let mut sequential_fails = 0;
-					if arguments.len() == 0 {
+					if arguments.is_empty() {
 						self.invoke(
 							solver,
 							hash_function,
 							collision_type,
 							round_range.clone(),
 							None,
-							&mut sequential_fails,
+							&mut sequential_fails
 						)?;
 					} else {
 						for arg in arguments.clone() {
@@ -82,7 +82,7 @@ impl BenchmarkRunner {
 								collision_type,
 								round_range.clone(),
 								Some(arg),
-								&mut sequential_fails,
+								&mut sequential_fails
 							)?;
 						}
 					}
@@ -95,12 +95,12 @@ impl BenchmarkRunner {
 
 	fn invoke(
 		&self,
-		solver: SmtSolver,
-		hash_function: &HashFunction,
-		collision_type: &CollisionType,
-		round_range: Range<u8>,
-		arg: Option<SolverArg>,
-		sequential_fails: &mut u8,
+		solver : SmtSolver,
+		hash_function : &HashFunction,
+		collision_type : &CollisionType,
+		round_range : Range<u8>,
+		arg : Option<SolverArg>,
+		sequential_fails : &mut u8
 	) -> Result<(), Box<dyn Error>> {
 		// Ensure range max does not exceed hash function max rounds.
 		let hash_max = hash_function.max_rounds();
@@ -112,7 +112,7 @@ impl BenchmarkRunner {
 				*hash_function,
 				*collision_type,
 				rounds,
-				self.encoding_type.clone(),
+				self.encoding_type
 			);
 
 			let mut result = self.run_solver_with_benchmark(
@@ -121,9 +121,9 @@ impl BenchmarkRunner {
 				*collision_type,
 				solver,
 				self.is_rerun,
-				self.encoding_type.clone(),
+				self.encoding_type,
 				smt_path,
-				arg.clone(),
+				arg.clone()
 			);
 
 			if let Err(err) = self.handle_result(&mut result, sequential_fails) {
@@ -145,15 +145,13 @@ impl BenchmarkRunner {
 
 	fn handle_result(
 		&self,
-		result: &mut Result<Benchmark, Box<dyn Error>>,
-		sequential_fails: &mut u8,
+		result : &mut Result<Benchmark, Box<dyn Error>>,
+		sequential_fails : &mut u8
 	) -> Result<(), Box<dyn Error>> {
 		match result {
 			Ok(benchmark) => {
 				if let Some(path) = &self.benchmark_save_dir {
-					benchmark
-						.save(path)
-						.expect("Failed to save benchmark!");
+					benchmark.save(path).expect("Failed to save benchmark!");
 				}
 
 				match benchmark.result {
@@ -164,7 +162,7 @@ impl BenchmarkRunner {
 					BenchmarkResult::Sat | BenchmarkResult::Unsat => {
 						match benchmark.parse_output()? {
 							None => println!("UNSAT\n"),
-							Some(colliding_pair) => println!("{}\n", colliding_pair),
+							Some(colliding_pair) => println!("{}\n", colliding_pair)
 						}
 
 						*sequential_fails = 0;
@@ -188,27 +186,27 @@ impl BenchmarkRunner {
 		}
 	}
 
+	#[allow(clippy::too_many_arguments)]
 	fn run_solver_with_benchmark(
 		&self,
-		hash_function: HashFunction,
-		rounds: u8,
-		collision_type: CollisionType,
-		solver: SmtSolver,
-		is_rerun: bool,
-		encoding: EncodingType,
-		smt_file: PathBuf,
-		arguments: Option<SolverArg>,
+		hash_function : HashFunction,
+		rounds : u8,
+		collision_type : CollisionType,
+		solver : SmtSolver,
+		is_rerun : bool,
+		encoding : EncodingType,
+		smt_file : PathBuf,
+		arguments : Option<SolverArg>
 	) -> Result<Benchmark, Box<dyn Error>> {
 		if !check_command_present(&solver.command())? {
-			return Err(Box::from(BenchmarkError::SolverNotFound { solver: solver.command() }));
+			return Err(Box::from(BenchmarkError::SolverNotFound {
+				solver : solver.command()
+			}));
 		}
 
-		let mut full_args: Vec<SolverArg> = vec![
-			"-v".into(),
-			solver.command(),
-		];
+		let mut full_args : Vec<SolverArg> = vec!["-v".into(), solver.command()];
 
-		let mut split_args: Vec<String> = vec![];
+		let mut split_args : Vec<String> = vec![];
 		let mut has_args = false;
 		if let Some(args) = &arguments {
 			split_args.extend(args.split(" ").map(String::from));
@@ -230,12 +228,18 @@ impl BenchmarkRunner {
 
 		let pid = child.id();
 		let arg_str = if let Some(args) = &arguments {
-			if args.len() > 0 {
+			if !args.is_empty() {
 				&format!(" {args}")
-			} else { "" }
-		} else { "" };
+			} else {
+				""
+			}
+		} else {
+			""
+		};
 
-		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}{arg_str}; SMT solver PID: {pid}\nFile: {file_path}");
+		println!(
+			"{rounds} rounds; {hash_function} {collision_type} collision; {solver}{arg_str}; SMT solver PID: {pid}\nFile: {file_path}"
+		);
 
 		// Await process exit
 		let status = child.wait_timeout(self.timeout)?;
@@ -247,36 +251,30 @@ impl BenchmarkRunner {
 				killpg(Pid::from_raw(pid as i32), Signal::SIGKILL)?;
 				child.wait()?;
 				(String::new(), String::new())
-			},
+			}
 			Some(_) => {
 				let cout = if let Some(stdout) = child.stdout.take() {
 					let mut cout = String::new();
 					BufReader::new(stdout).read_to_string(&mut cout)?;
 					cout
-				} else { String::new() };
+				} else {
+					String::new()
+				};
 
 				let cerr = if let Some(stderr) = child.stderr.take() {
 					let mut cerr = String::new();
 					BufReader::new(stderr).read_to_string(&mut cerr)?;
 					cerr
-				} else { String::new() };
+				} else {
+					String::new()
+				};
 
 				(cout, cerr)
 			}
 		};
 
 		// Extract memory information
-		let mut bytes_rss = 0;
-		if let Some(line) = cerr
-			.lines()
-			.find(|line| line.contains("Maximum resident set size")) {
-			if let Some(val_str) = line.split(':').nth(1) {
-				if let Ok(value) = val_str.trim().parse::<u64>() {
-					// Convert kB to bytes
-					bytes_rss = value * 1024;
-				}
-			}
-		}
+		let bytes_rss = max_resident_set_size(&cerr).unwrap_or(0);
 
 		let is_baseline = !has_args && self.timeout == Duration::from_secs(900);
 
@@ -288,31 +286,30 @@ impl BenchmarkRunner {
 			rounds,
 			collision_type,
 			execution_time,
-			memory_bytes: bytes_rss,
-			result: Self::categorize_status(status, &cout)?,
-			console_output: (cout, cerr),
-			is_valid: None,
+			memory_bytes : bytes_rss,
+			result : Self::categorize_status(status, &cout)?,
+			console_output : (cout, cerr),
+			is_valid : None,
 			is_baseline,
 			is_rerun,
 			encoding,
-			stop_tolerance: self.stop_tolerance,
-			timeout: self.timeout,
+			stop_tolerance : self.stop_tolerance,
+			timeout : self.timeout
 		})
 	}
 
-	fn categorize_status(exit_status: Option<ExitStatus>, cout: &String) -> Result<BenchmarkResult, Box<dyn Error>> {
-		use Signal::*;
+	fn categorize_status(
+		exit_status : Option<ExitStatus>,
+		cout : &str
+	) -> Result<BenchmarkResult, Box<dyn Error>> {
 		use BenchmarkResult::*;
+		use Signal::*;
 
 		Ok(match exit_status {
 			None => CPUOut,
 			Some(status) => {
 				let code = status.code().ok_or("Failed to retrieve status code!")?;
-				let outcome = cout
-					.lines()
-					.next()
-					.unwrap_or("unknown")
-					.to_lowercase();
+				let outcome = cout.lines().next().unwrap_or("unknown").to_lowercase();
 
 				if outcome.contains("unsat") {
 					Unsat
@@ -325,7 +322,7 @@ impl BenchmarkRunner {
 						SIGABRT | SIGKILL | SIGSEGV => MemOut,
 						SIGALRM | SIGTERM | SIGXCPU => CPUOut,
 						SIGHUP | SIGILL | SIGSYS => SMTError,
-						_ => Unknown,
+						_ => Unknown
 					}
 				}
 			}
@@ -333,11 +330,20 @@ impl BenchmarkRunner {
 	}
 }
 
-fn check_command_present(command: &str) -> Result<bool, Box<dyn Error>> {
+fn check_command_present(command : &str) -> Result<bool, Box<dyn Error>> {
 	let output = Command::new("sh")
 		.arg("-c")
 		.arg(format!("command -v {}", command))
 		.output()?;
 
 	Ok(output.status.success())
+}
+
+fn max_resident_set_size(cerr : &str) -> Option<u64> {
+	let line = cerr
+		.lines()
+		.find(|line| line.contains("Maximum resident set size"))?;
+	let value = line.split(':').nth(1)?.trim().parse::<u64>().ok()?;
+	// Convert kB to bytes
+	Some(value * 1024)
 }

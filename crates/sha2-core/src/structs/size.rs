@@ -18,7 +18,7 @@ impl Size {
 	/// ```ignore
 	/// let size = Bits::from_bits(8);
 	/// ```
-	pub fn from_bits(bits: usize) -> Self {
+	pub fn from_bits(bits : usize) -> Self {
 		Size(bits)
 	}
 
@@ -36,7 +36,7 @@ impl Size {
 	/// ```ignore
 	/// let size = Bits::from_bytes(2);
 	/// ```
-	pub fn from_bytes(bytes: usize) -> Self {
+	pub fn from_bytes(bytes : usize) -> Self {
 		Size(bytes * 8)
 	}
 
@@ -73,7 +73,7 @@ impl Size {
 	/// println!("{}", size.bytes()); // Outputs 2
 	/// ```
 	pub fn bytes(&self) -> usize {
-		(self.0 + 7) / 8
+		self.0.div_ceil(8)
 	}
 }
 
