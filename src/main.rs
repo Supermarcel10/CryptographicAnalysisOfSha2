@@ -38,8 +38,7 @@ enum Commands {
 
 	/// Run an exhaustive benchmark over all solvers, hash functions, collision types and arguments
 	Benchmark {
-		/// Argument to select solver. Use multiple `--solver <SOLVER>` statements for multiple
-		/// solvers
+		/// Argument to select solver. Use `--solver <SOLVER>` statements for multiple solvers.
 		#[arg(required = true, long)]
 		solver : Vec<SmtSolver>,
 
@@ -98,8 +97,7 @@ enum Commands {
 		#[arg(short = 'E', long)]
 		encoding_type : Option<String>,
 
-		/// Should the benchmark be marked as a rerun. Useful for flagging up anomalies. Default
-		/// false
+		/// Should the benchmark be marked as a rerun. Useful for flagging anomalies. Default false
 		#[arg(short = 'R', long)]
 		is_rerun : Option<bool>
 	},

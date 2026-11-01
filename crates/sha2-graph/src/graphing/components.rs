@@ -131,8 +131,7 @@ impl GraphRenderer {
 	/// * `chart`: The chart to draw on.
 	/// * `data`: The data to draw.
 	/// * `with_point_styles`: What type of points should be drawn for each data plot?
-	/// * `discontinue_line`: Should the line be continious/discontinue if part of the data is
-	///   missing?
+	/// * `discontinue_line`: Should the line be continious/discontinue if part is missing?
 	/// * `label`: Legend label for the charted data.
 	/// * `color`: Color of drawn line, or black by default.
 	///
@@ -212,8 +211,7 @@ impl GraphRenderer {
 	/// * `chart`: The chart to draw on.
 	/// * `data`: The data to draw.
 	/// * `with_points`: Should circle points be made for each data plot?
-	/// * `discontinue_line`: Should the line be continious/discontinue if part of the data is
-	///   missing?
+	/// * `discontinue_line`: Should the line be continious/discontinue if part is missing?
 	/// * `label`: Legend label for the charted data.
 	/// * `color`: Color of drawn line, or black by default.
 	///
