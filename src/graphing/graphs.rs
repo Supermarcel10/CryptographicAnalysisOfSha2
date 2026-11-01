@@ -9,7 +9,7 @@ use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
 use crate::graphing::line_styles::LineStyle::Normal;
 use crate::graphing::utils::get_range;
-use crate::smt_lib::smt_retriever::EncodingType;
+use sha2_smt::smt_lib::smt_retriever::EncodingType;
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
 
 
@@ -428,7 +428,7 @@ impl GraphRenderer {
 	pub fn generate_all_graphs(&mut self) -> Result<(), Box<dyn Error>> {
 		use sha2_core::structs::hash_function::HashFunction::*;
 		use sha2_core::structs::collision_type::CollisionType::*;
-		use crate::smt_lib::smt_retriever::EncodingType::*;
+		use sha2_smt::smt_lib::smt_retriever::EncodingType::*;
 
 
 		// Generate all solver comparisons for each HashFunction and CollisionType

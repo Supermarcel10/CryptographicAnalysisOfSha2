@@ -6,4 +6,5 @@ edition = "2024"
 license = "CC BY-NC-SA"
 
 [dependencies]
+serde = { version = "1.0.218", features = ["derive"] }
 sha2-core = { path = "../sha2-core" }

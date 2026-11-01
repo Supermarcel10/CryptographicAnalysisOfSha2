@@ -447,6 +447,7 @@ dependencies = [
 name = "sha2-smt"
 version = "0.1.2"
 dependencies = [
+ "serde",
  "sha2-core",
 ]
 
