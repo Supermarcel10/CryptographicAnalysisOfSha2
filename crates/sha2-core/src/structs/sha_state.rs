@@ -27,7 +27,9 @@ impl BitDifferential for Vec<ShaState> {
 				Word::W32(_) => 32,
 				Word::W64(_) => 64
 			}
-		} else { return output };
+		} else {
+			return output;
+		};
 
 		// Append heading
 		output += &format!(

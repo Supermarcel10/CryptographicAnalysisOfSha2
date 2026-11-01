@@ -7,19 +7,22 @@ use crate::structs::hash_function::HashFunction;
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
 pub enum HashError {
 	#[error("requested rounds {requested} exceeds maximum rounds {maximum} for hash function")]
-	TooManyRounds {
-		requested: u8,
-		maximum: u8,
-	},
+	TooManyRounds { requested : u8, maximum : u8 },
 	#[error("failed to convert bytes into valid word")]
 	FailedToConvertBytes,
 	#[error("attempted to {operation} on two different word sizes")]
-	WordMismatch {
-		operation: String,
-	}
+	WordMismatch { operation : String }
 }
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(
+	Debug,
+	Eq,
+	PartialEq,
+	Copy,
+	Clone,
+	serde::Serialize,
+	serde::Deserialize
+)]
 pub enum Word {
 	W32(u32),
 	W64(u64)
@@ -89,7 +92,10 @@ impl BitDifferential for Word {
 		match (self, rhs) {
 			(W32(l), W32(r)) => l.bit_diff(r),
 			(W64(l), W64(r)) => l.bit_diff(r),
-			(_, _) => HashError::WordMismatch { operation: String::from("bit diff") }.to_string(),
+			(..) => HashError::WordMismatch {
+				operation : String::from("bit diff")
+			}
+			.to_string()
 		}
 	}
 }
@@ -100,7 +106,9 @@ impl Word {
 		match (e, f, g) {
 			(W32(e), W32(f), W32(g)) => Ok(W32((e & f) ^ (!e & g))),
 			(W64(e), W64(f), W64(g)) => Ok(W64((e & f) ^ (!e & g))),
-			(_, _, _) => Err(HashError::WordMismatch { operation: String::from("ch")}),
+			(..) => Err(HashError::WordMismatch {
+				operation : String::from("ch")
+			})
 		}
 	}
 
@@ -109,7 +117,9 @@ impl Word {
 		match (a, b, c) {
 			(W32(a), W32(b), W32(c)) => Ok(W32((a & b) ^ (a & c) ^ (b & c))),
 			(W64(a), W64(b), W64(c)) => Ok(W64((a & b) ^ (a & c) ^ (b & c))),
-			(_, _, _) => Err(HashError::WordMismatch { operation: String::from("maj")}),
+			(..) => Err(HashError::WordMismatch {
+				operation : String::from("maj")
+			})
 		}
 	}
 
@@ -169,7 +179,9 @@ impl Word {
 		match (self, rhs) {
 			(Word::W32(l), Word::W32(r)) => Ok(Word::W32(l.wrapping_add(r))),
 			(Word::W64(l), Word::W64(r)) => Ok(Word::W64(l.wrapping_add(r))),
-			(_, _) => Err(HashError::WordMismatch { operation: String::from("wrapping add")})
+			(..) => Err(HashError::WordMismatch {
+				operation : String::from("wrapping add")
+			})
 		}
 	}
 

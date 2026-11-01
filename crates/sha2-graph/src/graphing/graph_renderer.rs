@@ -116,9 +116,7 @@ impl GraphRenderer {
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
 pub enum GraphRendererError<'a> {
 	#[error("failed to get range for {variable}")]
-	GetRangeFailed {
-		variable: &'a str,
-	},
+	GetRangeFailed { variable : &'a str },
 	#[error("failed to generate chart {hash_function} {collision_type}: {err}")]
 	FailedToGenerate {
 		hash_function : HashFunction,

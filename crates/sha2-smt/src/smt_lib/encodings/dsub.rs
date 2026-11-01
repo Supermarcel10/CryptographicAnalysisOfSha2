@@ -4,9 +4,8 @@ use sha2_core::structs::collision_type::CollisionType;
 
 use crate::smt_lib::smt_lib::SmtBuilder;
 
-
 impl SmtBuilder {
-	pub fn dsub_encoding(&mut self) -> Result<(), Box<dyn Error>>  {
+	pub fn dsub_encoding(&mut self) -> Result<(), Box<dyn Error>> {
 		self.title("SETUP");
 		self.set_logic();
 

@@ -51,7 +51,8 @@ impl SmtBuilder {
 			if self.collision_type == CollisionType::Standard {
 				self.smt += &format!(
 					"(define-fun delta_{var}0 () Word #b{})\n",
-					"0".repeat(word_size));
+					"0".repeat(word_size)
+				);
 			} else {
 				self.smt += &format!("(declare-fun delta_{var}0 () Word)\n");
 			}

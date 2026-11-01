@@ -53,7 +53,7 @@ macro_rules! impl_bit_differential_for {
     }
 }
 
-impl_bit_differential_for!(u8, u16,u32, u64, u128);
+impl_bit_differential_for!(u8, u16, u32, u64, u128);
 
 impl<T : BitDifferential + Copy, const N: usize> BitDifferential for [T; N] {
 	fn bit_diff(self, other : Self) -> String {

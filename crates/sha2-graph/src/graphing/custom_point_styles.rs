@@ -40,9 +40,9 @@ impl PointStyles {
 		match self {
 			PointStyles::None => Ok(()), // Do nothing
 			PointStyles::Basic => self.draw_basic(chart, data, color, point_thickness),
-			PointStyles::Custom { shapes } => {
-				self.draw_with_custom_shapes(chart, data, color, point_thickness, shapes.clone())
-			}
+			PointStyles::Custom {
+				shapes
+			} => self.draw_with_custom_shapes(chart, data, color, point_thickness, shapes.clone())
 		}
 	}
 
@@ -96,10 +96,8 @@ impl PointStyles {
 		let mut crosses = Vec::new();
 		let mut triangles = Vec::new();
 
-		let data_with_shapes: Vec<((XT, YT), CustomShape)> = data
-			.into_iter()
-			.zip(shapes)
-			.collect();
+		let data_with_shapes : Vec<((XT, YT), CustomShape)> =
+			data.into_iter().zip(shapes).collect();
 
 		for ((x, y), shape) in &data_with_shapes {
 			match shape {

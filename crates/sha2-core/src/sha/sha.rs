@@ -8,33 +8,41 @@ use crate::structs::hash_result::HashResult;
 use crate::structs::sha_state::ShaState;
 
 macro_rules! impl_word_display {
-    ($type:ty, $closure:expr) => {
-        impl Display for $type {
-            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-                for (i, word) in $closure(self).iter().enumerate() {
-                    if i > 0 {
-                        write!(f, " ")?;
-                    }
-                    write!(f, "{word}")?;
-                }
+	($type:ty, $closure:expr) => {
+		impl Display for $type {
+			fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
+				for (i, word) in $closure(self).iter().enumerate() {
+					if i > 0 {
+						write!(f, " ")?;
+					}
+					write!(f, "{word}")?;
+				}
 
-                Ok(())
-            }
-        }
-    };
+				Ok(())
+			}
+		}
+	};
 }
 
 macro_rules! impl_from_word_array {
-    ($array_type:ty, $array_size:expr, $for_type:ty, $constructor:expr) => {
-        impl From<[$array_type; $array_size]> for $for_type {
-            fn from(arr: [$array_type; $array_size]) -> Self {
-                $constructor(arr.map(Word::from))
-            }
-        }
-    };
+	($array_type:ty, $array_size:expr, $for_type:ty, $constructor:expr) => {
+		impl From<[$array_type; $array_size]> for $for_type {
+			fn from(arr : [$array_type; $array_size]) -> Self {
+				$constructor(arr.map(Word::from))
+			}
+		}
+	};
 }
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(
+	Debug,
+	Eq,
+	PartialEq,
+	Copy,
+	Clone,
+	serde::Serialize,
+	serde::Deserialize
+)]
 pub enum StartVector {
 	/// Initial Vector
 	IV,
@@ -106,18 +114,25 @@ impl MessageBlock {
 		}
 
 		if words.len() != 16 {
-			return Err(Box::from(format!("Message digest should be 16 words in length, parsed {} instead", words.len())));
+			return Err(Box::from(format!(
+				"Message digest should be 16 words in length, parsed {} instead",
+				words.len()
+			)));
 		}
 
 		// Ensure all words are same size
 		let base_discriminant = std::mem::discriminant(&words[0]);
 		for word in words.iter() {
 			if base_discriminant != std::mem::discriminant(word) {
-				return Err(Box::from("Words length must be of the same size, parsed both u32 and u64"));
+				return Err(Box::from(
+					"Words length must be of the same size, parsed both u32 and u64"
+				));
 			}
 		}
 
-		Ok(MessageBlock(<[Word; 16]>::try_from(words).expect("Failed to word Vec convert to array")))
+		Ok(MessageBlock(
+			<[Word; 16]>::try_from(words).expect("Failed to word Vec convert to array")
+		))
 	}
 }
 
@@ -247,10 +262,10 @@ impl Sha {
 
 		// Message schedule expansion
 		for i in 16..self.rounds as usize {
-			w[i] = w[i-16]
-				.wrapping_add(Word::gamma0(w[i-15]))?
-				.wrapping_add(w[i-7])?
-				.wrapping_add(Word::gamma1(w[i-2]))?;
+			w[i] = w[i - 16]
+				.wrapping_add(Word::gamma0(w[i - 15]))?
+				.wrapping_add(w[i - 7])?
+				.wrapping_add(Word::gamma1(w[i - 2]))?;
 		}
 
 		// Initialize working variables
@@ -264,8 +279,11 @@ impl Sha {
 				.wrapping_add(k[i])?
 				.wrapping_add(w[i])?;
 
-			let t2 = Word::sigma0(working_vars[0])
-				.wrapping_add(Word::maj(working_vars[0], working_vars[1], working_vars[2])?)?;
+			let t2 = Word::sigma0(working_vars[0]).wrapping_add(Word::maj(
+				working_vars[0],
+				working_vars[1],
+				working_vars[2]
+			)?)?;
 
 			// Rotate working variables
 			working_vars.rotate_right(1);
@@ -286,7 +304,8 @@ impl Sha {
 		}
 
 		// Truncate
-		let truncate_to_length = self.hash_function
+		let truncate_to_length = self
+			.hash_function
 			.truncate_to_length()
 			.or(Some(self.state.len()))
 			.unwrap();
@@ -326,7 +345,7 @@ impl Sha {
 		let length_size_bytes = hash_function.length_size().bytes();
 
 		let mut padded = message.to_vec();
-		padded.push(0x80);  // '1' bit
+		padded.push(0x80); // '1' bit
 
 		// Calculate padding zeros
 		let needed = block_size_bytes - ((padded.len() + length_size_bytes) % block_size_bytes);
@@ -347,7 +366,10 @@ impl Sha {
 	///
 	/// # Returns
 	/// `Result<[W; 16], HashError>` 16 blocks of words
-	fn bytes_to_block(bytes: &[u8], hash_function: HashFunction) -> Result<MessageBlock, HashError> {
+	fn bytes_to_block(
+		bytes : &[u8],
+		hash_function : HashFunction
+	) -> Result<MessageBlock, HashError> {
 		let mut words = [hash_function.default_word(); 16];
 		let size = hash_function.word_size().bytes();
 

@@ -10,7 +10,17 @@ use sha2_core::structs::hash_function::HashFunction;
 
 use crate::smt_lib::smt_retriever::EncodingType::{Base4, BruteForce, DeltaSub, DeltaXOR};
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(
+	Debug,
+	Copy,
+	Clone,
+	Serialize,
+	Deserialize,
+	Eq,
+	PartialEq,
+	PartialOrd,
+	Ord
+)]
 pub enum EncodingType {
 	BruteForce {
 		simplified_maj_and_ch_functions : bool,
@@ -33,11 +43,20 @@ pub enum EncodingType {
 impl Into<String> for EncodingType {
 	fn into(self) -> String {
 		let mut encoding_str = match self {
-			BruteForce { .. } => "bruteforce",
-			DeltaXOR { .. } => "delta-xor",
-			DeltaSub { .. } => "delta-sub",
-			Base4 { .. } => "base-4",
-		}.to_string();
+			BruteForce {
+				..
+			} => "bruteforce",
+			DeltaXOR {
+				..
+			} => "delta-xor",
+			DeltaSub {
+				..
+			} => "delta-sub",
+			Base4 {
+				..
+			} => "base-4"
+		}
+		.to_string();
 
 		if self.alternative_add() {
 			encoding_str.push_str(" bitwise add");
@@ -55,8 +74,12 @@ impl EncodingType {
 	pub fn get_diff(&self) -> Result<&str, Box<dyn Error>> {
 		use EncodingType::*;
 		match self {
-			DeltaXOR { .. } => Ok("bvxor"),
-			DeltaSub { .. } => Ok("bvsub"),
+			DeltaXOR {
+				..
+			} => Ok("bvxor"),
+			DeltaSub {
+				..
+			} => Ok("bvsub"),
 			_ => Err(Box::from("get_diff not supported for encoding type"))
 		}
 	}
@@ -64,20 +87,40 @@ impl EncodingType {
 	pub fn simplified_maj_and_ch_functions(&self) -> bool {
 		use EncodingType::*;
 		*match self {
-			BruteForce { simplified_maj_and_ch_functions, .. } => simplified_maj_and_ch_functions,
-			DeltaXOR { simplified_maj_and_ch_functions, .. } => simplified_maj_and_ch_functions,
-			DeltaSub { simplified_maj_and_ch_functions, .. } => simplified_maj_and_ch_functions,
-			Base4 { simplified_maj_and_ch_functions, .. } => simplified_maj_and_ch_functions,
+			BruteForce {
+				simplified_maj_and_ch_functions,
+				..
+			} => simplified_maj_and_ch_functions,
+			DeltaXOR {
+				simplified_maj_and_ch_functions,
+				..
+			} => simplified_maj_and_ch_functions,
+			DeltaSub {
+				simplified_maj_and_ch_functions,
+				..
+			} => simplified_maj_and_ch_functions,
+			Base4 {
+				simplified_maj_and_ch_functions,
+				..
+			} => simplified_maj_and_ch_functions
 		}
 	}
 
 	pub fn alternative_add(&self) -> bool {
 		use EncodingType::*;
 		*match self {
-			BruteForce { alternative_add, .. } => alternative_add,
-			DeltaXOR { alternative_add, .. } => alternative_add,
-			DeltaSub { alternative_add, .. } => alternative_add,
-			Base4 { alternative_add, .. } => alternative_add,
+			BruteForce {
+				alternative_add, ..
+			} => alternative_add,
+			DeltaXOR {
+				alternative_add, ..
+			} => alternative_add,
+			DeltaSub {
+				alternative_add, ..
+			} => alternative_add,
+			Base4 {
+				alternative_add, ..
+			} => alternative_add
 		}
 	}
 
@@ -126,39 +169,27 @@ impl FromStr for EncodingType {
 		let parts : Vec<_> = s.splitn(3, ":").collect();
 		let encoding_type_str = parts[0].trim();
 
-		let simplified_maj_and_ch_functions = parts
-			.get(1)
-			.map_or(false, |&s| parse_bool(s));
+		let simplified_maj_and_ch_functions = parts.get(1).map_or(false, |&s| parse_bool(s));
 
-		let alternative_add = parts
-			.get(2)
-			.map_or(false, |&s| parse_bool(s));
+		let alternative_add = parts.get(2).map_or(false, |&s| parse_bool(s));
 
 		match encoding_type_str {
-			"bruteforce" => {
-				Ok(BruteForce {
-					simplified_maj_and_ch_functions,
-					alternative_add,
-				})
-			},
-			"dxor" => {
-				Ok(DeltaXOR {
-					simplified_maj_and_ch_functions,
-					alternative_add,
-				})
-			},
-			"dsub" => {
-				Ok(DeltaSub {
-					simplified_maj_and_ch_functions,
-					alternative_add,
-				})
-			},
-			"base4" => {
-				Ok(Base4 {
-					simplified_maj_and_ch_functions,
-					alternative_add,
-				})
-			},
+			"bruteforce" => Ok(BruteForce {
+				simplified_maj_and_ch_functions,
+				alternative_add
+			}),
+			"dxor" => Ok(DeltaXOR {
+				simplified_maj_and_ch_functions,
+				alternative_add
+			}),
+			"dsub" => Ok(DeltaSub {
+				simplified_maj_and_ch_functions,
+				alternative_add
+			}),
+			"base4" => Ok(Base4 {
+				simplified_maj_and_ch_functions,
+				alternative_add
+			}),
 			_ => Err(format!("Unknown encoding type: {}", encoding_type_str))
 		}
 	}
@@ -169,14 +200,22 @@ impl Display for EncodingType {
 		use EncodingType::*;
 
 		let (et_name, simplified_maj_and_ch_functions, alternative_add) = match self {
-			BruteForce { simplified_maj_and_ch_functions, alternative_add } =>
-				("", *simplified_maj_and_ch_functions, *alternative_add),
-			DeltaXOR { simplified_maj_and_ch_functions, alternative_add } =>
-				("DXOR", *simplified_maj_and_ch_functions, *alternative_add),
-			DeltaSub { simplified_maj_and_ch_functions, alternative_add } =>
-				("DSUB", *simplified_maj_and_ch_functions, *alternative_add),
-			Base4 { simplified_maj_and_ch_functions, alternative_add } =>
-				("BASE4", *simplified_maj_and_ch_functions, *alternative_add),
+			BruteForce {
+				simplified_maj_and_ch_functions,
+				alternative_add
+			} => ("", *simplified_maj_and_ch_functions, *alternative_add),
+			DeltaXOR {
+				simplified_maj_and_ch_functions,
+				alternative_add
+			} => ("DXOR", *simplified_maj_and_ch_functions, *alternative_add),
+			DeltaSub {
+				simplified_maj_and_ch_functions,
+				alternative_add
+			} => ("DSUB", *simplified_maj_and_ch_functions, *alternative_add),
+			Base4 {
+				simplified_maj_and_ch_functions,
+				alternative_add
+			} => ("BASE4", *simplified_maj_and_ch_functions, *alternative_add)
 		};
 
 		let mut s = String::from(et_name);

@@ -18,8 +18,12 @@ impl LineStyle {
 		use LineStyle::*;
 
 		match self {
-			Normal { color, .. } => color,
-			Dashed { color, .. } => color,
+			Normal {
+				color, ..
+			} => color,
+			Dashed {
+				color, ..
+			} => color
 		}
 	}
 
@@ -27,8 +31,12 @@ impl LineStyle {
 		use LineStyle::*;
 
 		match self {
-			Normal { color, .. } => color.filled(),
-			Dashed { color, .. } => color.into(),
+			Normal {
+				color, ..
+			} => color.filled(),
+			Dashed {
+				color, ..
+			} => color.into()
 		}
 	}
 }

@@ -121,19 +121,14 @@ impl DataRetriever {
 		encoding_type : EncodingType,
 		prefer_test_reruns : bool
 	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
-		let all_baselines = self.retrieve_all_baselines(
-			hash_function,
-			collision_type,
-			prefer_test_reruns
-		)?;
+		let all_baselines =
+			self.retrieve_all_baselines(hash_function, collision_type, prefer_test_reruns)?;
 
-		Ok(
-			all_baselines
-				.into_iter()
-				.filter(|b| b.solver == solver)
-				.filter(|b| b.encoding == encoding_type)
-				.collect()
-		)
+		Ok(all_baselines
+			.into_iter()
+			.filter(|b| b.solver == solver)
+			.filter(|b| b.encoding == encoding_type)
+			.collect())
 	}
 
 	pub fn retrieve_with_args(
@@ -149,7 +144,10 @@ impl DataRetriever {
 		}
 
 		fn has_similar_arg(benchmark : &Benchmark, identifier : &str) -> bool {
-			benchmark.arguments.iter().any(|arg| arg.contains(identifier))
+			benchmark
+				.arguments
+				.iter()
+				.any(|arg| arg.contains(identifier))
 		}
 
 		let mut baselines = Vec::new();
@@ -175,9 +173,7 @@ impl DataRetriever {
 		let mut map = BTreeMap::new();
 		for benchmark in baselines {
 			let key = benchmark.arguments.clone().unwrap_or("".into());
-			map.entry(key)
-				.or_insert_with(Vec::new)
-				.push(benchmark);
+			map.entry(key).or_insert_with(Vec::new).push(benchmark);
 		}
 
 		Ok(map)
@@ -200,7 +196,7 @@ impl DataRetriever {
 			if b.solver == solver
 				&& b.hash_function == hash_function
 				&& b.collision_type == collision_type
-				&& !matches!(b.encoding, BruteForce {..})
+				&& !matches!(b.encoding, BruteForce { .. })
 			{
 				if b.is_rerun {
 					reruns.push(b);
@@ -217,19 +213,14 @@ impl DataRetriever {
 		let mut map = BTreeMap::new();
 		for benchmark in baselines {
 			let key = benchmark.encoding.clone();
-			map.entry(key)
-				.or_insert_with(Vec::new)
-				.push(benchmark);
+			map.entry(key).or_insert_with(Vec::new).push(benchmark);
 		}
 
 		Ok(map)
 	}
 }
 
-fn substitute_reruns(
-	baselines: &mut Vec<Benchmark>,
-	reruns: Vec<Benchmark>,
-) {
+fn substitute_reruns(baselines : &mut Vec<Benchmark>, reruns : Vec<Benchmark>) {
 	for rerun in reruns.into_iter() {
 		for baseline in baselines.iter_mut() {
 			if baseline.rounds == rerun.rounds

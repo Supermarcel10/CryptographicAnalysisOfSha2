@@ -43,7 +43,7 @@ impl SmtBuilder {
 		self.smt += format!("(assert (and\n{s}))\n").as_str();
 	}
 
-	pub fn brute_force_encoding(&mut self) -> Result<(), Box<dyn Error>>{
+	pub fn brute_force_encoding(&mut self) -> Result<(), Box<dyn Error>> {
 		self.title("SETUP");
 		self.set_logic();
 

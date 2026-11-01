@@ -17,26 +17,13 @@ pub struct MessageData {
 }
 
 impl MessageData {
-	fn run_sha(
-		&self,
-		hash_function: HashFunction,
-		rounds: u8
-	) -> Result<HashResult, HashError> {
-		Sha::from_message_block(
-			self.m,
-			hash_function,
-			rounds,
-			self.cv,
-		)?.execute()
+	fn run_sha(&self, hash_function : HashFunction, rounds : u8) -> Result<HashResult, HashError> {
+		Sha::from_message_block(self.m, hash_function, rounds, self.cv)?.execute()
 	}
 }
 
 impl VerifyHash for MessageData {
-	fn verify(
-		&self,
-		hash_function: HashFunction,
-		rounds: u8,
-	) -> Result<bool, HashError> {
+	fn verify(&self, hash_function : HashFunction, rounds : u8) -> Result<bool, HashError> {
 		let hash_result = self.run_sha(hash_function, rounds)?;
 		Ok(hash_result.hash == self.expected_hash)
 	}
@@ -61,8 +48,14 @@ impl CollidingPair {
 
 impl Display for CollidingPair {
 	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
-		let is_m0_hash_same = self.m0.verify(self.hash_function, self.rounds).unwrap_or(false);
-		let is_m1_hash_same = self.m1.verify(self.hash_function, self.rounds).unwrap_or(false);
+		let is_m0_hash_same = self
+			.m0
+			.verify(self.hash_function, self.rounds)
+			.unwrap_or(false);
+		let is_m1_hash_same = self
+			.m1
+			.verify(self.hash_function, self.rounds)
+			.unwrap_or(false);
 
 		let mut mismatch_info = String::new();
 		if !is_m0_hash_same {
@@ -97,7 +90,11 @@ impl Display for CollidingPair {
 		write!(f, "M    : {}\n", self.m0.m)?;
 		write!(f, "M'   : {}\n", self.m1.m)?;
 		write!(f, "{hash_message}\n\n")?;
-		write!(f, "{}", self.m0.states.clone().bit_diff(self.m1.states.clone()))?;
+		write!(
+			f,
+			"{}",
+			self.m0.states.clone().bit_diff(self.m1.states.clone())
+		)?;
 		Ok(())
 	}
 }

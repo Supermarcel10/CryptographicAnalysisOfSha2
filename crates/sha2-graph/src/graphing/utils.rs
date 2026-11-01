@@ -93,12 +93,12 @@ pub(super) fn ensure_defined_only_once<'a, DB>(
 {
 	if !*was_legend_defined {
 		*was_legend_defined = true;
-		series
-			.label(label)
-			.legend(move |(x, y)| Rectangle::new(
+		series.label(label).legend(move |(x, y)| {
+			Rectangle::new(
 				[(x, y - 10), (x + 20, y + 10)],
-				line_style.get_legend_style())
-			);
+				line_style.get_legend_style()
+			)
+		});
 	}
 }
 

@@ -15,11 +15,7 @@ pub(super) fn get_previous_var(var : char) -> char {
 	}
 }
 
-pub(super) fn msg_prefix(
-	message: u8,
-	i: u64,
-	collision_type: CollisionType,
-) -> String {
+pub(super) fn msg_prefix(message : u8, i : u64, collision_type : CollisionType) -> String {
 	// SemiFreeStart has separate parameters for the 0th iteration
 	if i == 0 && collision_type != CollisionType::FreeStart {
 		"".to_string()

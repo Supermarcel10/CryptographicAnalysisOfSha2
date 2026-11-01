@@ -15,9 +15,13 @@ impl SmtBuilder {
 		let word_size = self.hash_function.word_size().bits();
 		for var in 'a'..='h' {
 			if self.collision_type == CollisionType::FreeStart {
-				self.smt += &format!("(define-fun delta_{var}0 () Word ({diff} m0_{var}0 m1_{var}0))\n");
+				self.smt +=
+					&format!("(define-fun delta_{var}0 () Word ({diff} m0_{var}0 m1_{var}0))\n");
 			} else {
-				self.smt += &format!("(define-fun delta_{var}0 () Word #b{})\n", "0".repeat(word_size));
+				self.smt += &format!(
+					"(define-fun delta_{var}0 () Word #b{})\n",
+					"0".repeat(word_size)
+				);
 			}
 		}
 
@@ -39,14 +43,20 @@ impl SmtBuilder {
 		}
 
 		if self.rounds <= 16 {
-			self.comment(&format!("Message expansion differentials irrelevant for {} rounds", self.rounds));
+			self.comment(&format!(
+				"Message expansion differentials irrelevant for {} rounds",
+				self.rounds
+			));
 		} else {
 			self.break_line();
 			self.comment("Message Expansion Assertions");
 			for i in 16..self.rounds {
 				self.smt += &format!(
 					"(define-fun delta_w{i} () Word (expandMessage delta_w{} delta_w{} delta_w{} delta_w{}))",
-					i - 16, i - 15, i - 7, i - 2
+					i - 16,
+					i - 15,
+					i - 7,
+					i - 2
 				);
 			}
 		}
@@ -79,7 +89,8 @@ impl SmtBuilder {
 
 		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
 		for i in 0..final_size {
-			self.smt += &format!("(define-fun delta_hash{i} () Word ({diff} m0_hash{i} m1_hash{i}))\n");
+			self.smt +=
+				&format!("(define-fun delta_hash{i} () Word ({diff} m0_hash{i} m1_hash{i}))\n");
 		}
 
 		Ok(())

@@ -1,6 +1,6 @@
 use std::error::Error;
-use crate::smt_lib::smt_lib::SmtBuilder;
 
+use crate::smt_lib::smt_lib::SmtBuilder;
 
 fn bvadd(exprs : Vec<&str>) -> String {
 	let mut s = String::from("(bvadd");
@@ -119,10 +119,7 @@ impl SmtBuilder {
 	)")
 	}
 
-	pub(super) fn add(
-		&self,
-		exprs: Vec<&str>,
-	) -> Result<String, Box<dyn Error>> {
+	pub(super) fn add(&self, exprs : Vec<&str>) -> Result<String, Box<dyn Error>> {
 		if exprs.len() < 2 {
 			return Err(Box::from("Add requires at least 2 expressions!"));
 		}
@@ -134,4 +131,3 @@ impl SmtBuilder {
 		}
 	}
 }
-

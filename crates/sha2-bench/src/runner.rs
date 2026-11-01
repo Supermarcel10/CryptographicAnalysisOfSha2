@@ -19,9 +19,7 @@ use crate::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
 pub enum BenchmarkError {
 	#[error("solver {solver} was not found on the host system")]
-	SolverNotFound {
-		solver: String,
-	},
+	SolverNotFound { solver : String }
 }
 
 pub struct BenchmarkRunner {
@@ -153,9 +151,7 @@ impl BenchmarkRunner {
 		match result {
 			Ok(benchmark) => {
 				if let Some(path) = &self.benchmark_save_dir {
-					benchmark
-						.save(path)
-						.expect("Failed to save benchmark!");
+					benchmark.save(path).expect("Failed to save benchmark!");
 				}
 
 				match benchmark.result {
@@ -202,13 +198,12 @@ impl BenchmarkRunner {
 		arguments : Option<SolverArg>
 	) -> Result<Benchmark, Box<dyn Error>> {
 		if !check_command_present(&solver.command())? {
-			return Err(Box::from(BenchmarkError::SolverNotFound { solver: solver.command() }));
+			return Err(Box::from(BenchmarkError::SolverNotFound {
+				solver : solver.command()
+			}));
 		}
 
-		let mut full_args: Vec<SolverArg> = vec![
-			"-v".into(),
-			solver.command(),
-		];
+		let mut full_args : Vec<SolverArg> = vec!["-v".into(), solver.command()];
 
 		let mut split_args : Vec<String> = vec![];
 		let mut has_args = false;
@@ -234,10 +229,16 @@ impl BenchmarkRunner {
 		let arg_str = if let Some(args) = &arguments {
 			if args.len() > 0 {
 				&format!(" {args}")
-			} else { "" }
-		} else { "" };
+			} else {
+				""
+			}
+		} else {
+			""
+		};
 
-		println!("{rounds} rounds; {hash_function} {collision_type} collision; {solver}{arg_str}; SMT solver PID: {pid}\nFile: {file_path}");
+		println!(
+			"{rounds} rounds; {hash_function} {collision_type} collision; {solver}{arg_str}; SMT solver PID: {pid}\nFile: {file_path}"
+		);
 
 		// Await process exit
 		let status = child.wait_timeout(self.timeout)?;
@@ -255,13 +256,17 @@ impl BenchmarkRunner {
 					let mut cout = String::new();
 					BufReader::new(stdout).read_to_string(&mut cout)?;
 					cout
-				} else { String::new() };
+				} else {
+					String::new()
+				};
 
 				let cerr = if let Some(stderr) = child.stderr.take() {
 					let mut cerr = String::new();
 					BufReader::new(stderr).read_to_string(&mut cerr)?;
 					cerr
-				} else { String::new() };
+				} else {
+					String::new()
+				};
 
 				(cout, cerr)
 			}
@@ -271,7 +276,8 @@ impl BenchmarkRunner {
 		let mut bytes_rss = 0;
 		if let Some(line) = cerr
 			.lines()
-			.find(|line| line.contains("Maximum resident set size")) {
+			.find(|line| line.contains("Maximum resident set size"))
+		{
 			if let Some(val_str) = line.split(':').nth(1) {
 				if let Ok(value) = val_str.trim().parse::<u64>() {
 					// Convert kB to bytes

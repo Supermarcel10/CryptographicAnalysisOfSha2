@@ -17,8 +17,19 @@ use sha2_core::structs::sha_state::ShaState;
 use sha2_smt::smt_lib::smt_retriever::EncodingType;
 use sha2_verify::colliding_pair::{CollidingPair, MessageData};
 
-
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq, Hash, Ord, PartialOrd, clap::ValueEnum)]
+#[derive(
+	Copy,
+	Clone,
+	Debug,
+	Serialize,
+	Deserialize,
+	Eq,
+	PartialEq,
+	Hash,
+	Ord,
+	PartialOrd,
+	clap::ValueEnum
+)]
 pub enum SmtSolver {
 	Z3,
 	CVC5,
@@ -139,7 +150,8 @@ impl SmtSolver {
 			// STP => "stp",
 			Colibri2 => "./solvers/colibri2",
 			MathSAT => "./solvers/mathsat"
-		}.into()
+		}
+		.into()
 	}
 }
 
@@ -158,15 +170,19 @@ pub enum BenchmarkResult {
 
 impl Display for BenchmarkResult {
 	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{}", match self {
-			BenchmarkResult::Sat => "SAT",
-			BenchmarkResult::Unsat => "UNSAT",
-			BenchmarkResult::MemOut => "OUT OF MEMORY",
-			BenchmarkResult::CPUOut => "OUT OF CPU TIME",
-			BenchmarkResult::Aborted => "ABORTED",
-			BenchmarkResult::SMTError => "SMT ERROR",
-			BenchmarkResult::Unknown => "UNKNOWN"
-		})
+		write!(
+			f,
+			"{}",
+			match self {
+				BenchmarkResult::Sat => "SAT",
+				BenchmarkResult::Unsat => "UNSAT",
+				BenchmarkResult::MemOut => "OUT OF MEMORY",
+				BenchmarkResult::CPUOut => "OUT OF CPU TIME",
+				BenchmarkResult::Aborted => "ABORTED",
+				BenchmarkResult::SMTError => "SMT ERROR",
+				BenchmarkResult::Unknown => "UNKNOWN"
+			}
+		)
 	}
 }
 
@@ -183,7 +199,8 @@ impl SmtOutputFormat {
 			SmtOutputFormat::Boolean => "#b([01]*)",
 			SmtOutputFormat::Hex => "#x([0-9a-fA-F]*)",
 			SmtOutputFormat::Decimal => "([0-9]*)"
-		}.to_string()
+		}
+		.to_string()
 	}
 
 	fn get_base_size(
@@ -195,7 +212,7 @@ impl SmtOutputFormat {
 			SmtOutputFormat::Boolean => 2,
 			SmtOutputFormat::Hex => 16,
 			SmtOutputFormat::Decimal => 10
- 		};
+		};
 
 		Ok(Word::from_str_radix(capture, radix_size, hash_function)?)
 	}
@@ -266,15 +283,10 @@ impl Benchmark {
 			fs::create_dir_all(path)?;
 		}
 
-		let path = path.join(
-			format!("{}_{}_{}_{}_{}.json",
-					self.hash_function,
-					self.collision_type,
-					self.solver,
-					self.rounds,
-					self.date_time,
-			)
-		);
+		let path = path.join(format!(
+			"{}_{}_{}_{}_{}.json",
+			self.hash_function, self.collision_type, self.solver, self.rounds, self.date_time,
+		));
 
 		let mut file = File::options()
 			.create_new(true)
@@ -322,11 +334,9 @@ impl Benchmark {
 
 		let output_format = self.get_output_format()?;
 		let number_format = output_format.output_string();
-		let re = Regex::new(
-			&format!(
-				r"\((?:m([01])_|)(delta_[aew]|[a-hw]|hash)([0-9]+) (?:\(_ bv{number_format} (?:32|64)\)|{number_format})\)",
-			)
-		)?;
+		let re = Regex::new(&format!(
+			r"\((?:m([01])_|)(delta_[aew]|[a-hw]|hash)([0-9]+) (?:\(_ bv{number_format} (?:32|64)\)|{number_format})\)",
+		))?;
 
 		let (smt_output, _) = self.console_output.clone();
 		let default_word = self.hash_function.default_word();
@@ -337,7 +347,7 @@ impl Benchmark {
 		let mut states = [BTreeMap::new(), BTreeMap::new()];
 
 		for capture in re.captures_iter(&smt_output) {
-			let msg= capture.get(1);
+			let msg = capture.get(1);
 			let var = &capture[2];
 			let round : usize = capture[3].parse()?;
 
@@ -464,7 +474,9 @@ impl Benchmark {
 			};
 
 			(var, val)
-		} else { (var, val) };
+		} else {
+			(var, val)
+		};
 
 		// Parse
 		if var == "hash" {
@@ -484,14 +496,17 @@ impl Benchmark {
 			}
 
 			// Upsert updated state
-			states[msg].entry(round).and_modify(|state| {
-				state.update_state_variable(var_char, val);
-			}).or_insert_with(|| {
-				let mut state = MutableShaState::default();
-				state.i = round as u8;
-				state.update_state_variable(var_char, val);
-				state
-			});
+			states[msg]
+				.entry(round)
+				.and_modify(|state| {
+					state.update_state_variable(var_char, val);
+				})
+				.or_insert_with(|| {
+					let mut state = MutableShaState::default();
+					state.i = round as u8;
+					state.update_state_variable(var_char, val);
+					state
+				});
 		}
 		Ok(())
 	}

@@ -31,15 +31,19 @@ impl GraphRenderer {
 		data : Vec<Benchmark>
 	) -> Result<PathBuf, Box<dyn Error>> {
 		if data.len() == 0 {
-			println!("{}", MissingData { graph_name: "Time & Memory", dataset_name: "data" });
+			println!(
+				"{}",
+				MissingData {
+					graph_name : "Time & Memory",
+					dataset_name : "data"
+				}
+			);
 		}
 
 		let solver_name = data[0].solver.to_string().to_lowercase();
 		let file_name = format!(
 			"detailed_{}_{}_{}.svg",
-			solver_name,
-			data[0].hash_function,
-			data[0].collision_type,
+			solver_name, data[0].hash_function, data[0].collision_type,
 		);
 		let path = self.output_dir.join(file_name);
 
@@ -52,16 +56,22 @@ impl GraphRenderer {
 		sorted_data.sort_by_key(|b| b.rounds);
 
 		// Define ranges
-		let x_range = get_range(&sorted_data.clone(), &|b| b.rounds as u32)
-			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range"})?;
+		let x_range = get_range(&sorted_data.clone(), &|b| b.rounds as u32).ok_or(
+			GraphRendererError::GetRangeFailed {
+				variable : "x_range"
+			}
+		)?;
 		let y_range_mem = get_range(&sorted_data.clone(), &|b| b.memory_bytes as f64 / 1048576.0)
-			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range_mem"})?;
+			.ok_or(GraphRendererError::GetRangeFailed {
+			variable : "y_range_mem"
+		})?;
 		let y_range_time = get_range(&sorted_data.clone(), &|b| b.execution_time.as_secs_f64())
-			.ok_or(GraphRendererError::GetRangeFailed { variable: "y_range_time"})?;
+			.ok_or(GraphRendererError::GetRangeFailed {
+				variable : "y_range_time"
+			})?;
 
 		let path_clone_bind = path.clone();
-		let root = SVGBackend::new(&path_clone_bind, self.output_size)
-			.into_drawing_area();
+		let root = SVGBackend::new(&path_clone_bind, self.output_size).into_drawing_area();
 		root.fill(&WHITE)?;
 
 		let title = format!("{solver_name}; Memory & Time vs Rounds");
