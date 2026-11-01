@@ -16,7 +16,7 @@ fn bitwise_add(exprs : Vec<&str>) -> String {
 		unimplemented!("Bitwise add only implemented up to 6 expressions.")
 	}
 
-	let mut s = String::from(format!("(bitadd-{} ", exprs.len()));
+	let mut s = format!("(bitadd-{} ", exprs.len());
 
 	for (i, expr) in exprs.iter().enumerate() {
 		if i != 0 {

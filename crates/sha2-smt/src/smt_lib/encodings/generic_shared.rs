@@ -8,7 +8,7 @@ use crate::smt_lib::utilities::{get_previous_var, msg_prefix, smt_hex};
 
 impl SmtBuilder {
 	pub(super) fn title(&mut self, title : &str) {
-		let break_like = if self.smt.len() != 0 { "\n\n" } else { "" };
+		let break_like = if !self.smt.is_empty() { "\n\n" } else { "" };
 		self.smt += format!("{break_like};; {title}\n").as_str();
 	}
 
