@@ -40,9 +40,9 @@ pub enum EncodingType {
 	}
 }
 
-impl Into<String> for EncodingType {
-	fn into(self) -> String {
-		let mut encoding_str = match self {
+impl From<EncodingType> for String {
+	fn from(encoding : EncodingType) -> Self {
+		let mut encoding_str = match encoding {
 			BruteForce {
 				..
 			} => "bruteforce",
@@ -58,11 +58,11 @@ impl Into<String> for EncodingType {
 		}
 		.to_string();
 
-		if self.alternative_add() {
+		if encoding.alternative_add() {
 			encoding_str.push_str(" bitwise add");
 		}
 
-		if self.simplified_maj_and_ch_functions() {
+		if encoding.simplified_maj_and_ch_functions() {
 			encoding_str.push_str(" simplified MAJ & CH fn");
 		}
 
@@ -154,10 +154,7 @@ impl EncodingType {
 }
 
 fn parse_bool(s : &str) -> bool {
-	match s.to_lowercase().as_str() {
-		"true" | "1" | "yes" | "y" => true,
-		_ => false
-	}
+	matches!(s.to_lowercase().as_str(), "true" | "1" | "yes" | "y")
 }
 
 impl FromStr for EncodingType {
@@ -169,9 +166,9 @@ impl FromStr for EncodingType {
 		let parts : Vec<_> = s.splitn(3, ":").collect();
 		let encoding_type_str = parts[0].trim();
 
-		let simplified_maj_and_ch_functions = parts.get(1).map_or(false, |&s| parse_bool(s));
+		let simplified_maj_and_ch_functions = parts.get(1).is_some_and(|&s| parse_bool(s));
 
-		let alternative_add = parts.get(2).map_or(false, |&s| parse_bool(s));
+		let alternative_add = parts.get(2).is_some_and(|&s| parse_bool(s));
 
 		match encoding_type_str {
 			"bruteforce" => Ok(BruteForce {
@@ -256,7 +253,7 @@ impl SmtRetriever {
 	}
 
 	#[allow(dead_code)]
-	pub fn default() -> Result<Self, Box<dyn Error>> {
+	pub fn with_default_dir() -> Result<Self, Box<dyn Error>> {
 		SmtRetriever::new(PathBuf::from("smt/"))
 	}
 
@@ -268,7 +265,7 @@ impl SmtRetriever {
 		encoding_type : EncodingType
 	) -> PathBuf {
 		let mut base = format!("{hash_function}_{collision_type}_{rounds}");
-		if encoding_type.to_string().len() > 0 {
+		if !encoding_type.to_string().is_empty() {
 			base += &format!("_{encoding_type}");
 		}
 

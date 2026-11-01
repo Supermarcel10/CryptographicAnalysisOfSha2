@@ -40,10 +40,10 @@ impl SmtBuilder {
 		})
 	}
 
-	fn to_file(self, file_path : PathBuf) -> Result<File, std::io::Error> {
+	fn to_file(&self, file_path : PathBuf) -> Result<File, std::io::Error> {
 		let mut file = File::create(file_path)?;
 
-		file.write(self.smt.as_bytes())?;
+		file.write_all(self.smt.as_bytes())?;
 
 		Ok(file)
 	}
