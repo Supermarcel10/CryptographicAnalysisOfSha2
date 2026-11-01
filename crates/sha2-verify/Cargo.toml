@@ -7,3 +7,6 @@ license.workspace = true
 
 [dependencies]
 sha2-core.workspace = true
+
+[lints]
+workspace = true

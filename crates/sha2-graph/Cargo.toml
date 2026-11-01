@@ -12,3 +12,6 @@ num-traits.workspace = true
 sha2-core.workspace = true
 sha2-bench.workspace = true
 sha2-smt.workspace = true
+
+[lints]
+workspace = true

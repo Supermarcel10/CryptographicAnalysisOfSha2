@@ -8,3 +8,6 @@ license.workspace = true
 [dependencies]
 serde.workspace = true
 sha2-core.workspace = true
+
+[lints]
+workspace = true

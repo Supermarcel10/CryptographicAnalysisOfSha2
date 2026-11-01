@@ -17,6 +17,12 @@ sha2-smt.workspace = true
 sha2-bench.workspace = true
 sha2-graph.workspace = true
 
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[lints]
+workspace = true
+
 [workspace]
 members = [".", "crates/sha2-core", "crates/sha2-verify", "crates/sha2-smt", "crates/sha2-bench", "crates/sha2-graph"]
 
