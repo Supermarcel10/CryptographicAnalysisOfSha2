@@ -302,9 +302,12 @@ impl BenchmarkRunner {
 		})
 	}
 
-	fn categorize_status(exit_status: Option<ExitStatus>, cout: &String) -> Result<BenchmarkResult, Box<dyn Error>> {
-		use Signal::*;
+	fn categorize_status(
+		exit_status : Option<ExitStatus>,
+		cout : &String
+	) -> Result<BenchmarkResult, Box<dyn Error>> {
 		use BenchmarkResult::*;
+		use Signal::*;
 
 		Ok(match exit_status {
 			None => CPUOut,

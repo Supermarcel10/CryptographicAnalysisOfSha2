@@ -62,11 +62,9 @@ impl SmtBuilder {
 	}
 }
 
-pub fn generate_smtlib_files(
-	smt_retriever: SmtRetriever,
-) -> Result<(), Box<dyn Error>> {
-	use HashFunction::*;
+pub fn generate_smtlib_files(smt_retriever : SmtRetriever) -> Result<(), Box<dyn Error>> {
 	use CollisionType::*;
+	use HashFunction::*;
 
 	for hash_function in [SHA224, SHA256, SHA512] {
 		for collision_type in [Standard, SemiFreeStart, FreeStart] {

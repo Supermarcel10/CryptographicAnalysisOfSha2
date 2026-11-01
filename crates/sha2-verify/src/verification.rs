@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-	use sha2_core::sha::{Sha, StartVector};
-	use sha2_core::sha::StartVector::IV;
-	use sha2_core::structs::hash_function::HashFunction::*;
 	use sha2_core::bit_differential::BitDifferential;
+	use sha2_core::sha::StartVector::IV;
+	use sha2_core::sha::{Sha, StartVector};
+	use sha2_core::structs::hash_function::HashFunction::*;
 
 	#[rustfmt::skip]
 	#[test]
