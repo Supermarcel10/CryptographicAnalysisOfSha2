@@ -153,7 +153,7 @@ impl Sha {
 	///
 	/// # Examples
 	///
-	/// ```
+	/// ```ignore
 	/// let sha_digest = Sha::from_string("abc", SHA256, 64, IV);
 	/// ```
 	pub fn from_string(
@@ -193,7 +193,7 @@ impl Sha {
 	///
 	/// # Examples
 	///
-	/// ```
+	/// ```ignore
 	/// let message: [u32; 16] = [
 	/// 	0xc61d6de7, 0x755336e8, 0x5e61d618, 0x18036de6,
 	/// 	0xa79f2f1d, 0xf2b44c7b, 0x4c0ef36b, 0xa85d45cf,
@@ -230,7 +230,7 @@ impl Sha {
 	///
 	/// # Examples
 	///
-	/// ```
+	/// ```ignore
 	/// let sha_digest = Sha::from_hash(message, SHA256, 64, IV)?;
 	///
 	/// let hash = sha_digest.execute();
@@ -310,7 +310,7 @@ impl Sha {
 	///
 	/// # Examples
 	///
-	/// ```
+	/// ```ignore
 	/// let message = b"abc";
 	/// let padded_message = Self::pad_message(message, HashFunction::SHA256);
 	/// ```

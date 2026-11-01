@@ -20,7 +20,6 @@ use sha2_core::structs::hash_function::HashFunction;
 compile_error!("This crate supports only Unix-like operating systems");
 
 mod smt_lib;
-mod verification;
 mod structs;
 mod graphing;
 mod data;

@@ -14,7 +14,7 @@ use crate::smt_lib::smt_retriever::EncodingType;
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 use sha2_core::structs::sha_state::ShaState;
-use crate::verification::colliding_pair::{CollidingPair, MessageData};
+use sha2_verify::colliding_pair::{CollidingPair, MessageData};
 
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq, Hash, Ord, PartialOrd, clap::ValueEnum)]

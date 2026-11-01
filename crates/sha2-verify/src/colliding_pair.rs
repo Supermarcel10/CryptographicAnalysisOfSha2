@@ -4,7 +4,7 @@ use sha2_core::structs::hash_function::HashFunction;
 use sha2_core::structs::hash_result::HashResult;
 use sha2_core::structs::sha_state::ShaState;
 use sha2_core::bit_differential::BitDifferential;
-use crate::verification::verify_hash::VerifyHash;
+use crate::verify_hash::VerifyHash;
 
 #[derive(Debug)]
 pub struct MessageData {

@@ -15,7 +15,7 @@ impl Size {
 	///
 	/// # Examples
 	///
-	/// ```
+	/// ```ignore
 	/// let size = Bits::from_bits(8);
 	/// ```
 	pub fn from_bits(bits: usize) -> Self {
@@ -33,7 +33,7 @@ impl Size {
 	///
 	/// # Examples
 	///
-	/// ```
+	/// ```ignore
 	/// let size = Bits::from_bytes(2);
 	/// ```
 	pub fn from_bytes(bytes: usize) -> Self {
@@ -47,7 +47,7 @@ impl Size {
 	///
 	/// # Examples
 	///
-	/// ```
+	/// ```ignore
 	/// let size = Bits::from_bytes(2);
 	/// println!("{}", size.bits()); // Outputs 16
 	/// ```
@@ -63,12 +63,12 @@ impl Size {
 	///
 	/// # Examples
 	///
-	/// ```
+	/// ```ignore
 	/// let size = Size::from_bits(8);
 	/// println!("{}", size.bytes()); // Outputs 1
 	/// ```
 	///
-	/// ```
+	/// ```ignore
 	/// let size = Size::from_bits(12);
 	/// println!("{}", size.bytes()); // Outputs 2
 	/// ```
