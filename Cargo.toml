@@ -19,3 +19,9 @@ sha2-bench = { path = "crates/sha2-bench" }
 
 [workspace]
 members = [".", "crates/sha2-core", "crates/sha2-verify", "crates/sha2-smt", "crates/sha2-bench"]
+
+[workspace.package]
+authors = ["Supermarcel10"]
+version = "0.1.2"
+edition = "2024"
+license = "CC BY-NC-SA"
