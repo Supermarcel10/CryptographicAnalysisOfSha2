@@ -418,20 +418,14 @@ dependencies = [
 name = "sha2-collision"
 version = "0.1.2"
 dependencies = [
- "chrono",
  "clap",
- "nix",
  "num-traits",
  "plotters",
- "regex",
- "serde",
- "serde_json",
  "sha2-bench",
  "sha2-core",
  "sha2-smt",
  "sha2-verify",
  "thiserror",
- "wait-timeout",
 ]
 
 [[package]]
