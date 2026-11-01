@@ -7,8 +7,8 @@ use clap::{Parser, Subcommand};
 use plotters::prelude::RGBAColor;
 use sha2_bench::runner::BenchmarkRunner;
 use sha2_bench::data_retriever::DataRetriever;
-use crate::graphing::graph_renderer::GraphRenderer;
-use crate::graphing::line_styles::LineStyle::*;
+use sha2_graph::graphing::graph_renderer::GraphRenderer;
+use sha2_graph::graphing::line_styles::LineStyle::*;
 use sha2_core::sha::{MessageBlock, Sha, StartVector, Word};
 use sha2_smt::smt_lib::smt_lib::generate_smtlib_files;
 use sha2_smt::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
@@ -18,9 +18,6 @@ use sha2_core::structs::hash_function::HashFunction;
 
 #[cfg(not(unix))]
 compile_error!("This crate supports only Unix-like operating systems");
-
-mod graphing;
-
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

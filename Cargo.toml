@@ -16,9 +16,10 @@ sha2-core = { path = "crates/sha2-core" }
 sha2-verify = { path = "crates/sha2-verify" }
 sha2-smt = { path = "crates/sha2-smt" }
 sha2-bench = { path = "crates/sha2-bench" }
+sha2-graph = { path = "crates/sha2-graph" }
 
 [workspace]
-members = [".", "crates/sha2-core", "crates/sha2-verify", "crates/sha2-smt", "crates/sha2-bench"]
+members = [".", "crates/sha2-core", "crates/sha2-verify", "crates/sha2-smt", "crates/sha2-bench", "crates/sha2-graph"]
 
 [workspace.package]
 authors = ["Supermarcel10"]

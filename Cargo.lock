@@ -423,6 +423,7 @@ dependencies = [
  "plotters",
  "sha2-bench",
  "sha2-core",
+ "sha2-graph",
  "sha2-smt",
  "sha2-verify",
  "thiserror",
@@ -434,6 +435,18 @@ version = "0.1.2"
 dependencies = [
  "clap",
  "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "sha2-graph"
+version = "0.1.2"
+dependencies = [
+ "num-traits",
+ "plotters",
+ "sha2-bench",
+ "sha2-core",
+ "sha2-smt",
  "thiserror",
 ]
 
