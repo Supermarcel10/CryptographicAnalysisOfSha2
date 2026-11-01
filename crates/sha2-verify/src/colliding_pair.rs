@@ -8,9 +8,9 @@ use crate::verify_hash::VerifyHash;
 
 #[derive(Debug)]
 pub struct MessageData {
-	pub m: MessageBlock,
-	pub cv: StartVector,
-	pub states: Vec<ShaState>,
+	pub m : MessageBlock,
+	pub cv : StartVector,
+	pub states : Vec<ShaState>,
 	pub expected_hash: OutputHash,
 }
 
@@ -42,9 +42,9 @@ impl VerifyHash for MessageData {
 
 #[derive(Debug)]
 pub struct CollidingPair {
-	pub m0: MessageData,
-	pub m1: MessageData,
-	pub hash_function: HashFunction,
+	pub m0 : MessageData,
+	pub m1 : MessageData,
+	pub hash_function : HashFunction,
 	pub rounds: u8,
 }
 
@@ -58,7 +58,7 @@ impl CollidingPair {
 }
 
 impl Display for CollidingPair {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		let is_m0_hash_same = self.m0.verify(self.hash_function, self.rounds).unwrap_or(false);
 		let is_m1_hash_same = self.m1.verify(self.hash_function, self.rounds).unwrap_or(false);
 

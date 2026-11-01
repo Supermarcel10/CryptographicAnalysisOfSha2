@@ -9,28 +9,28 @@ use sha2_core::structs::hash_function::HashFunction;
 
 pub struct SmtBuilder {
 	/// Sha defined in SMTLIB2 format
-	pub(super) smt: String,
+	pub(super) smt : String,
 	/// Hash function to use
-	pub(super) hash_function: HashFunction,
+	pub(super) hash_function : HashFunction,
 	/// Number of compression rounds
-	pub(super) rounds: u8,
+	pub(super) rounds : u8,
 	/// The target collision type
-	pub(super) collision_type: CollisionType,
+	pub(super) collision_type : CollisionType,
 	/// The target encoding type
 	pub(super) encoding: EncodingType,
 }
 
 impl SmtBuilder {
 	fn new(
-		hash_function: HashFunction,
-		rounds: u8,
-		collision_type: CollisionType,
-		encoding: EncodingType
+		hash_function : HashFunction,
+		rounds : u8,
+		collision_type : CollisionType,
+		encoding : EncodingType
 	) -> Result<Self, HashError> {
 		hash_function.validate_rounds(rounds)?;
 
 		Ok(SmtBuilder {
-			smt: String::new(),
+			smt : String::new(),
 			hash_function,
 			rounds,
 			collision_type,
@@ -38,7 +38,7 @@ impl SmtBuilder {
 		})
 	}
 
-	fn to_file(self, file_path: PathBuf) -> Result<File, std::io::Error> {
+	fn to_file(self, file_path : PathBuf) -> Result<File, std::io::Error> {
 		let mut file = File::create(file_path)?;
 
 		file.write(self.smt.as_bytes())?;

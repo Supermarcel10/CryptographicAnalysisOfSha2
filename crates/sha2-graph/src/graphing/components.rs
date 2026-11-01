@@ -24,9 +24,9 @@ impl GraphRenderer {
 		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
 	) -> Result<(), Box<dyn Error>>
 	where
-		DB: DrawingBackend + 'a,
-		DB::ErrorType: 'static,
-		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
+		DB : DrawingBackend + 'a,
+		DB::ErrorType : 'static,
+		X : Ranged<ValueType = XT> + ValueFormatter<XT>,
 		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
 	{
 		chart
@@ -53,16 +53,16 @@ impl GraphRenderer {
 	/// `Result<(), Box<dyn Error>>`
 	pub(super) fn set_y_axis<'a, DB, X, Y, XT, YT>(
 		&self,
-		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
-		label: &str,
-		color: Option<RGBAColor>,
+		chart : &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
+		label : &str,
+		color : Option<RGBAColor>,
 		formatter: Option<&dyn Fn(&YT) -> String>,
 	) -> Result<(), Box<dyn Error>>
 	where
-		DB: DrawingBackend + 'a,
-		DB::ErrorType: 'static,
-		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
-		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
+		DB : DrawingBackend + 'a,
+		DB::ErrorType : 'static,
+		X : Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y : Ranged<ValueType = YT> + ValueFormatter<YT>,
 		YT: 'a,
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
@@ -95,16 +95,16 @@ impl GraphRenderer {
 	/// `Result<(), Box<dyn Error>>`
 	pub(super) fn set_secondary_y_axis<'a, DB, X, Y1, Y2, XT, YT1, YT2>(
 		&self,
-		chart: &mut DualCoordChartContext<'a, DB, Cartesian2d<X, Y1>, Cartesian2d<X, Y2>>,
-		label: &str,
-		color: Option<RGBAColor>,
+		chart : &mut DualCoordChartContext<'a, DB, Cartesian2d<X, Y1>, Cartesian2d<X, Y2>>,
+		label : &str,
+		color : Option<RGBAColor>,
 		formatter: Option<&dyn Fn(&YT2) -> String>,
 	) -> Result<(), Box<dyn Error>>
 	where
-		DB: DrawingBackend + 'a,
-		DB::ErrorType: 'static,
-		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
-		Y1: Ranged<ValueType = YT1> + ValueFormatter<YT1>,
+		DB : DrawingBackend + 'a,
+		DB::ErrorType : 'static,
+		X : Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y1 : Ranged<ValueType = YT1> + ValueFormatter<YT1>,
 		Y2: Ranged<ValueType = YT2> + ValueFormatter<YT2>,
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
@@ -137,23 +137,23 @@ impl GraphRenderer {
 	/// `Result<(), Box<dyn Error>>`
 	pub(super) fn draw_series<'a, DB, X, Y, XT, YT>(
 		&self,
-		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
-		data: Vec<(XT, YT)>,
-		with_point_styles: PointStyles,
-		discontinue_line: bool,
-		label: &str,
+		chart : &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
+		data : Vec<(XT, YT)>,
+		with_point_styles : PointStyles,
+		discontinue_line : bool,
+		label : &str,
 		line_style: Option<LineStyle>,
 	) -> Result<(), Box<dyn Error>>
 	where
-		DB: DrawingBackend + 'a,
-		DB::ErrorType: 'static,
-		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
-		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
-		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
+		DB : DrawingBackend + 'a,
+		DB::ErrorType : 'static,
+		X : Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y : Ranged<ValueType = YT> + ValueFormatter<YT>,
+		XT : Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
 		YT: Clone + Add<Output = YT> + One + 'static,
 	{
 		let line_style = line_style.unwrap_or(LineStyle::Normal {
-			color: BLACK.to_rgba()
+			color : BLACK.to_rgba()
 		});
 		let color = line_style.get_color();
 
@@ -213,21 +213,21 @@ impl GraphRenderer {
 	/// `Result<(), Box<dyn Error>>`
 	pub(super) fn draw_secondary_series<'a, DB, X, Y1, Y2, XT, YT1, YT2>(
 		&self,
-		chart: &mut DualCoordChartContext<'a, DB, Cartesian2d<X, Y1>, Cartesian2d<X, Y2>>,
-		data: Vec<(XT, YT2)>,
-		with_points: bool,
-		discontinue_line: bool,
-		label: &str,
+		chart : &mut DualCoordChartContext<'a, DB, Cartesian2d<X, Y1>, Cartesian2d<X, Y2>>,
+		data : Vec<(XT, YT2)>,
+		with_points : bool,
+		discontinue_line : bool,
+		label : &str,
 		color: Option<RGBAColor>,
 	) -> Result<(), Box<dyn Error>>
 	where
-		DB: DrawingBackend + 'a,
-		DB::ErrorType: 'static,
-		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
-		Y1: Ranged<ValueType = YT1> + ValueFormatter<YT1>,
-		Y2: Ranged<ValueType = YT2> + ValueFormatter<YT2>,
-		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
-		YT1: Clone + 'static,
+		DB : DrawingBackend + 'a,
+		DB::ErrorType : 'static,
+		X : Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y1 : Ranged<ValueType = YT1> + ValueFormatter<YT1>,
+		Y2 : Ranged<ValueType = YT2> + ValueFormatter<YT2>,
+		XT : Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
+		YT1 : Clone + 'static,
 		YT2: Clone + 'static,
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
@@ -286,8 +286,8 @@ impl GraphRenderer {
 		chart: &mut ChartContext<'a, DB, CT>,
 	) -> Result<(), Box<dyn Error>>
 	where
-		DB: DrawingBackend + 'a,
-		DB::ErrorType: 'static,
+		DB : DrawingBackend + 'a,
+		DB::ErrorType : 'static,
 		CT: CoordTranslate + 'a,
 	{
 		chart

@@ -23,23 +23,23 @@ pub enum BenchmarkError {
 }
 
 pub struct BenchmarkRunner {
-	stop_tolerance: u8,
-	timeout: Duration,
-	smt_retriever: SmtRetriever,
-	benchmark_save_dir: Option<PathBuf>,
-	continue_on_failure: bool,
-	encoding_type: EncodingType,
+	stop_tolerance : u8,
+	timeout : Duration,
+	smt_retriever : SmtRetriever,
+	benchmark_save_dir : Option<PathBuf>,
+	continue_on_failure : bool,
+	encoding_type : EncodingType,
 	is_rerun: bool,
 }
 
 impl BenchmarkRunner {
 	pub fn new(
-		stop_tolerance: u8,
-		timeout: Duration,
-		smt_retriever: SmtRetriever,
-		benchmark_save_dir: Option<PathBuf>,
-		continue_on_failure: bool,
-		encoding_type: EncodingType,
+		stop_tolerance : u8,
+		timeout : Duration,
+		smt_retriever : SmtRetriever,
+		benchmark_save_dir : Option<PathBuf>,
+		continue_on_failure : bool,
+		encoding_type : EncodingType,
 		is_rerun: bool,
 	) -> Self {
 		BenchmarkRunner {
@@ -55,10 +55,10 @@ impl BenchmarkRunner {
 
 	pub fn run_benchmarks(
 		&self,
-		solvers: Vec<SmtSolver>,
-		hash_functions: Vec<HashFunction>,
-		collision_types: Vec<CollisionType>,
-		round_range: Range<u8>,
+		solvers : Vec<SmtSolver>,
+		hash_functions : Vec<HashFunction>,
+		collision_types : Vec<CollisionType>,
+		round_range : Range<u8>,
 		arguments: Vec<SolverArg>,
 	) -> Result<(), Box<dyn Error>> {
 		for solver in solvers {
@@ -95,11 +95,11 @@ impl BenchmarkRunner {
 
 	fn invoke(
 		&self,
-		solver: SmtSolver,
-		hash_function: &HashFunction,
-		collision_type: &CollisionType,
-		round_range: Range<u8>,
-		arg: Option<SolverArg>,
+		solver : SmtSolver,
+		hash_function : &HashFunction,
+		collision_type : &CollisionType,
+		round_range : Range<u8>,
+		arg : Option<SolverArg>,
 		sequential_fails: &mut u8,
 	) -> Result<(), Box<dyn Error>> {
 		// Ensure range max does not exceed hash function max rounds.
@@ -145,7 +145,7 @@ impl BenchmarkRunner {
 
 	fn handle_result(
 		&self,
-		result: &mut Result<Benchmark, Box<dyn Error>>,
+		result : &mut Result<Benchmark, Box<dyn Error>>,
 		sequential_fails: &mut u8,
 	) -> Result<(), Box<dyn Error>> {
 		match result {
@@ -190,13 +190,13 @@ impl BenchmarkRunner {
 
 	fn run_solver_with_benchmark(
 		&self,
-		hash_function: HashFunction,
-		rounds: u8,
-		collision_type: CollisionType,
-		solver: SmtSolver,
-		is_rerun: bool,
-		encoding: EncodingType,
-		smt_file: PathBuf,
+		hash_function : HashFunction,
+		rounds : u8,
+		collision_type : CollisionType,
+		solver : SmtSolver,
+		is_rerun : bool,
+		encoding : EncodingType,
+		smt_file : PathBuf,
 		arguments: Option<SolverArg>,
 	) -> Result<Benchmark, Box<dyn Error>> {
 		if !check_command_present(&solver.command())? {
@@ -208,7 +208,7 @@ impl BenchmarkRunner {
 			solver.command(),
 		];
 
-		let mut split_args: Vec<String> = vec![];
+		let mut split_args : Vec<String> = vec![];
 		let mut has_args = false;
 		if let Some(args) = &arguments {
 			split_args.extend(args.split(" ").map(String::from));
@@ -288,14 +288,14 @@ impl BenchmarkRunner {
 			rounds,
 			collision_type,
 			execution_time,
-			memory_bytes: bytes_rss,
-			result: Self::categorize_status(status, &cout)?,
-			console_output: (cout, cerr),
-			is_valid: None,
+			memory_bytes : bytes_rss,
+			result : Self::categorize_status(status, &cout)?,
+			console_output : (cout, cerr),
+			is_valid : None,
 			is_baseline,
 			is_rerun,
 			encoding,
-			stop_tolerance: self.stop_tolerance,
+			stop_tolerance : self.stop_tolerance,
 			timeout: self.timeout,
 		})
 	}
@@ -333,7 +333,7 @@ impl BenchmarkRunner {
 	}
 }
 
-fn check_command_present(command: &str) -> Result<bool, Box<dyn Error>> {
+fn check_command_present(command : &str) -> Result<bool, Box<dyn Error>> {
 	let output = Command::new("sh")
 		.arg("-c")
 		.arg(format!("command -v {}", command))

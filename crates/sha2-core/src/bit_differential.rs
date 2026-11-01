@@ -20,7 +20,7 @@ impl DiffType {
 }
 
 pub trait BitDifferential {
-	fn bit_diff(self, other: Self) -> String;
+	fn bit_diff(self, other : Self) -> String;
 }
 
 macro_rules! impl_bit_differential_for {
@@ -55,8 +55,8 @@ macro_rules! impl_bit_differential_for {
 
 impl_bit_differential_for!(u8, u16,u32, u64, u128);
 
-impl<T: BitDifferential + Copy, const N: usize> BitDifferential for [T; N] {
-	fn bit_diff(self, other: Self) -> String {
+impl<T : BitDifferential + Copy, const N: usize> BitDifferential for [T; N] {
+	fn bit_diff(self, other : Self) -> String {
 		self.into_iter()
 			.zip(other)
 			.map(|(s, o)| s.bit_diff(o))
@@ -64,8 +64,8 @@ impl<T: BitDifferential + Copy, const N: usize> BitDifferential for [T; N] {
 	}
 }
 
-impl<T: BitDifferential + Copy> BitDifferential for &[T] {
-	fn bit_diff(self, other: Self) -> String {
+impl<T : BitDifferential + Copy> BitDifferential for &[T] {
+	fn bit_diff(self, other : Self) -> String {
 		self.into_iter()
 			.zip(other)
 			.map(|(s, o)| s.bit_diff(*o))

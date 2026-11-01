@@ -2,12 +2,12 @@ use sha2_core::sha::Word;
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 
-pub(super) fn smt_hex(val: Word, hash_function: &HashFunction) -> String {
+pub(super) fn smt_hex(val : Word, hash_function : &HashFunction) -> String {
 	let size = hash_function.word_size().bytes() * 2;
 	format!("#x{:0size$x}", val)
 }
 
-pub(super) fn get_previous_var(var: char) -> char {
+pub(super) fn get_previous_var(var : char) -> char {
 	if var == 'a' {
 		'h'
 	} else {

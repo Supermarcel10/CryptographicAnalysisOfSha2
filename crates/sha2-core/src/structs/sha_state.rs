@@ -3,14 +3,14 @@ use crate::bit_differential::BitDifferential;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ShaState {
-	pub i: u8,
-	pub w: Word,
-	pub a: Word,
+	pub i : u8,
+	pub w : Word,
+	pub a : Word,
 	pub e: Word,
 }
 
 impl BitDifferential for ShaState {
-	fn bit_diff(self, other: Self) -> String {
+	fn bit_diff(self, other : Self) -> String {
 		let a_delta = self.a.bit_diff(other.a);
 		let e_delta = self.e.bit_diff(other.e);
 		let w_delta = self.w.bit_diff(other.w);
@@ -20,7 +20,7 @@ impl BitDifferential for ShaState {
 }
 
 impl BitDifferential for Vec<ShaState> {
-	fn bit_diff(self, other: Self) -> String {
+	fn bit_diff(self, other : Self) -> String {
 		let mut output = String::new();
 		let padding = if let Some(state) = self.get(0) {
 			match state.w {

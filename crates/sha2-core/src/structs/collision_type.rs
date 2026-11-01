@@ -14,7 +14,7 @@ pub enum CollisionType {
 }
 
 impl Display for CollisionType {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
 			CollisionType::Standard => f.write_str("STD"),
 			CollisionType::SemiFreeStart => f.write_str("SFS"),

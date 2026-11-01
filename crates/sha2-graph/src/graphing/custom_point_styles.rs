@@ -23,17 +23,17 @@ pub enum PointStyles {
 impl PointStyles {
 	pub fn draw<'a, DB, X, Y, XT, YT>(
 		&self,
-		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
-		data: Vec<(XT, YT)>,
-		color: Option<RGBAColor>,
+		chart : &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
+		data : Vec<(XT, YT)>,
+		color : Option<RGBAColor>,
 		point_thickness: u32,
 	) -> Result<(), Box<dyn Error>>
 	where
-		DB: DrawingBackend + 'a,
-		DB::ErrorType: 'static,
-		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
-		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
-		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
+		DB : DrawingBackend + 'a,
+		DB::ErrorType : 'static,
+		X : Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y : Ranged<ValueType = YT> + ValueFormatter<YT>,
+		XT : Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
 		YT: Clone + Add<Output = YT> + One + 'static,
 	{
 		match self {
@@ -47,17 +47,17 @@ impl PointStyles {
 
 	fn draw_basic<'a, DB, X, Y, XT, YT>(
 		&self,
-		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
-		data: Vec<(XT, YT)>,
-		color: Option<RGBAColor>,
+		chart : &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
+		data : Vec<(XT, YT)>,
+		color : Option<RGBAColor>,
 		point_thickness: u32,
 	) -> Result<(), Box<dyn Error>>
 	where
-		DB: DrawingBackend + 'a,
-		DB::ErrorType: 'static,
-		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
-		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
-		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
+		DB : DrawingBackend + 'a,
+		DB::ErrorType : 'static,
+		X : Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y : Ranged<ValueType = YT> + ValueFormatter<YT>,
+		XT : Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
 		YT: Clone + 'static,
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());
@@ -74,18 +74,18 @@ impl PointStyles {
 
 	fn draw_with_custom_shapes<'a, DB, X, Y, XT, YT>(
 		&self,
-		chart: &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
-		data: Vec<(XT, YT)>,
-		color: Option<RGBAColor>,
-		point_thickness: u32,
+		chart : &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
+		data : Vec<(XT, YT)>,
+		color : Option<RGBAColor>,
+		point_thickness : u32,
 		shapes: Vec<CustomShape>,
 	) -> Result<(), Box<dyn Error>>
 	where
-		DB: DrawingBackend + 'a,
-		DB::ErrorType: 'static,
-		X: Ranged<ValueType = XT> + ValueFormatter<XT>,
-		Y: Ranged<ValueType = YT> + ValueFormatter<YT>,
-		XT: Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
+		DB : DrawingBackend + 'a,
+		DB::ErrorType : 'static,
+		X : Ranged<ValueType = XT> + ValueFormatter<XT>,
+		Y : Ranged<ValueType = YT> + ValueFormatter<YT>,
+		XT : Clone + Copy + Add<Output = XT> + PartialOrd + 'static + One,
 		YT: Clone + Add<Output = YT> + One + 'static,
 	{
 		let color = color.unwrap_or(BLACK.to_rgba());

@@ -11,7 +11,7 @@ impl SmtBuilder {
 		self.smt += format!("{break_like};; {title}\n").as_str();
 	}
 
-	pub(super) fn comment(&mut self, comment: &str) {
+	pub(super) fn comment(&mut self, comment : &str) {
 		self.smt += format!("; {comment}\n").as_str();
 	}
 
@@ -88,7 +88,7 @@ impl SmtBuilder {
 		self.smt += &s;
 	}
 
-	pub(super) fn define_expansion_for_message(&mut self, message: u8) {
+	pub(super) fn define_expansion_for_message(&mut self, message : u8) {
 		self.comment(&format!("MESSAGE {message}"));
 		let msg = format!("m{message}_w");
 

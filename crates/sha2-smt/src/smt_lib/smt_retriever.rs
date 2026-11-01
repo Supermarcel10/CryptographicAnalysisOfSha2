@@ -11,19 +11,19 @@ use sha2_core::structs::hash_function::HashFunction;
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, PartialOrd, Ord)]
 pub enum EncodingType {
 	BruteForce {
-		simplified_maj_and_ch_functions: bool,
+		simplified_maj_and_ch_functions : bool,
 		alternative_add: bool,
 	},
 	DeltaXOR {
-		simplified_maj_and_ch_functions: bool,
+		simplified_maj_and_ch_functions : bool,
 		alternative_add: bool,
 	},
 	DeltaSub {
-		simplified_maj_and_ch_functions: bool,
+		simplified_maj_and_ch_functions : bool,
 		alternative_add: bool,
 	},
 	Base4 {
-		simplified_maj_and_ch_functions: bool,
+		simplified_maj_and_ch_functions : bool,
 		alternative_add: bool,
 	}
 }
@@ -108,7 +108,7 @@ impl EncodingType {
 	}
 }
 
-fn parse_bool(s: &str) -> bool {
+fn parse_bool(s : &str) -> bool {
 	match s.to_lowercase().as_str() {
 		"true" | "1" | "yes" | "y" => true,
 		_ => false
@@ -118,10 +118,10 @@ fn parse_bool(s: &str) -> bool {
 impl FromStr for EncodingType {
 	type Err = String;
 
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
+	fn from_str(s : &str) -> Result<Self, Self::Err> {
 		use EncodingType::*;
 
-		let parts: Vec<_> = s.splitn(3, ":").collect();
+		let parts : Vec<_> = s.splitn(3, ":").collect();
 		let encoding_type_str = parts[0].trim();
 
 		let simplified_maj_and_ch_functions = parts
@@ -163,7 +163,7 @@ impl FromStr for EncodingType {
 }
 
 impl Display for EncodingType {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		use EncodingType::*;
 
 		let (et_name, simplified_maj_and_ch_functions, alternative_add) = match self {
@@ -204,7 +204,7 @@ pub struct SmtRetriever {
 }
 
 impl SmtRetriever {
-	pub fn new(smt_dir: PathBuf) -> Result<Self, Box<dyn Error>> {
+	pub fn new(smt_dir : PathBuf) -> Result<Self, Box<dyn Error>> {
 		if !smt_dir.exists() {
 			fs::create_dir_all(smt_dir.clone())?;
 		}
@@ -221,9 +221,9 @@ impl SmtRetriever {
 
 	pub fn get_file(
 		&self,
-		hash_function: HashFunction,
-		collision_type: CollisionType,
-		rounds: u8,
+		hash_function : HashFunction,
+		collision_type : CollisionType,
+		rounds : u8,
 		encoding_type: EncodingType,
 	) -> PathBuf {
 		let mut base = format!("{hash_function}_{collision_type}_{rounds}");

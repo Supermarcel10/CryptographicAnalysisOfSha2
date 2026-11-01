@@ -39,19 +39,19 @@ enum Commands {
 	Benchmark {
 		/// Argument to select solver. Use multiple `--solver <SOLVER>` statements for multiple solvers
 		#[arg(required = true, long)]
-		solver: Vec<SmtSolver>,
+		solver : Vec<SmtSolver>,
 
 		/// Argument to select hash function. Use separate `--hash-function <HASH_FUNCTION>` statements for multiple hash functions
 		#[arg(required = true, long)]
-		hash_function: Vec<HashFunction>,
+		hash_function : Vec<HashFunction>,
 
 		/// Argument to select collision type. Use separate `--collision-type <COLLISION_TYPE>` statements for multiple collision types
 		#[arg(required = true, long)]
-		collision_type: Vec<CollisionType>,
+		collision_type : Vec<CollisionType>,
 
 		/// Argument to set (non-inclusive) range of compression rounds. Input with `--round-range <MIN>..<MAX>`. Default 1..hash function max
 		#[arg(long, value_parser = parse_range)]
-		round_range: Option<Range<u8>>,
+		round_range : Option<Range<u8>>,
 
 		/// Argument to set the solver argument sets (combinations of solver arguments).
 		/// An arugment set can contain multiple arguments which will all be executed on the solver.
@@ -59,7 +59,7 @@ enum Commands {
 		/// Use separate `--arg-set "<ARG_SET>"` statements for multiple argument sets.
 		/// Default <No Args>
 		#[arg(long, allow_hyphen_values = true)]
-		arg_set: Option<Vec<String>>,
+		arg_set : Option<Vec<String>>,
 
 		/// The number of required sequential failures to stop. Default 3
 		#[arg(short, long)]
@@ -67,19 +67,19 @@ enum Commands {
 
 		/// Duration after which run is marked as timed out. Default 15 mins
 		#[arg(short, long)]
-		timeout_sec: Option<u64>,
+		timeout_sec : Option<u64>,
 
 		/// Path to directory containing SMT files. Default `smt/`
 		#[arg(short = 'S', long)]
-		smt_dir: Option<PathBuf>,
+		smt_dir : Option<PathBuf>,
 
 		/// Path to directory where result files will be saved to. `None` to disable output. Default `results/`
 		#[arg(short, long)]
-		result_dir: Option<PathBuf>,
+		result_dir : Option<PathBuf>,
 
 		/// Should remaining benchmark runs continue despite error on one. Default false
 		#[arg(short = 'C', visible_alias = "cof", long)]
-		continue_on_fail: Option<bool>,
+		continue_on_fail : Option<bool>,
 
 		/// Type of encoding to benchmark.
 		/// Format `<encoding_type>:[simplified_maj_and_ch_functions]:[alternative_add]`,
@@ -90,7 +90,7 @@ enum Commands {
 		///
 		/// [encoding_type possible values: bruteforce, dxor, dsub, base4]
 		#[arg(short = 'E', long)]
-		encoding_type: Option<String>,
+		encoding_type : Option<String>,
 
 		/// Should the benchmark be marked as a rerun. Useful for flagging up anomalies. Default false
 		#[arg(short = 'R', long)]
@@ -101,18 +101,18 @@ enum Commands {
 	Sha2 {
 		/// Message to hash
 		#[arg(short, long)]
-		msg: Option<String>,
+		msg : Option<String>,
 
 		/// Message digest block to hash (pre-padded and pre-processed digest), separated word-by-word with spaces
 		#[arg(short = 'M', visible_alias = "mb", long)]
-		msg_block: Option<String>,
+		msg_block : Option<String>,
 
 		/// Hash function
-		hash_function: HashFunction,
+		hash_function : HashFunction,
 
 		/// Number of compression rounds. Default hash function max
 		#[arg(short, long)]
-		rounds: Option<u8>,
+		rounds : Option<u8>,
 
 		/// Starting vector for hash function, separated word-by-word with spaces. Default Initial Vector (IV)
 		#[arg(long, visible_alias = "sv")]
@@ -123,7 +123,7 @@ enum Commands {
 	Load {
 		/// Path to a result file, or a directory. Default `results/`
 		#[arg(short = 'R', long)]
-		result_path: Option<PathBuf>,
+		result_path : Option<PathBuf>,
 
 		/// Should directory scan be recursive. Default true
 		#[arg(short, long)]
@@ -134,7 +134,7 @@ enum Commands {
 	Graph {
 		/// Directory where graphs will be saved. Default `graphs/`
 		#[arg(long)]
-		graph_dir: Option<PathBuf>,
+		graph_dir : Option<PathBuf>,
 
 		/// Directory where all benchmark results are stored. Default `results/`
 		#[arg(long)]
@@ -172,9 +172,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 			let stop_tolerance = (*stop_tolerance).unwrap_or(3);
 			let timeout = Duration::from_secs((*timeout_sec).unwrap_or(15 * 60));
 			let continue_on_fail = (*continue_on_fail).unwrap_or(false);
-			let encoding_type: EncodingType = encoding_type.as_deref().map_or(
+			let encoding_type : EncodingType = encoding_type.as_deref().map_or(
 				EncodingType::BruteForce {
-					simplified_maj_and_ch_functions: false,
+					simplified_maj_and_ch_functions : false,
 					alternative_add: false,
 				},
 				|s| s.parse().expect("Failed to parse encoding type")
@@ -322,26 +322,26 @@ fn main() -> Result<(), Box<dyn Error>> {
 					},
 					// Cyan
 					Dashed {
-						color: RGBAColor(12, 133, 153, 1.0),
-						size: 10,
+						color : RGBAColor(12, 133, 153, 1.0),
+						size : 10,
 						spacing: 20,
 					},
 					// Light Purple
 					Dashed {
-						color: RGBAColor(95, 61, 196, 1.0),
-						size: 10,
+						color : RGBAColor(95, 61, 196, 1.0),
+						size : 10,
 						spacing: 20,
 					},
 					// Light Green
 					Dashed {
-						color: RGBAColor(70, 210, 94, 1.0),
-						size: 10,
+						color : RGBAColor(70, 210, 94, 1.0),
+						size : 10,
 						spacing: 20,
 					},
 					// Light Blue
 					Dashed {
-						color: RGBAColor(116, 143, 252, 1.0),
-						size: 10,
+						color : RGBAColor(116, 143, 252, 1.0),
+						size : 10,
 						spacing: 20,
 					},
 					// Black
@@ -362,7 +362,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn load_mapped(
-	dir_location: &PathBuf,
+	dir_location : &PathBuf,
 	recursive: bool,
 ) -> Result<Vec<(Benchmark, PathBuf)>, Box<dyn Error>> {
 	let mut map = Vec::new();
@@ -386,13 +386,13 @@ fn load_mapped(
 	Ok(map)
 }
 
-fn parse_range(s: &str) -> Result<Range<u8>, String> {
+fn parse_range(s : &str) -> Result<Range<u8>, String> {
 	let (start, end) = s.split_once("..")
 		.ok_or_else(|| format!("Invalid range format: '{}'", s))?;
 
 	Ok(Range {
-		start: start.parse().map_err(|e| format!("Start: {}", e))?,
-		end: end.parse().map_err(|e| format!("End: {}", e))?
+		start : start.parse().map_err(|e| format!("Start: {}", e))?,
+		end : end.parse().map_err(|e| format!("End: {}", e))?
 	})
 }
 

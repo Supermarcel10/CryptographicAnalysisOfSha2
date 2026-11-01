@@ -20,8 +20,8 @@ use crate::graphing::line_styles::LineStyle;
 /// Returns `None` if length 0 data provided, otherwise provides a range of the retrieved data type.
 // Potential bug/oversight with plotters.rs?
 // Range<u8> and Range<u16> don't implement plotters::prelude::Ranged as expected?
-pub(super) fn get_range<T: Copy + PartialOrd>(
-	data: &Vec<Benchmark>,
+pub(super) fn get_range<T : Copy + PartialOrd>(
+	data : &Vec<Benchmark>,
 	retr: &dyn Fn(&Benchmark) -> T,
 ) -> Option<Range<T>> {
 	let mut it = data.into_iter();
@@ -48,9 +48,9 @@ pub(super) fn get_range<T: Copy + PartialOrd>(
 /// Vec<Vec<(XT, YT), Global>, Global>
 ///
 /// A set of continious cartesian data.
-pub(super) fn split_data<XT, YT>(data: Vec<(XT, YT)>) -> Vec<Vec<(XT, YT)>>
+pub(super) fn split_data<XT, YT>(data : Vec<(XT, YT)>) -> Vec<Vec<(XT, YT)>>
 where
-	XT: Clone + Copy + Add<Output = XT> + PartialOrd + One + 'static,
+	XT : Clone + Copy + Add<Output = XT> + PartialOrd + One + 'static,
 	YT: Clone + 'static,
 {
 	if data.is_empty() {
@@ -81,12 +81,12 @@ where
 }
 
 pub(super) fn ensure_defined_only_once<'a, DB>(
-	label: &str,
-	line_style: LineStyle,
-	was_legend_defined: &mut bool,
+	label : &str,
+	line_style : LineStyle,
+	was_legend_defined : &mut bool,
 	series: &mut SeriesAnno<DB>,
 ) where
-	DB: DrawingBackend + 'a,
+	DB : DrawingBackend + 'a,
 	DB::ErrorType: 'static,
 {
 	if !*was_legend_defined {
@@ -101,7 +101,7 @@ pub(super) fn ensure_defined_only_once<'a, DB>(
 }
 
 #[allow(dead_code)]
-pub(super) fn classify_benchmark_result_to_point_style(result: BenchmarkResult) -> CustomShape {
+pub(super) fn classify_benchmark_result_to_point_style(result : BenchmarkResult) -> CustomShape {
 	use CustomShape::*;
 	use BenchmarkResult::*;
 

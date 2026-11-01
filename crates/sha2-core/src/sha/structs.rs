@@ -25,7 +25,7 @@ pub enum Word {
 }
 
 impl Display for Word {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
 			Word::W32(w) => f.write_str(&format!("{w:08x}")),
 			Word::W64(w) => f.write_str(&format!("{w:016x}"))
@@ -34,45 +34,45 @@ impl Display for Word {
 }
 
 impl From<u32> for Word {
-	fn from(value: u32) -> Self {
+	fn from(value : u32) -> Self {
 		Word::W32(value)
 	}
 }
 
 impl From<u64> for Word {
-	fn from(value: u64) -> Self {
+	fn from(value : u64) -> Self {
 		Word::W64(value)
 	}
 }
 
 impl PartialEq<u32> for Word {
-	fn eq(&self, other: &u32) -> bool {
+	fn eq(&self, other : &u32) -> bool {
 		match self {
 			Word::W32(s) => s == other,
 			Word::W64(_) => false
 		}
 	}
 
-	fn ne(&self, other: &u32) -> bool {
+	fn ne(&self, other : &u32) -> bool {
 		!self.eq(other)
 	}
 }
 
 impl PartialEq<u64> for Word {
-	fn eq(&self, other: &u64) -> bool {
+	fn eq(&self, other : &u64) -> bool {
 		match self {
 			Word::W32(_) => false,
 			Word::W64(s) => s == other
 		}
 	}
 
-	fn ne(&self, other: &u64) -> bool {
+	fn ne(&self, other : &u64) -> bool {
 		!self.eq(other)
 	}
 }
 
 impl LowerHex for Word {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
 			Word::W32(w) => f.write_str(&format!("{w:08x}")),
 			Word::W64(w) => f.write_str(&format!("{w:016x}"))
@@ -83,7 +83,7 @@ impl LowerHex for Word {
 }
 
 impl BitDifferential for Word {
-	fn bit_diff(self, rhs: Self) -> String {
+	fn bit_diff(self, rhs : Self) -> String {
 		use Word::*;
 		match (self, rhs) {
 			(W32(l), W32(r)) => l.bit_diff(r),
@@ -94,7 +94,7 @@ impl BitDifferential for Word {
 }
 
 impl Word {
-	pub(super) fn ch(e: Self, f: Self, g: Self) -> Result<Self, HashError> {
+	pub(super) fn ch(e : Self, f : Self, g : Self) -> Result<Self, HashError> {
 		use Word::*;
 		match (e, f, g) {
 			(W32(e), W32(f), W32(g)) => Ok(W32((e & f) ^ (!e & g))),
@@ -103,7 +103,7 @@ impl Word {
 		}
 	}
 
-	pub(super) fn maj(a: Self, b: Self, c: Self) -> Result<Self, HashError> {
+	pub(super) fn maj(a : Self, b : Self, c : Self) -> Result<Self, HashError> {
 		use Word::*;
 		match (a, b, c) {
 			(W32(a), W32(b), W32(c)) => Ok(W32((a & b) ^ (a & c) ^ (b & c))),
@@ -112,7 +112,7 @@ impl Word {
 		}
 	}
 
-	pub(super) fn sigma0(a: Self) -> Self {
+	pub(super) fn sigma0(a : Self) -> Self {
 		use Word::*;
 		match a {
 			W32(a) => W32(a.rotate_right(2) ^ a.rotate_right(13) ^ a.rotate_right(22)),
@@ -120,7 +120,7 @@ impl Word {
 		}
 	}
 
-	pub(super) fn sigma1(e: Self) -> Self {
+	pub(super) fn sigma1(e : Self) -> Self {
 		use Word::*;
 		match e {
 			W32(e) => W32(e.rotate_right(6) ^ e.rotate_right(11) ^ e.rotate_right(25)),
@@ -128,7 +128,7 @@ impl Word {
 		}
 	}
 
-	pub(super) fn gamma0(x: Self) -> Self {
+	pub(super) fn gamma0(x : Self) -> Self {
 		use Word::*;
 		match x {
 			W32(x) => W32(x.rotate_right(7) ^ x.rotate_right(18) ^ (x >> 3)),
@@ -136,7 +136,7 @@ impl Word {
 		}
 	}
 
-	pub(super) fn gamma1(x: Self) -> Self {
+	pub(super) fn gamma1(x : Self) -> Self {
 		use Word::*;
 		match x {
 			W32(x) => W32(x.rotate_right(17) ^ x.rotate_right(19) ^ (x >> 10)),
@@ -144,17 +144,17 @@ impl Word {
 		}
 	}
 
-	pub fn from_u32_vec(slice: Vec<u32>) -> Vec<Self> {
+	pub fn from_u32_vec(slice : Vec<u32>) -> Vec<Self> {
 		slice.into_iter().map(|x| Word::W32(x)).collect()
 	}
 
-	pub fn from_u64_vec(slice: Vec<u64>) -> Vec<Self> {
+	pub fn from_u64_vec(slice : Vec<u64>) -> Vec<Self> {
 		slice.into_iter().map(|x| Word::W64(x)).collect()
 	}
 
 	pub fn from_str_radix(
-		src: &str,
-		radix: u32,
+		src : &str,
+		radix : u32,
 		hash_function: HashFunction,
 	) -> Result<Word, ParseIntError> {
 		use HashFunction::*;
@@ -164,7 +164,7 @@ impl Word {
 		}
 	}
 
-	pub(super) fn wrapping_add(self, rhs: Word) -> Result<Self, HashError> {
+	pub(super) fn wrapping_add(self, rhs : Word) -> Result<Self, HashError> {
 		match (self, rhs) {
 			(Word::W32(l), Word::W32(r)) => Ok(Word::W32(l.wrapping_add(r))),
 			(Word::W64(l), Word::W64(r)) => Ok(Word::W64(l.wrapping_add(r))),
@@ -172,7 +172,7 @@ impl Word {
 		}
 	}
 
-	pub(super) fn from_be_bytes(bytes: &[u8]) -> Result<Self, HashError> {
+	pub(super) fn from_be_bytes(bytes : &[u8]) -> Result<Self, HashError> {
 		match bytes.len() {
 			4 => Ok(Word::W32(u32::from_be_bytes(bytes.try_into().unwrap()))),
 			8 => Ok(Word::W64(u64::from_be_bytes(bytes.try_into().unwrap()))),

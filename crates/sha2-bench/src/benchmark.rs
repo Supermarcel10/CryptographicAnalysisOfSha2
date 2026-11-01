@@ -109,7 +109,7 @@ pub enum SmtSolver {
 // TODO: Boolector
 
 impl Display for SmtSolver {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		use SmtSolver::*;
 
 		write!(f, "{}", match self {
@@ -156,7 +156,7 @@ pub enum BenchmarkResult {
 }
 
 impl Display for BenchmarkResult {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		write!(f, "{}", match self {
 			BenchmarkResult::Sat => "SAT",
 			BenchmarkResult::Unsat => "UNSAT",
@@ -187,8 +187,8 @@ impl SmtOutputFormat {
 
 	fn get_base_size(
 		self,
-		capture: &str,
-		hash_function: HashFunction
+		capture : &str,
+		hash_function : HashFunction
 	) -> Result<Word, Box<dyn Error>> {
 		let radix_size = match self {
 			SmtOutputFormat::Boolean => 2,
@@ -202,18 +202,18 @@ impl SmtOutputFormat {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct MutableShaState {
-	pub i: u8,
-	pub w: Option<Word>,
-	pub a: Option<Word>,
+	pub i : u8,
+	pub w : Option<Word>,
+	pub a : Option<Word>,
 	pub e: Option<Word>,
 }
 
 impl Default for MutableShaState {
 	fn default() -> Self {
 		MutableShaState {
-			i: 0,
-			w: None,
-			a: None,
+			i : 0,
+			w : None,
+			a : None,
 			e: None,
 		}
 	}
@@ -222,14 +222,14 @@ impl Default for MutableShaState {
 impl MutableShaState {
 	fn to_immutable(self) -> Option<ShaState> {
 		Some(ShaState {
-			i: self.i,
-			w: self.w?,
-			a: self.a?,
+			i : self.i,
+			w : self.w?,
+			a : self.a?,
 			e: self.e?,
 		})
 	}
 
-	fn update_state_variable(&mut self, variable: char, value: Word) {
+	fn update_state_variable(&mut self, variable : char, value : Word) {
 		match variable {
 			'a' => self.a = Some(value),
 			'e' => self.e = Some(value),
@@ -241,26 +241,26 @@ impl MutableShaState {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Benchmark {
-	pub date_time: DateTime<Utc>,
-	pub solver: SmtSolver,
-	pub arguments: Option<SolverArg>,
-	pub hash_function: HashFunction,
-	pub rounds: u8,
-	pub collision_type: CollisionType,
-	pub execution_time: Duration,
-	pub memory_bytes: u64,
-	pub result: BenchmarkResult,
-	pub console_output: (String, String),
-	pub is_valid: Option<bool>,
-	pub is_baseline: bool,
-	pub is_rerun: bool,
-	pub encoding: EncodingType,
-	pub stop_tolerance: u8,
+	pub date_time : DateTime<Utc>,
+	pub solver : SmtSolver,
+	pub arguments : Option<SolverArg>,
+	pub hash_function : HashFunction,
+	pub rounds : u8,
+	pub collision_type : CollisionType,
+	pub execution_time : Duration,
+	pub memory_bytes : u64,
+	pub result : BenchmarkResult,
+	pub console_output : (String, String),
+	pub is_valid : Option<bool>,
+	pub is_baseline : bool,
+	pub is_rerun : bool,
+	pub encoding : EncodingType,
+	pub stop_tolerance : u8,
 	pub timeout: Duration,
 }
 
 impl Benchmark {
-	pub fn save(&self, path: &Path) -> Result<PathBuf, Box<dyn Error>> {
+	pub fn save(&self, path : &Path) -> Result<PathBuf, Box<dyn Error>> {
 		if !path.exists() {
 			fs::create_dir_all(path)?;
 		}
@@ -286,13 +286,13 @@ impl Benchmark {
 		Ok(path)
 	}
 
-	pub fn load(file: &Path) -> Result<Self, Box<dyn Error>> {
+	pub fn load(file : &Path) -> Result<Self, Box<dyn Error>> {
 		let contents = fs::read(file)?;
-		let benchmark: Self = serde_json::from_slice(&contents)?;
+		let benchmark : Self = serde_json::from_slice(&contents)?;
 		Ok(benchmark)
 	}
 
-	pub fn load_all(dir_location: &Path, recursively: bool) -> Result<Vec<Self>, Box<dyn Error>> {
+	pub fn load_all(dir_location : &Path, recursively : bool) -> Result<Vec<Self>, Box<dyn Error>> {
 		let mut benchmarks = vec![];
 
 		if dir_location.is_file() {
@@ -338,7 +338,7 @@ impl Benchmark {
 		for capture in re.captures_iter(&smt_output) {
 			let msg= capture.get(1);
 			let var = &capture[2];
-			let round: usize = capture[3].parse()?;
+			let round : usize = capture[3].parse()?;
 
 			let val = match (capture.get(4), capture.get(5)) {
 				(Some(val), _) => val,
@@ -420,8 +420,8 @@ impl Benchmark {
 			}
 
 			messages.push(MessageData {
-				m: MessageBlock(start_blocks[i]),
-				cv: StartVector::CV(start_vectors[i]),
+				m : MessageBlock(start_blocks[i]),
+				cv : StartVector::CV(start_vectors[i]),
 				states,
 				expected_hash: OutputHash(Box::from(trimmed_hash.clone())),
 			});
@@ -431,7 +431,7 @@ impl Benchmark {
 		let colliding_pair = CollidingPair {
 			m0,
 			m1,
-			hash_function: self.hash_function,
+			hash_function : self.hash_function,
 			rounds: self.rounds,
 		};
 
@@ -443,14 +443,14 @@ impl Benchmark {
 
 	fn parse_update_for_msg(
 		&self,
-		msg: usize,
-		var: &str,
-		round: usize,
-		val: Word,
-		hash: &mut Box<[Option<Word>; 8]>,
-		start_blocks: &mut [[Word; 16]; 2],
-		start_vectors: &mut [[Word; 8]; 2],
-		states: &mut [BTreeMap<usize, MutableShaState>; 2],
+		msg : usize,
+		var : &str,
+		round : usize,
+		val : Word,
+		hash : &mut Box<[Option<Word>; 8]>,
+		start_blocks : &mut [[Word; 16]; 2],
+		start_vectors : &mut [[Word; 8]; 2],
+		states : &mut [BTreeMap<usize, MutableShaState>; 2],
 		differential: bool,
 	) -> Result<(), Box<dyn Error>> {
 		// Special handling if differential
@@ -469,7 +469,7 @@ impl Benchmark {
 		if var == "hash" {
 			hash[round] = Some(val);
 		} else {
-			let var_char: char = var.parse()?;
+			let var_char : char = var.parse()?;
 
 			// Parse H constants (CV/IV)
 			if !differential && round == 0 && var_char != 'w' {

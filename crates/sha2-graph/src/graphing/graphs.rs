@@ -42,7 +42,7 @@ impl GraphRenderer {
 		);
 		let path = self.output_dir.join(file_name);
 
-		let data: Vec<_> = data
+		let data : Vec<_> = data
 			.into_iter()
 			.filter(|b| b.result == BenchmarkResult::Sat || b.result == BenchmarkResult::Unsat)
 			.collect();
@@ -89,7 +89,7 @@ impl GraphRenderer {
 		)?;
 
 		// Draw primary data
-		let time_data: Vec<_> = sorted_data
+		let time_data : Vec<_> = sorted_data
 			.clone()
 			.into_iter()
 			.map(|b| (b.rounds as u32, b.execution_time.as_secs_f64()))
@@ -105,7 +105,7 @@ impl GraphRenderer {
 		)?;
 
 		// Draw secondary data
-		let memory_data: Vec<_> = sorted_data
+		let memory_data : Vec<_> = sorted_data
 			.clone()
 			.into_iter()
 			.map(|b| (b.rounds as u32, b.memory_bytes as f64 / 1048576.0))
@@ -143,11 +143,11 @@ impl GraphRenderer {
 	/// Returns path of saved graph file, or error.
 	fn create_baseline_graph<L>(
 		&self,
-		baseline_data: Vec<Benchmark>,
-		data: BTreeMap<L, Vec<Benchmark>>,
-		title_str: &str,
-		buffer: bool,
-		enforce: bool,
+		baseline_data : Vec<Benchmark>,
+		data : BTreeMap<L, Vec<Benchmark>>,
+		title_str : &str,
+		buffer : bool,
+		enforce : bool,
 		draw_background: bool,
 	) -> Result<PathBuf, Box<dyn Error>>
 	where
@@ -166,7 +166,7 @@ impl GraphRenderer {
 			.ok_or(GraphRendererError::GetRangeFailed { variable: "x_range" })?;
 
 		// Trim data
-		let mut trimmed_data: BTreeMap<L, Vec<Benchmark>> = BTreeMap::new();
+		let mut trimmed_data : BTreeMap<L, Vec<Benchmark>> = BTreeMap::new();
 		for (encoding, mut benchmarks) in data.clone().into_iter() {
 			if benchmarks.len() > x_range.end as usize {
 				benchmarks.retain(|b| b.rounds <= x_range.end as u8);
@@ -200,7 +200,7 @@ impl GraphRenderer {
 		}
 
 		// Get range & calculate deviation from baseline
-		let mut deviation_range: Range<f64> = f64::MAX..f64::MIN;
+		let mut deviation_range : Range<f64> = f64::MAX..f64::MIN;
 		let mut deviation_data: BTreeMap<String, Vec<(u32, f64, BenchmarkResult)>> = BTreeMap::new();
 		for (label, run) in trimmed_data.clone() {
 			let mut data = vec![];
@@ -297,7 +297,7 @@ impl GraphRenderer {
 				continue;
 			}
 
-			let (cartesian_run, _): (Vec<_>, Vec<_>) = run
+			let (cartesian_run, _) : (Vec<_>, Vec<_>) = run
 				.into_iter()
 				.map(|(x, y, result)| ((x, y), result))
 				.unzip();
@@ -403,7 +403,7 @@ impl GraphRenderer {
 		}
 
 		for (i, (solver, data)) in split_data.into_iter().enumerate() {
-			let (cartesian_run, _): (Vec<_>, Vec<_>) = data
+			let (cartesian_run, _) : (Vec<_>, Vec<_>) = data
 				.into_iter()
 				.map(|(x, y, result)| ((x, y), result))
 				.unzip();
@@ -438,7 +438,7 @@ impl GraphRenderer {
 					hash_function,
 					collision_type,
 					BruteForce {
-						simplified_maj_and_ch_functions: false,
+						simplified_maj_and_ch_functions : false,
 						alternative_add: false,
 					},
 					false
@@ -469,8 +469,8 @@ impl GraphRenderer {
 			SHA256,
 			Standard,
 			BruteForce {
-				simplified_maj_and_ch_functions: false,
-				alternative_add: false
+				simplified_maj_and_ch_functions : false,
+				alternative_add : false
 			},
 			true
 		)?;
@@ -540,7 +540,7 @@ impl GraphRenderer {
 		)?;
 
 		// DXOR
-		let dxor_encoding_data: BTreeMap<_, _> = encoding_data
+		let dxor_encoding_data : BTreeMap<_, _> = encoding_data
 			.clone()
 			.into_iter()
 			.filter(|(e, _)| matches!(e, DeltaXOR { .. }))
@@ -556,7 +556,7 @@ impl GraphRenderer {
 		)?;
 
 		// DSUB
-		let dsub_encoding_data: BTreeMap<_, _> = encoding_data
+		let dsub_encoding_data : BTreeMap<_, _> = encoding_data
 			.clone()
 			.into_iter()
 			.filter(|(e, _)| matches!(e, DeltaSub { .. }))
@@ -572,7 +572,7 @@ impl GraphRenderer {
 		)?;
 
 		// Pure encoding comparison graph
-		let mut all_encodings: BTreeMap<EncodingType, Vec<Benchmark>> = BTreeMap::new();
+		let mut all_encodings : BTreeMap<EncodingType, Vec<Benchmark>> = BTreeMap::new();
 
 		// Retrieve remaining results
 		let bruteforce_simpl = self.data_retriever.retrieve_baseline(
@@ -580,7 +580,7 @@ impl GraphRenderer {
 			SHA256,
 			Standard,
 			BruteForce {
-				simplified_maj_and_ch_functions: true,
+				simplified_maj_and_ch_functions : true,
 				alternative_add: false,
 			},
 			false
@@ -591,7 +591,7 @@ impl GraphRenderer {
 			SHA256,
 			Standard,
 			BruteForce {
-				simplified_maj_and_ch_functions: false,
+				simplified_maj_and_ch_functions : false,
 				alternative_add: true,
 			},
 			false
@@ -602,7 +602,7 @@ impl GraphRenderer {
 			SHA256,
 			Standard,
 			BruteForce {
-				simplified_maj_and_ch_functions: true,
+				simplified_maj_and_ch_functions : true,
 				alternative_add: true,
 			},
 			false

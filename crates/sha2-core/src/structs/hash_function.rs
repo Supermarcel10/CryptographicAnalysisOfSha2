@@ -10,7 +10,7 @@ pub enum HashFunction {
 }
 
 impl Display for HashFunction {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
 			HashFunction::SHA224 => f.write_str("SHA224"),
 			HashFunction::SHA256 => f.write_str("SHA256"),
@@ -78,11 +78,11 @@ impl HashFunction {
 	///
 	/// # Returns
 	/// `Result<(), HashError>`
-	pub fn validate_rounds(&self, rounds: u8) -> Result<(), HashError> {
+	pub fn validate_rounds(&self, rounds : u8) -> Result<(), HashError> {
 		let max_rounds = self.max_rounds();
 		if rounds > max_rounds {
 			return Err(HashError::TooManyRounds {
-				requested: rounds,
+				requested : rounds,
 				maximum: max_rounds,
 			});
 		}
