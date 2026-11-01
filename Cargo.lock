@@ -402,7 +402,6 @@ name = "sha2-bench"
 version = "0.1.2"
 dependencies = [
  "chrono",
- "clap",
  "nix",
  "regex",
  "serde",
@@ -432,7 +431,6 @@ dependencies = [
 name = "sha2-core"
 version = "0.1.2"
 dependencies = [
- "clap",
  "serde",
  "thiserror",
 ]

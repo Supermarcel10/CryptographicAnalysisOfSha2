@@ -38,15 +38,15 @@ enum Commands {
 	/// Run an exhaustive benchmark over all solvers, hash functions, collision types and arguments
 	Benchmark {
 		/// Argument to select solver. Use multiple `--solver <SOLVER>` statements for multiple solvers
-		#[arg(required = true, long)]
+		#[arg(required = true, long, value_parser = clap::value_parser!(SmtSolver))]
 		solver: Vec<SmtSolver>,
 
 		/// Argument to select hash function. Use separate `--hash-function <HASH_FUNCTION>` statements for multiple hash functions
-		#[arg(required = true, long)]
+		#[arg(required = true, long, value_parser = clap::value_parser!(HashFunction))]
 		hash_function: Vec<HashFunction>,
 
 		/// Argument to select collision type. Use separate `--collision-type <COLLISION_TYPE>` statements for multiple collision types
-		#[arg(required = true, long)]
+		#[arg(required = true, long, value_parser = clap::value_parser!(CollisionType))]
 		collision_type: Vec<CollisionType>,
 
 		/// Argument to set (non-inclusive) range of compression rounds. Input with `--round-range <MIN>..<MAX>`. Default 1..hash function max
@@ -108,6 +108,7 @@ enum Commands {
 		msg_block: Option<String>,
 
 		/// Hash function
+		#[arg(value_parser = clap::value_parser!(HashFunction))]
 		hash_function: HashFunction,
 
 		/// Number of compression rounds. Default hash function max
