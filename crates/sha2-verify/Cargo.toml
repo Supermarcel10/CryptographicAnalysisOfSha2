@@ -1,0 +1,9 @@
+[package]
+name = "sha2-verify"
+authors = ["Supermarcel10"]
+version = "0.1.2"
+edition = "2024"
+license = "CC BY-NC-SA"
+
+[dependencies]
+sha2-core = { path = "../sha2-core" }

@@ -398,6 +398,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha2-bench"
+version = "0.1.2"
+dependencies = [
+ "chrono",
+ "clap",
+ "nix",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2-core",
+ "sha2-smt",
+ "sha2-verify",
+ "thiserror",
+ "wait-timeout",
+]
+
+[[package]]
 name = "sha2-collision"
 version = "0.1.2"
 dependencies = [
@@ -409,8 +426,35 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "sha2-bench",
+ "sha2-core",
+ "sha2-smt",
+ "sha2-verify",
  "thiserror",
  "wait-timeout",
+]
+
+[[package]]
+name = "sha2-core"
+version = "0.1.2"
+dependencies = [
+ "clap",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "sha2-smt"
+version = "0.1.2"
+dependencies = [
+ "sha2-core",
+]
+
+[[package]]
+name = "sha2-verify"
+version = "0.1.2"
+dependencies = [
+ "sha2-core",
 ]
 
 [[package]]
