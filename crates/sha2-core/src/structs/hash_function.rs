@@ -1,8 +1,9 @@
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 use crate::sha::{HashError, Word};
 use crate::structs::size::Size;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, serde::Serialize, serde::Deserialize, clap::ValueEnum)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum HashFunction {
 	SHA224,
 	SHA256,
@@ -135,5 +136,41 @@ impl HashFunction {
 				0x4cc5d4becb3e42b6, 0x597f299cfc657e2a, 0x5fcb6fab3ad6faec, 0x6c44198c4a475817,
 			]),
 		}
+	}
+}
+
+impl FromStr for HashFunction {
+	type Err = ParseHashFunctionError;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		match s {
+			"sha224" => Ok(HashFunction::SHA224),
+			"sha256" => Ok(HashFunction::SHA256),
+			"sha512" => Ok(HashFunction::SHA512),
+			_ => Err(ParseHashFunctionError(s.to_string())),
+		}
+	}
+}
+
+#[derive(thiserror::Error, Debug, PartialEq, Clone)]
+#[error("unknown hash function '{0}', expected one of: sha224, sha256, sha512")]
+pub struct ParseHashFunctionError(String);
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn parses_all_variants() {
+		assert_eq!(HashFunction::from_str("sha224"), Ok(HashFunction::SHA224));
+		assert_eq!(HashFunction::from_str("sha256"), Ok(HashFunction::SHA256));
+		assert_eq!(HashFunction::from_str("sha512"), Ok(HashFunction::SHA512));
+	}
+
+	#[test]
+	fn rejects_unknown() {
+		assert!(HashFunction::from_str("SHA256").is_err());
+		assert!(HashFunction::from_str("md5").is_err());
+		assert!(HashFunction::from_str("").is_err());
 	}
 }
