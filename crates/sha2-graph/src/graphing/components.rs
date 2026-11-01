@@ -36,7 +36,7 @@ impl GraphRenderer {
 			.disable_mesh()
 			.disable_y_axis()
 			.x_desc("Compression Rounds")
-			.label_style(self.text_style.with_color(&BLACK))
+			.label_style(self.text_style.with_color(BLACK))
 			.draw()?;
 		Ok(())
 	}

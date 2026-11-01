@@ -65,7 +65,7 @@ impl BenchmarkRunner {
 			for hash_function in &hash_functions {
 				for collision_type in &collision_types {
 					let mut sequential_fails = 0;
-					if arguments.len() == 0 {
+					if arguments.is_empty() {
 						self.invoke(
 							solver,
 							hash_function,
@@ -112,7 +112,7 @@ impl BenchmarkRunner {
 				*hash_function,
 				*collision_type,
 				rounds,
-				self.encoding_type.clone()
+				self.encoding_type
 			);
 
 			let mut result = self.run_solver_with_benchmark(
@@ -121,7 +121,7 @@ impl BenchmarkRunner {
 				*collision_type,
 				solver,
 				self.is_rerun,
-				self.encoding_type.clone(),
+				self.encoding_type,
 				smt_path,
 				arg.clone()
 			);
@@ -186,6 +186,7 @@ impl BenchmarkRunner {
 		}
 	}
 
+	#[allow(clippy::too_many_arguments)]
 	fn run_solver_with_benchmark(
 		&self,
 		hash_function : HashFunction,
@@ -227,7 +228,7 @@ impl BenchmarkRunner {
 
 		let pid = child.id();
 		let arg_str = if let Some(args) = &arguments {
-			if args.len() > 0 {
+			if !args.is_empty() {
 				&format!(" {args}")
 			} else {
 				""
@@ -273,18 +274,7 @@ impl BenchmarkRunner {
 		};
 
 		// Extract memory information
-		let mut bytes_rss = 0;
-		if let Some(line) = cerr
-			.lines()
-			.find(|line| line.contains("Maximum resident set size"))
-		{
-			if let Some(val_str) = line.split(':').nth(1) {
-				if let Ok(value) = val_str.trim().parse::<u64>() {
-					// Convert kB to bytes
-					bytes_rss = value * 1024;
-				}
-			}
-		}
+		let bytes_rss = max_resident_set_size(&cerr).unwrap_or(0);
 
 		let is_baseline = !has_args && self.timeout == Duration::from_secs(900);
 
@@ -310,7 +300,7 @@ impl BenchmarkRunner {
 
 	fn categorize_status(
 		exit_status : Option<ExitStatus>,
-		cout : &String
+		cout : &str
 	) -> Result<BenchmarkResult, Box<dyn Error>> {
 		use BenchmarkResult::*;
 		use Signal::*;
@@ -347,4 +337,13 @@ fn check_command_present(command : &str) -> Result<bool, Box<dyn Error>> {
 		.output()?;
 
 	Ok(output.status.success())
+}
+
+fn max_resident_set_size(cerr : &str) -> Option<u64> {
+	let line = cerr
+		.lines()
+		.find(|line| line.contains("Maximum resident set size"))?;
+	let value = line.split(':').nth(1)?.trim().parse::<u64>().ok()?;
+	// Convert kB to bytes
+	Some(value * 1024)
 }

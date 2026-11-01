@@ -2,7 +2,7 @@ use std::error::Error;
 
 use sha2_core::structs::collision_type::CollisionType;
 
-use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::smt_lib::builder::SmtBuilder;
 
 impl SmtBuilder {
 	fn assert_initial_vector_not_same(&mut self) {

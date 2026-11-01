@@ -2,13 +2,13 @@ use std::error::Error;
 
 use sha2_core::structs::collision_type::CollisionType;
 
-use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::smt_lib::builder::SmtBuilder;
 
 impl SmtBuilder {
 	pub(super) fn define_calculated_differential_initial_vector(
 		&mut self
 	) -> Result<(), Box<dyn Error>> {
-		let encoding = self.encoding.clone();
+		let encoding = self.encoding;
 		let diff = encoding.get_diff()?;
 		self.comment("Initial Vector difference");
 
@@ -29,7 +29,7 @@ impl SmtBuilder {
 	}
 
 	pub(super) fn define_differential_words(&mut self) -> Result<(), Box<dyn Error>> {
-		let encoding = self.encoding.clone();
+		let encoding = self.encoding;
 		let diff = encoding.get_diff()?;
 
 		self.define_expansion_for_message(0);
@@ -67,7 +67,7 @@ impl SmtBuilder {
 	pub(super) fn define_differential_for_working_variables(
 		&mut self
 	) -> Result<(), Box<dyn Error>> {
-		let encoding = self.encoding.clone();
+		let encoding = self.encoding;
 		let diff = encoding.get_diff()?;
 		self.comment("Variable Differential");
 
@@ -83,7 +83,7 @@ impl SmtBuilder {
 	}
 
 	pub(super) fn define_differential_final_state(&mut self) -> Result<(), Box<dyn Error>> {
-		let encoding = self.encoding.clone();
+		let encoding = self.encoding;
 		let diff = encoding.get_diff()?;
 		self.comment("Final state difference");
 

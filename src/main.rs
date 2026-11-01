@@ -14,7 +14,7 @@ use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 use sha2_graph::graphing::graph_renderer::GraphRenderer;
 use sha2_graph::graphing::line_styles::LineStyle::*;
-use sha2_smt::smt_lib::smt_lib::generate_smtlib_files;
+use sha2_smt::smt_lib::builder::generate_smtlib_files;
 use sha2_smt::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
 
 #[cfg(not(unix))]
@@ -373,14 +373,12 @@ fn load_mapped(
 		return Ok(map);
 	}
 
-	for dir_entry in fs::read_dir(dir_location)? {
-		if let Ok(entry) = dir_entry {
-			let metadata = entry.metadata()?;
-			if recursive && metadata.is_dir() {
-				map.extend(load_mapped(&entry.path(), true)?);
-			} else if metadata.is_file() {
-				map.push((Benchmark::load(&entry.path())?, entry.path()));
-			}
+	for dir_entry in fs::read_dir(dir_location)?.flatten() {
+		let metadata = dir_entry.metadata()?;
+		if recursive && metadata.is_dir() {
+			map.extend(load_mapped(&dir_entry.path(), true)?);
+		} else if metadata.is_file() {
+			map.push((Benchmark::load(&dir_entry.path())?, dir_entry.path()));
 		}
 	}
 

@@ -2,7 +2,7 @@ use std::error::Error;
 
 use sha2_core::structs::collision_type::CollisionType;
 
-use crate::smt_lib::smt_lib::SmtBuilder;
+use crate::smt_lib::builder::SmtBuilder;
 
 impl SmtBuilder {
 	pub fn dsub_encoding(&mut self) -> Result<(), Box<dyn Error>> {
