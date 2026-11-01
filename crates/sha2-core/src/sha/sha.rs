@@ -64,6 +64,7 @@ impl Display for StartVector {
 
 impl StartVector {
 	/// Retrieves initial vector (IV), often referred to as H variables
+	#[rustfmt::skip]
 	pub fn get_vector(self, hash_function : HashFunction) -> [Word; 8] {
 		let vec = match (self, hash_function) {
 			(StartVector::IV, HashFunction::SHA224) => Word::from_u32_vec(vec![
@@ -365,6 +366,7 @@ mod tests {
 
 	const MESSAGE : &str = "abc";
 
+	#[rustfmt::skip]
 	#[test]
 	fn test_padding() {
 		// MESSAGE "abc" (3 char, 24b) for SHA 256
