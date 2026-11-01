@@ -120,8 +120,7 @@ enum Commands {
 		#[arg(short, long)]
 		rounds : Option<u8>,
 
-		/// Starting vector for hash function, separated word-by-word with spaces. Default Initial
-		/// Vector (IV)
+		/// Starting vector for hash function, separated word-by-word. Default Initial Vector (IV)
 		#[arg(long, visible_alias = "sv")]
 		start_vector : Option<String>
 	},
