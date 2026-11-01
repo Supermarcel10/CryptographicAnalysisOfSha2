@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use plotters::prelude::RGBAColor;
 use crate::data::data_retriever::DataRetriever;
 use crate::graphing::line_styles::LineStyle;
-use crate::structs::collision_type::CollisionType;
-use crate::structs::hash_function::HashFunction;
+use sha2_core::structs::collision_type::CollisionType;
+use sha2_core::structs::hash_function::HashFunction;
 
 
 pub struct GraphRenderer {

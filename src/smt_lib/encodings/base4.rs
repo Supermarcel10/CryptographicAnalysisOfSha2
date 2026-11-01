@@ -1,6 +1,6 @@
 use std::error::Error;
 use crate::smt_lib::smt_lib::SmtBuilder;
-use crate::structs::collision_type::CollisionType;
+use sha2_core::structs::collision_type::CollisionType;
 
 #[allow(unreachable_code)]
 #[allow(dead_code)]

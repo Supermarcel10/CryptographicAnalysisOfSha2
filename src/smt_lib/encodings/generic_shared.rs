@@ -1,8 +1,8 @@
 use std::error::Error;
-use crate::sha::StartVector;
+use sha2_core::sha::StartVector;
 use crate::smt_lib::smt_lib::SmtBuilder;
 use crate::smt_lib::utilities::{get_previous_var, msg_prefix, smt_hex};
-use crate::structs::collision_type::CollisionType;
+use sha2_core::structs::collision_type::CollisionType;
 
 
 impl SmtBuilder {
@@ -163,7 +163,7 @@ impl SmtBuilder {
 
 	pub(super) fn define_initial_vector(&mut self) {
 		self.comment("Define H constants (IV/CV)");
-		use crate::structs::collision_type::CollisionType::*;
+		use sha2_core::structs::collision_type::CollisionType::*;
 
 		let iv_vec = StartVector::IV.get_vector(self.hash_function);
 		let mut s = String::new();

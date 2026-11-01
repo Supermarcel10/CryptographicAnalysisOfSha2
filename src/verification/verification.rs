@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-	use crate::sha::{Sha, StartVector};
-	use crate::sha::StartVector::IV;
-	use crate::structs::hash_function::HashFunction::*;
-	use crate::verification::bit_differential::BitDifferential;
+	use sha2_core::sha::{Sha, StartVector};
+	use sha2_core::sha::StartVector::IV;
+	use sha2_core::structs::hash_function::HashFunction::*;
+	use sha2_core::bit_differential::BitDifferential;
 
 	#[test]
 	/// Example in Li et al. (p.17, Table 4)

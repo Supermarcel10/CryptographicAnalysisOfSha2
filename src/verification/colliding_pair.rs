@@ -1,9 +1,9 @@
 use std::fmt::{Display, Formatter};
-use crate::sha::{HashError, MessageBlock, OutputHash, Sha, StartVector};
-use crate::structs::hash_function::HashFunction;
-use crate::structs::hash_result::HashResult;
-use crate::structs::sha_state::ShaState;
-use crate::verification::bit_differential::BitDifferential;
+use sha2_core::sha::{HashError, MessageBlock, OutputHash, Sha, StartVector};
+use sha2_core::structs::hash_function::HashFunction;
+use sha2_core::structs::hash_result::HashResult;
+use sha2_core::structs::sha_state::ShaState;
+use sha2_core::bit_differential::BitDifferential;
 use crate::verification::verify_hash::VerifyHash;
 
 #[derive(Debug)]

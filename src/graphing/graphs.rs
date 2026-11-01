@@ -426,8 +426,8 @@ impl GraphRenderer {
 
 	/// Collection function to generate all graphs.
 	pub fn generate_all_graphs(&mut self) -> Result<(), Box<dyn Error>> {
-		use crate::structs::hash_function::HashFunction::*;
-		use crate::structs::collision_type::CollisionType::*;
+		use sha2_core::structs::hash_function::HashFunction::*;
+		use sha2_core::structs::collision_type::CollisionType::*;
 		use crate::smt_lib::smt_retriever::EncodingType::*;
 
 

@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, LowerHex};
 use std::num::ParseIntError;
 use crate::structs::hash_function::HashFunction;
-use crate::verification::bit_differential::BitDifferential;
+use crate::bit_differential::BitDifferential;
 
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
 pub enum HashError {

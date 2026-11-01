@@ -9,11 +9,11 @@ use std::time::Duration;
 use chrono::{DateTime, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use crate::sha::{MessageBlock, OutputHash, StartVector, Word};
+use sha2_core::sha::{MessageBlock, OutputHash, StartVector, Word};
 use crate::smt_lib::smt_retriever::EncodingType;
-use crate::structs::collision_type::CollisionType;
-use crate::structs::hash_function::HashFunction;
-use crate::structs::sha_state::ShaState;
+use sha2_core::structs::collision_type::CollisionType;
+use sha2_core::structs::hash_function::HashFunction;
+use sha2_core::structs::sha_state::ShaState;
 use crate::verification::colliding_pair::{CollidingPair, MessageData};
 
 

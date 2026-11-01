@@ -1,5 +1,5 @@
 use crate::sha::Word;
-use crate::verification::bit_differential::BitDifferential;
+use crate::bit_differential::BitDifferential;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ShaState {

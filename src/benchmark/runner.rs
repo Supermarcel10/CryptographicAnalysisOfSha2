@@ -11,8 +11,8 @@ use nix::unistd::Pid;
 use wait_timeout::ChildExt;
 use crate::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
 use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
-use crate::structs::collision_type::CollisionType;
-use crate::structs::hash_function::HashFunction;
+use sha2_core::structs::collision_type::CollisionType;
+use sha2_core::structs::hash_function::HashFunction;
 
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
 pub enum BenchmarkError {

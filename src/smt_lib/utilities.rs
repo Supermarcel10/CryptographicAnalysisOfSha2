@@ -1,6 +1,6 @@
-use crate::sha::Word;
-use crate::structs::collision_type::CollisionType;
-use crate::structs::hash_function::HashFunction;
+use sha2_core::sha::Word;
+use sha2_core::structs::collision_type::CollisionType;
+use sha2_core::structs::hash_function::HashFunction;
 
 pub(super) fn smt_hex(val: Word, hash_function: &HashFunction) -> String {
 	let size = hash_function.word_size().bytes() * 2;

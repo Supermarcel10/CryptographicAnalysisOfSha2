@@ -9,18 +9,17 @@ use crate::benchmark::runner::BenchmarkRunner;
 use crate::data::data_retriever::DataRetriever;
 use crate::graphing::graph_renderer::GraphRenderer;
 use crate::graphing::line_styles::LineStyle::*;
-use crate::sha::{MessageBlock, Sha, StartVector, Word};
+use sha2_core::sha::{MessageBlock, Sha, StartVector, Word};
 use crate::smt_lib::smt_lib::generate_smtlib_files;
 use crate::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
 use crate::structs::benchmark::{Benchmark, SmtSolver};
-use crate::structs::collision_type::CollisionType;
-use crate::structs::hash_function::HashFunction;
+use sha2_core::structs::collision_type::CollisionType;
+use sha2_core::structs::hash_function::HashFunction;
 
 #[cfg(not(unix))]
 compile_error!("This crate supports only Unix-like operating systems");
 
 mod smt_lib;
-mod sha;
 mod verification;
 mod structs;
 mod graphing;

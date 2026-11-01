@@ -5,8 +5,8 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use crate::smt_lib::smt_retriever::EncodingType::{BruteForce, DeltaSub, DeltaXOR, Base4};
-use crate::structs::collision_type::CollisionType;
-use crate::structs::hash_function::HashFunction;
+use sha2_core::structs::collision_type::CollisionType;
+use sha2_core::structs::hash_function::HashFunction;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, PartialOrd, Ord)]
 pub enum EncodingType {

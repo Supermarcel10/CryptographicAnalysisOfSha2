@@ -5,8 +5,8 @@ use std::path::PathBuf;
 use crate::smt_lib::smt_retriever::EncodingType;
 use crate::smt_lib::smt_retriever::EncodingType::BruteForce;
 use crate::structs::benchmark::{Benchmark, SmtSolver, SolverArg};
-use crate::structs::collision_type::CollisionType;
-use crate::structs::hash_function::HashFunction;
+use sha2_core::structs::collision_type::CollisionType;
+use sha2_core::structs::hash_function::HashFunction;
 
 
 pub struct DataRetriever {
