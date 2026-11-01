@@ -10,7 +10,7 @@ use nix::sys::signal::{killpg, Signal};
 use nix::unistd::Pid;
 use wait_timeout::ChildExt;
 use sha2_smt::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
-use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
+use crate::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 

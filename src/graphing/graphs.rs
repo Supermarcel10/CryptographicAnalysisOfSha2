@@ -10,7 +10,7 @@ use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, Miss
 use crate::graphing::line_styles::LineStyle::Normal;
 use crate::graphing::utils::get_range;
 use sha2_smt::smt_lib::smt_retriever::EncodingType;
-use crate::structs::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
+use sha2_bench::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
 
 
 /// Implementation of graph types

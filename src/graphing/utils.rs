@@ -1,5 +1,5 @@
 use crate::graphing::custom_point_styles::CustomShape;
-use crate::structs::benchmark::{Benchmark, BenchmarkResult};
+use sha2_bench::benchmark::{Benchmark, BenchmarkResult};
 use num_traits::One;
 use plotters::backend::DrawingBackend;
 use plotters::chart::SeriesAnno;
