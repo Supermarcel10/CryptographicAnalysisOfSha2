@@ -72,7 +72,7 @@ impl Display for CollidingPair {
 			}
 		}
 
-		if mismatch_info.len() > 0 {
+		if !mismatch_info.is_empty() {
 			mismatch_info += "\n";
 		}
 
@@ -85,10 +85,10 @@ impl Display for CollidingPair {
 			mismatch_info,
 		);
 
-		write!(f, "CV   : {}\n", self.m0.cv)?;
-		write!(f, "CV'  : {}\n", self.m1.cv)?;
-		write!(f, "M    : {}\n", self.m0.m)?;
-		write!(f, "M'   : {}\n", self.m1.m)?;
+		writeln!(f, "CV   : {}", self.m0.cv)?;
+		writeln!(f, "CV'  : {}", self.m1.cv)?;
+		writeln!(f, "M    : {}", self.m0.m)?;
+		writeln!(f, "M'   : {}", self.m1.m)?;
 		write!(f, "{hash_message}\n\n")?;
 		write!(
 			f,
