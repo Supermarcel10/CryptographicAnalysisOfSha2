@@ -1,10 +1,12 @@
-use crate::graphing::custom_point_styles::CustomShape;
-use sha2_bench::benchmark::{Benchmark, BenchmarkResult};
+use std::ops::{Add, Range};
+
 use num_traits::One;
 use plotters::backend::DrawingBackend;
 use plotters::chart::SeriesAnno;
 use plotters::prelude::Rectangle;
-use std::ops::{Add, Range};
+use sha2_bench::benchmark::{Benchmark, BenchmarkResult};
+
+use crate::graphing::custom_point_styles::CustomShape;
 use crate::graphing::line_styles::LineStyle;
 
 /// Utility method to retrieve the range of a given data set for any numerical data.
@@ -102,8 +104,8 @@ pub(super) fn ensure_defined_only_once<'a, DB>(
 
 #[allow(dead_code)]
 pub(super) fn classify_benchmark_result_to_point_style(result : BenchmarkResult) -> CustomShape {
-	use CustomShape::*;
 	use BenchmarkResult::*;
+	use CustomShape::*;
 
 	match result {
 		Sat => Circle,

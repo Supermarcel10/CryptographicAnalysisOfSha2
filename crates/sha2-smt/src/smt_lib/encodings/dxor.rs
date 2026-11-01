@@ -1,7 +1,8 @@
 use std::error::Error;
-use crate::smt_lib::smt_lib::SmtBuilder;
+
 use sha2_core::structs::collision_type::CollisionType;
 
+use crate::smt_lib::smt_lib::SmtBuilder;
 
 impl SmtBuilder {
 	pub fn dxor_encoding(&mut self) -> Result<(), Box<dyn Error>> {

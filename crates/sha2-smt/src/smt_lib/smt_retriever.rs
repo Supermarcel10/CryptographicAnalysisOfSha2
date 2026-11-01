@@ -3,8 +3,8 @@ use std::fmt::{Display, Formatter};
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
-use crate::smt_lib::smt_retriever::EncodingType::{BruteForce, DeltaSub, DeltaXOR, Base4};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 

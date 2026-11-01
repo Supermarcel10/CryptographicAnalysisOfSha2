@@ -1,8 +1,9 @@
+use std::error::Error;
+use std::ops::Add;
+
 use num_traits::One;
 use plotters::coord::ranged1d::ValueFormatter;
 use plotters::prelude::*;
-use std::error::Error;
-use std::ops::Add;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[allow(dead_code)]

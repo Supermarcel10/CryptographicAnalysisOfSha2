@@ -5,14 +5,16 @@ use std::os::unix::prelude::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
+
 use chrono::Local;
-use nix::sys::signal::{killpg, Signal};
+use nix::sys::signal::{Signal, killpg};
 use nix::unistd::Pid;
-use wait_timeout::ChildExt;
-use sha2_smt::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
-use crate::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
+use sha2_smt::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
+use wait_timeout::ChildExt;
+
+use crate::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
 
 #[derive(thiserror::Error, Debug, PartialEq, Clone)]
 pub enum BenchmarkError {

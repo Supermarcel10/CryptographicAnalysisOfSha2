@@ -2,12 +2,13 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
-use sha2_smt::smt_lib::smt_retriever::EncodingType;
-use sha2_smt::smt_lib::smt_retriever::EncodingType::BruteForce;
-use crate::benchmark::{Benchmark, SmtSolver, SolverArg};
+
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
+use sha2_smt::smt_lib::smt_retriever::EncodingType;
+use sha2_smt::smt_lib::smt_retriever::EncodingType::BruteForce;
 
+use crate::benchmark::{Benchmark, SmtSolver, SolverArg};
 
 pub struct DataRetriever {
 	data_dir : PathBuf,

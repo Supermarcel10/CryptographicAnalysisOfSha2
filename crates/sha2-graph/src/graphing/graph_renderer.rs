@@ -1,12 +1,13 @@
 use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
+
 use plotters::prelude::RGBAColor;
 use sha2_bench::data_retriever::DataRetriever;
-use crate::graphing::line_styles::LineStyle;
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 
+use crate::graphing::line_styles::LineStyle;
 
 pub struct GraphRenderer {
 	pub(super) output_dir : PathBuf,

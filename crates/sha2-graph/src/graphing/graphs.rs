@@ -2,16 +2,17 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::ops::Range;
 use std::path::PathBuf;
+
 use num_traits::Float;
 use plotters::prelude::*;
+use sha2_bench::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
+use sha2_smt::smt_lib::smt_retriever::EncodingType;
+
 use crate::graphing::custom_point_styles::PointStyles;
-use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::graph_renderer::GraphRendererError::{FailedToGenerate, MissingData};
+use crate::graphing::graph_renderer::{GraphRenderer, GraphRendererError};
 use crate::graphing::line_styles::LineStyle::Normal;
 use crate::graphing::utils::get_range;
-use sha2_smt::smt_lib::smt_retriever::EncodingType;
-use sha2_bench::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
-
 
 /// Implementation of graph types
 impl GraphRenderer {
@@ -426,10 +427,9 @@ impl GraphRenderer {
 
 	/// Collection function to generate all graphs.
 	pub fn generate_all_graphs(&mut self) -> Result<(), Box<dyn Error>> {
-		use sha2_core::structs::hash_function::HashFunction::*;
 		use sha2_core::structs::collision_type::CollisionType::*;
+		use sha2_core::structs::hash_function::HashFunction::*;
 		use sha2_smt::smt_lib::smt_retriever::EncodingType::*;
-
 
 		// Generate all solver comparisons for each HashFunction and CollisionType
 		for hash_function in [SHA224, SHA256, SHA512] {
