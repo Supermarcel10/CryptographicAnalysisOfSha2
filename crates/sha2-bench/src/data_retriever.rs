@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use sha2_smt::smt_lib::smt_retriever::EncodingType;
 use sha2_smt::smt_lib::smt_retriever::EncodingType::BruteForce;
-use sha2_bench::benchmark::{Benchmark, SmtSolver, SolverArg};
+use crate::benchmark::{Benchmark, SmtSolver, SolverArg};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 

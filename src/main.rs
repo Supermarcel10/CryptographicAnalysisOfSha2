@@ -6,7 +6,7 @@ use std::time::Duration;
 use clap::{Parser, Subcommand};
 use plotters::prelude::RGBAColor;
 use sha2_bench::runner::BenchmarkRunner;
-use crate::data::data_retriever::DataRetriever;
+use sha2_bench::data_retriever::DataRetriever;
 use crate::graphing::graph_renderer::GraphRenderer;
 use crate::graphing::line_styles::LineStyle::*;
 use sha2_core::sha::{MessageBlock, Sha, StartVector, Word};
@@ -20,7 +20,6 @@ use sha2_core::structs::hash_function::HashFunction;
 compile_error!("This crate supports only Unix-like operating systems");
 
 mod graphing;
-mod data;
 
 
 #[derive(Parser, Debug)]

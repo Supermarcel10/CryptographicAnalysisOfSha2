@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 use plotters::prelude::RGBAColor;
-use crate::data::data_retriever::DataRetriever;
+use sha2_bench::data_retriever::DataRetriever;
 use crate::graphing::line_styles::LineStyle;
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
