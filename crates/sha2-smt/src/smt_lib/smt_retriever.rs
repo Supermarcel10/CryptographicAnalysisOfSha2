@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 
+use crate::smt_lib::smt_retriever::EncodingType::{Base4, BruteForce, DeltaSub, DeltaXOR};
+
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, PartialOrd, Ord)]
 pub enum EncodingType {
 	BruteForce {
