@@ -6,5 +6,8 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-thiserror = "2.0.11"
-serde = { version = "1.0.218", features = ["derive"] }
+thiserror.workspace = true
+serde.workspace = true
+
+[lints]
+workspace = true
