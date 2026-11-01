@@ -274,16 +274,7 @@ impl BenchmarkRunner {
 		};
 
 		// Extract memory information
-		let mut bytes_rss = 0;
-		if let Some(line) = cerr
-			.lines()
-			.find(|line| line.contains("Maximum resident set size"))
-			&& let Some(val_str) = line.split(':').nth(1)
-			&& let Ok(value) = val_str.trim().parse::<u64>()
-		{
-			// Convert kB to bytes
-			bytes_rss = value * 1024;
-		}
+		let bytes_rss = max_resident_set_size(&cerr).unwrap_or(0);
 
 		let is_baseline = !has_args && self.timeout == Duration::from_secs(900);
 
@@ -346,4 +337,13 @@ fn check_command_present(command : &str) -> Result<bool, Box<dyn Error>> {
 		.output()?;
 
 	Ok(output.status.success())
+}
+
+fn max_resident_set_size(cerr : &str) -> Option<u64> {
+	let line = cerr
+		.lines()
+		.find(|line| line.contains("Maximum resident set size"))?;
+	let value = line.split(':').nth(1)?.trim().parse::<u64>().ok()?;
+	// Convert kB to bytes
+	Some(value * 1024)
 }
