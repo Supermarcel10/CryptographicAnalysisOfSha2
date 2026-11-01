@@ -8,7 +8,6 @@ license.workspace = true
 [dependencies]
 thiserror.workspace = true
 serde.workspace = true
-clap.workspace = true
 
 [lints]
 workspace = true

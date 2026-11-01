@@ -13,7 +13,6 @@ regex.workspace = true
 nix.workspace = true
 wait-timeout.workspace = true
 chrono.workspace = true
-clap.workspace = true
 sha2-core.workspace = true
 sha2-verify.workspace = true
 sha2-smt.workspace = true

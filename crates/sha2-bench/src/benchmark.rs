@@ -5,6 +5,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::time::Duration;
 
 use chrono::{DateTime, Utc};
@@ -27,8 +28,7 @@ use sha2_verify::colliding_pair::{CollidingPair, MessageData};
 	PartialEq,
 	Hash,
 	Ord,
-	PartialOrd,
-	clap::ValueEnum
+	PartialOrd
 )]
 pub enum SmtSolver {
 	Z3,
@@ -39,6 +39,52 @@ pub enum SmtSolver {
 	// STP, // STP Does not support SMTLIB 2.6!
 	Colibri2,
 	MathSAT
+}
+
+impl FromStr for SmtSolver {
+	type Err = ParseSmtSolverError;
+
+	fn from_str(s : &str) -> Result<Self, Self::Err> {
+		match s {
+			"z3" => Ok(SmtSolver::Z3),
+			"cvc5" => Ok(SmtSolver::CVC5),
+			"yices2" => Ok(SmtSolver::Yices2),
+			"bitwuzla" => Ok(SmtSolver::Bitwuzla),
+			"boolector" => Ok(SmtSolver::Boolector),
+			"colibri2" => Ok(SmtSolver::Colibri2),
+			"math-sat" => Ok(SmtSolver::MathSAT),
+			_ => Err(ParseSmtSolverError(s.to_string()))
+		}
+	}
+}
+
+#[derive(thiserror::Error, Debug, PartialEq, Clone)]
+#[error(
+	"unknown solver '{0}', expected one of: z3, cvc5, yices2, bitwuzla, boolector, colibri2, math-sat"
+)]
+pub struct ParseSmtSolverError(String);
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn parses_all_variants() {
+		assert_eq!(SmtSolver::from_str("z3"), Ok(SmtSolver::Z3));
+		assert_eq!(SmtSolver::from_str("cvc5"), Ok(SmtSolver::CVC5));
+		assert_eq!(SmtSolver::from_str("yices2"), Ok(SmtSolver::Yices2));
+		assert_eq!(SmtSolver::from_str("bitwuzla"), Ok(SmtSolver::Bitwuzla));
+		assert_eq!(SmtSolver::from_str("boolector"), Ok(SmtSolver::Boolector));
+		assert_eq!(SmtSolver::from_str("colibri2"), Ok(SmtSolver::Colibri2));
+		assert_eq!(SmtSolver::from_str("math-sat"), Ok(SmtSolver::MathSAT));
+	}
+
+	#[test]
+	fn rejects_unknown() {
+		assert!(SmtSolver::from_str("Z3").is_err());
+		assert!(SmtSolver::from_str("stp").is_err());
+		assert!(SmtSolver::from_str("").is_err());
+	}
 }
 
 // TODO: TO TEST:
