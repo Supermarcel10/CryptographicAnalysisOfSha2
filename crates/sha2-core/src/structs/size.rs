@@ -73,7 +73,7 @@ impl Size {
 	/// println!("{}", size.bytes()); // Outputs 2
 	/// ```
 	pub fn bytes(&self) -> usize {
-		(self.0 + 7) / 8
+		self.0.div_ceil(8)
 	}
 }
 

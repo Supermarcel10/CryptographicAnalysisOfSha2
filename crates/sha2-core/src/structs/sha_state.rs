@@ -22,7 +22,7 @@ impl BitDifferential for ShaState {
 impl BitDifferential for Vec<ShaState> {
 	fn bit_diff(self, other : Self) -> String {
 		let mut output = String::new();
-		let padding = if let Some(state) = self.get(0) {
+		let padding = if let Some(state) = self.first() {
 			match state.w {
 				Word::W32(_) => 32,
 				Word::W64(_) => 64
@@ -39,7 +39,7 @@ impl BitDifferential for Vec<ShaState> {
 
 		// Append differential for each compression round
 		for i in 0..self.len() {
-			let diff = self[i].clone().bit_diff(other[i].clone());
+			let diff = self[i].bit_diff(other[i]);
 			output += &format!("{i:2} | {diff}\n");
 		}
 
