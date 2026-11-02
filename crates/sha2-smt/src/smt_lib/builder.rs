@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
-use sha2_core::sha::HashError;
+use anyhow::Result;
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 
@@ -28,7 +28,7 @@ impl SmtBuilder {
 		rounds : u8,
 		collision_type : CollisionType,
 		encoding : EncodingType
-	) -> Result<Self, HashError> {
+	) -> Result<Self> {
 		hash_function.validate_rounds(rounds)?;
 
 		Ok(SmtBuilder {

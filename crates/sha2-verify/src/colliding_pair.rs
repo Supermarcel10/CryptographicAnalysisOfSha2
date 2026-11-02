@@ -1,7 +1,8 @@
 use std::fmt::{Display, Formatter};
 
+use anyhow::Result;
 use sha2_core::bit_differential::BitDifferential;
-use sha2_core::sha::{HashError, MessageBlock, OutputHash, Sha, StartVector};
+use sha2_core::sha::{MessageBlock, OutputHash, Sha, StartVector};
 use sha2_core::structs::hash_function::HashFunction;
 use sha2_core::structs::hash_result::HashResult;
 use sha2_core::structs::sha_state::ShaState;
@@ -17,13 +18,13 @@ pub struct MessageData {
 }
 
 impl MessageData {
-	fn run_sha(&self, hash_function : HashFunction, rounds : u8) -> Result<HashResult, HashError> {
+	fn run_sha(&self, hash_function : HashFunction, rounds : u8) -> Result<HashResult> {
 		Sha::from_message_block(self.m, hash_function, rounds, self.cv)?.execute()
 	}
 }
 
 impl VerifyHash for MessageData {
-	fn verify(&self, hash_function : HashFunction, rounds : u8) -> Result<bool, HashError> {
+	fn verify(&self, hash_function : HashFunction, rounds : u8) -> Result<bool> {
 		let hash_result = self.run_sha(hash_function, rounds)?;
 		Ok(hash_result.hash == self.expected_hash)
 	}
@@ -38,7 +39,7 @@ pub struct CollidingPair {
 }
 
 impl CollidingPair {
-	pub fn verify(&self) -> Result<bool, HashError> {
+	pub fn verify(&self) -> Result<bool> {
 		let is_m0_hash_same = self.m0.verify(self.hash_function, self.rounds)?;
 		let is_m1_hash_same = self.m0.verify(self.hash_function, self.rounds)?;
 
