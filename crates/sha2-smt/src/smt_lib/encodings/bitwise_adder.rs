@@ -1,4 +1,4 @@
-use std::error::Error;
+use anyhow::Result;
 
 use crate::smt_lib::builder::SmtBuilder;
 
@@ -119,9 +119,9 @@ impl SmtBuilder {
 	)")
 	}
 
-	pub(super) fn add(&self, exprs : Vec<&str>) -> Result<String, Box<dyn Error>> {
+	pub(super) fn add(&self, exprs : Vec<&str>) -> Result<String> {
 		if exprs.len() < 2 {
-			return Err(Box::from("Add requires at least 2 expressions!"));
+			return Err(anyhow::anyhow!("Add requires at least 2 expressions!"));
 		}
 
 		if self.encoding.alternative_add() {

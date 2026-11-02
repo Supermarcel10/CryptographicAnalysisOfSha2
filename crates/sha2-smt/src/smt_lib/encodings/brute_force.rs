@@ -1,5 +1,4 @@
-use std::error::Error;
-
+use anyhow::Result;
 use sha2_core::structs::collision_type::CollisionType;
 
 use crate::smt_lib::builder::SmtBuilder;
@@ -43,7 +42,7 @@ impl SmtBuilder {
 		self.smt += format!("(assert (and\n{s}))\n").as_str();
 	}
 
-	pub fn brute_force_encoding(&mut self) -> Result<(), Box<dyn Error>> {
+	pub fn brute_force_encoding(&mut self) -> Result<()> {
 		self.title("SETUP");
 		self.set_logic();
 

@@ -1,11 +1,10 @@
-use std::error::Error;
-
+use anyhow::Result;
 use sha2_core::structs::collision_type::CollisionType;
 
 use crate::smt_lib::builder::SmtBuilder;
 
 impl SmtBuilder {
-	pub fn dsub_encoding(&mut self) -> Result<(), Box<dyn Error>> {
+	pub fn dsub_encoding(&mut self) -> Result<()> {
 		self.title("SETUP");
 		self.set_logic();
 

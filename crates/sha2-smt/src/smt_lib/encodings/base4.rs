@@ -1,5 +1,4 @@
-use std::error::Error;
-
+use anyhow::Result;
 use sha2_core::structs::collision_type::CollisionType;
 
 use crate::smt_lib::builder::SmtBuilder;
@@ -59,7 +58,7 @@ impl SmtBuilder {
 		}
 	}
 
-	pub fn base4_encoding(&mut self) -> Result<(), Box<dyn Error>> {
+	pub fn base4_encoding(&mut self) -> Result<()> {
 		todo!(); //TODO: Implement
 		self.title("SETUP");
 		self.set_logic();

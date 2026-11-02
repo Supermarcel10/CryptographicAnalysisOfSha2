@@ -1,9 +1,9 @@
-use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
@@ -71,7 +71,7 @@ impl From<EncodingType> for String {
 }
 
 impl EncodingType {
-	pub fn get_diff(&self) -> Result<&str, Box<dyn Error>> {
+	pub fn get_diff(&self) -> Result<&str> {
 		use EncodingType::*;
 		match self {
 			DeltaXOR {
@@ -80,7 +80,7 @@ impl EncodingType {
 			DeltaSub {
 				..
 			} => Ok("bvsub"),
-			_ => Err(Box::from("get_diff not supported for encoding type"))
+			_ => Err(anyhow::anyhow!("get_diff not supported for encoding type"))
 		}
 	}
 
@@ -242,9 +242,10 @@ pub struct SmtRetriever {
 }
 
 impl SmtRetriever {
-	pub fn new(smt_dir : PathBuf) -> Result<Self, Box<dyn Error>> {
+	pub fn new(smt_dir : PathBuf) -> Result<Self> {
 		if !smt_dir.exists() {
-			fs::create_dir_all(smt_dir.clone())?;
+			fs::create_dir_all(&smt_dir)
+				.with_context(|| format!("failed to create SMT directory {}", smt_dir.display()))?;
 		}
 
 		Ok(SmtRetriever {
@@ -253,7 +254,7 @@ impl SmtRetriever {
 	}
 
 	#[allow(dead_code)]
-	pub fn with_default_dir() -> Result<Self, Box<dyn Error>> {
+	pub fn with_default_dir() -> Result<Self> {
 		SmtRetriever::new(PathBuf::from("smt/"))
 	}
 
