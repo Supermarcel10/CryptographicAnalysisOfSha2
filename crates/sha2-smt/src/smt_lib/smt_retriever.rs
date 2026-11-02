@@ -283,6 +283,24 @@ mod tests {
 	}
 
 	#[test]
+	fn from_str_parses_base4_spelling() {
+		assert_eq!(
+			"base4".parse::<EncodingType>(),
+			Ok(Base4 {
+				simplified_maj_and_ch_functions : false,
+				alternative_add : false
+			})
+		);
+		assert_eq!(
+			"base4:true:1".parse::<EncodingType>(),
+			Ok(Base4 {
+				simplified_maj_and_ch_functions : true,
+				alternative_add : true
+			})
+		);
+	}
+
+	#[test]
 	fn new_creates_missing_dir() {
 		let dir = unique_temp_path("missing");
 		let _ = std::fs::remove_dir_all(&dir);
