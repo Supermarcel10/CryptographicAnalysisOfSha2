@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::fs::File;
@@ -8,6 +7,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
 
+use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -84,6 +84,78 @@ mod tests {
 		assert!(SmtSolver::from_str("Z3").is_err());
 		assert!(SmtSolver::from_str("stp").is_err());
 		assert!(SmtSolver::from_str("").is_err());
+	}
+
+	#[test]
+	fn unknown_solver_lists_expected_variants() {
+		let err = SmtSolver::from_str("stp").unwrap_err().to_string();
+
+		for variant in [
+			"z3",
+			"cvc5",
+			"yices2",
+			"bitwuzla",
+			"boolector",
+			"colibri2",
+			"math-sat"
+		] {
+			assert!(
+				err.contains(variant),
+				"error text {err:?} missing variant {variant}"
+			);
+		}
+	}
+
+	#[test]
+	fn load_missing_file_reports_path() {
+		let missing = Path::new("/nonexistent-dir/missing-benchmark.json");
+		let err = Benchmark::load(missing).unwrap_err();
+
+		assert!(
+			format!("{err:#}").contains(&missing.display().to_string()),
+			"error {err:#?} missing path {}",
+			missing.display()
+		);
+	}
+
+	#[test]
+	fn parse_output_rejects_malformed_sat_output() {
+		let mut benchmark = sat_benchmark_with_output("(hash0 #x)");
+		let err = benchmark.parse_output().unwrap_err();
+		let message = format!("{err:#}");
+
+		assert!(
+			message.contains("failed to decode solver output value"),
+			"error {message:?} missing decode context"
+		);
+		assert!(
+			message.contains("Z3"),
+			"error {message:?} missing solver name"
+		);
+	}
+
+	fn sat_benchmark_with_output(output : &str) -> Benchmark {
+		Benchmark {
+			date_time : Utc::now(),
+			solver : SmtSolver::Z3,
+			arguments : None,
+			hash_function : HashFunction::SHA256,
+			rounds : 1,
+			collision_type : CollisionType::Standard,
+			execution_time : Duration::from_secs(1),
+			memory_bytes : 0,
+			result : BenchmarkResult::Sat,
+			console_output : (output.to_string(), String::new()),
+			is_valid : None,
+			is_baseline : false,
+			is_rerun : false,
+			encoding : EncodingType::BruteForce {
+				simplified_maj_and_ch_functions : false,
+				alternative_add : false
+			},
+			stop_tolerance : 0,
+			timeout : Duration::from_secs(60)
+		}
 	}
 }
 
@@ -275,18 +347,18 @@ impl SmtOutputFormat {
 		.to_string()
 	}
 
-	fn get_base_size(
-		self,
-		capture : &str,
-		hash_function : HashFunction
-	) -> Result<Word, Box<dyn Error>> {
+	fn get_base_size(self, capture : &str, hash_function : HashFunction) -> Result<Word> {
 		let radix_size = match self {
 			SmtOutputFormat::Boolean => 2,
 			SmtOutputFormat::Hex => 16,
 			SmtOutputFormat::Decimal => 10
 		};
 
-		Ok(Word::from_str_radix(capture, radix_size, hash_function)?)
+		Word::from_str_radix(capture, radix_size, hash_function).with_context(|| {
+			format!(
+				"failed to parse solver output value {capture:?} with radix {radix_size} for {hash_function}"
+			)
+		})
 	}
 }
 
@@ -339,9 +411,14 @@ pub struct Benchmark {
 }
 
 impl Benchmark {
-	pub fn save(&self, path : &Path) -> Result<PathBuf, Box<dyn Error>> {
+	pub fn save(&self, path : &Path) -> Result<PathBuf> {
 		if !path.exists() {
-			fs::create_dir_all(path)?;
+			fs::create_dir_all(path).with_context(|| {
+				format!(
+					"failed to create benchmark save directory {}",
+					path.display()
+				)
+			})?;
 		}
 
 		let path = path.join(format!(
@@ -352,21 +429,31 @@ impl Benchmark {
 		let mut file = File::options()
 			.create_new(true)
 			.write(true)
-			.open(path.clone())?;
+			.open(path.clone())
+			.with_context(|| format!("failed to create benchmark file {}", path.display()))?;
 
-		let json = serde_json::to_string(&self)?;
-		file.write_all(json.as_bytes())?;
+		let json = serde_json::to_string(&self).with_context(|| {
+			format!(
+				"failed to serialize benchmark (solver {}, encoding {})",
+				self.solver,
+				String::from(self.encoding)
+			)
+		})?;
+		file.write_all(json.as_bytes())
+			.with_context(|| format!("failed to write benchmark file {}", path.display()))?;
 
 		Ok(path)
 	}
 
-	pub fn load(file : &Path) -> Result<Self, Box<dyn Error>> {
-		let contents = fs::read(file)?;
-		let benchmark : Self = serde_json::from_slice(&contents)?;
+	pub fn load(file : &Path) -> Result<Self> {
+		let contents = fs::read(file)
+			.with_context(|| format!("failed to read benchmark file {}", file.display()))?;
+		let benchmark : Self = serde_json::from_slice(&contents)
+			.with_context(|| format!("failed to parse benchmark file {}", file.display()))?;
 		Ok(benchmark)
 	}
 
-	pub fn load_all(dir_location : &Path, recursively : bool) -> Result<Vec<Self>, Box<dyn Error>> {
+	pub fn load_all(dir_location : &Path, recursively : bool) -> Result<Vec<Self>> {
 		let mut benchmarks = vec![];
 
 		if dir_location.is_file() {
@@ -374,8 +461,18 @@ impl Benchmark {
 			return Ok(benchmarks);
 		}
 
-		for dir_entry in fs::read_dir(dir_location)?.flatten() {
-			let metadata = dir_entry.metadata()?;
+		for dir_entry in fs::read_dir(dir_location)
+			.with_context(|| {
+				format!(
+					"failed to read benchmark directory {}",
+					dir_location.display()
+				)
+			})?
+			.flatten()
+		{
+			let metadata = dir_entry.metadata().with_context(|| {
+				format!("failed to read metadata for {}", dir_entry.path().display())
+			})?;
 			if recursively && metadata.is_dir() {
 				benchmarks.extend(Self::load_all(&dir_entry.path(), recursively)?)
 			} else if metadata.is_file() {
@@ -386,16 +483,23 @@ impl Benchmark {
 		Ok(benchmarks)
 	}
 
-	pub fn parse_output(&mut self) -> Result<Option<CollidingPair>, Box<dyn Error>> {
+	pub fn parse_output(&mut self) -> Result<Option<CollidingPair>> {
 		if self.result != BenchmarkResult::Sat {
 			return Ok(None);
 		}
 
-		let output_format = self.get_output_format()?;
+		let output_format = self.get_output_format();
 		let number_format = output_format.output_string();
 		let re = Regex::new(&format!(
 			r"\((?:m([01])_|)(delta_[aew]|[a-hw]|hash)([0-9]+) (?:\(_ bv{number_format} (?:32|64)\)|{number_format})\)",
-		))?;
+		))
+		.with_context(|| {
+			format!(
+				"failed to compile solver output pattern for {} encoding (solver {})",
+				String::from(self.encoding),
+				self.solver
+			)
+		})?;
 
 		let (smt_output, _) = self.console_output.clone();
 		let default_word = self.hash_function.default_word();
@@ -408,23 +512,45 @@ impl Benchmark {
 		for capture in re.captures_iter(&smt_output) {
 			let msg = capture.get(1);
 			let var = &capture[2];
-			let round : usize = capture[3].parse()?;
+			let round : usize = capture[3].parse().with_context(|| {
+				format!(
+					"failed to parse solver output round {:?} (solver {})",
+					&capture[3], self.solver
+				)
+			})?;
 
 			let val = match (capture.get(4), capture.get(5)) {
 				(Some(val), _) => val,
 				(_, Some(val)) => val,
 				(None, None) => {
-					return Err(Box::from("Failed to retrieve value"));
+					return Err(anyhow::anyhow!(
+						"failed to retrieve solver output value (solver {})",
+						self.solver
+					));
 				}
 			};
-			let val = output_format.get_base_size(val.into(), self.hash_function)?;
+			let val = output_format
+				.get_base_size(val.into(), self.hash_function)
+				.with_context(|| {
+					format!(
+						"failed to decode solver output value for {var}{round} (solver {})",
+						self.solver
+					)
+				})?;
 
 			let is_differential = var.contains("delta");
 
 			match msg {
 				Some(msg) => {
+					let msg_index : usize = msg.as_str().parse().with_context(|| {
+						format!(
+							"failed to parse solver output message {:?} (solver {})",
+							msg.as_str(),
+							self.solver
+						)
+					})?;
 					self.parse_update_for_msg(
-						msg.as_str().parse()?,
+						msg_index,
 						var,
 						round,
 						val,
@@ -482,11 +608,13 @@ impl Benchmark {
 					state.w = Some(self.hash_function.default_word());
 				}
 
-				states.push(
-					state
-						.to_immutable()
-						.ok_or("Failed to retrieve all message states")?
-				);
+				states.push(state.to_immutable().ok_or_else(|| {
+					anyhow::anyhow!(
+						"failed to retrieve all message states (solver {}, {} rounds)",
+						self.solver,
+						self.rounds
+					)
+				})?);
 			}
 
 			messages.push(MessageData {
@@ -497,7 +625,13 @@ impl Benchmark {
 			});
 		}
 
-		let [m0, m1] = messages.try_into().unwrap();
+		let [m0, m1] = messages.try_into().map_err(|messages : Vec<MessageData>| {
+			anyhow::anyhow!(
+				"expected 2 colliding messages, parsed {} (solver {})",
+				messages.len(),
+				self.solver
+			)
+		})?;
 		let colliding_pair = CollidingPair {
 			m0,
 			m1,
@@ -506,7 +640,9 @@ impl Benchmark {
 		};
 
 		// Verify benchmark
-		self.is_valid = Some(colliding_pair.verify()?);
+		self.is_valid = Some(colliding_pair.verify().with_context(|| {
+			format!("failed to verify colliding pair (solver {})", self.solver)
+		})?);
 
 		Ok(Some(colliding_pair))
 	}
@@ -523,10 +659,15 @@ impl Benchmark {
 		start_vectors : &mut [[Word; 8]; 2],
 		states : &mut [BTreeMap<usize, MutableShaState>; 2],
 		differential : bool
-	) -> Result<(), Box<dyn Error>> {
+	) -> Result<()> {
 		// Special handling if differential
 		let (var, val) = if differential {
-			let var = var.split("_").collect::<Vec<_>>()[1];
+			let var = var.split("_").nth(1).ok_or_else(|| {
+				anyhow::anyhow!(
+					"failed to parse differential variable {var:?} (solver {})",
+					self.solver
+				)
+			})?;
 			let val = if msg == 0 {
 				val
 			} else {
@@ -540,9 +681,20 @@ impl Benchmark {
 
 		// Parse
 		if var == "hash" {
-			hash[round] = Some(val);
+			let slot = hash.get_mut(round).ok_or_else(|| {
+				anyhow::anyhow!(
+					"solver output round {round} out of range for hash (solver {})",
+					self.solver
+				)
+			})?;
+			*slot = Some(val);
 		} else {
-			let var_char : char = var.parse()?;
+			let var_char : char = var.parse().with_context(|| {
+				format!(
+					"failed to parse state variable {var:?} (solver {})",
+					self.solver
+				)
+			})?;
 
 			// Parse H constants (CV/IV)
 			if !differential && round == 0 && var_char != 'w' {
@@ -573,14 +725,14 @@ impl Benchmark {
 		Ok(())
 	}
 
-	fn get_output_format(&self) -> Result<SmtOutputFormat, Box<dyn Error>> {
-		let (smt_output, _) = self.console_output.clone();
+	fn get_output_format(&self) -> SmtOutputFormat {
+		let (smt_output, _) = &self.console_output;
 		if smt_output.contains("#b") {
-			Ok(SmtOutputFormat::Boolean)
+			SmtOutputFormat::Boolean
 		} else if smt_output.contains("#x") {
-			Ok(SmtOutputFormat::Hex)
+			SmtOutputFormat::Hex
 		} else {
-			Ok(SmtOutputFormat::Decimal)
+			SmtOutputFormat::Decimal
 		}
 	}
 }
