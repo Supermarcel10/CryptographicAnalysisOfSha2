@@ -1,9 +1,9 @@
-use std::error::Error;
 use std::fs;
 use std::ops::Range;
 use std::path::PathBuf;
 use std::time::Duration;
 
+use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use plotters::prelude::RGBAColor;
 use sha2_bench::benchmark::{Benchmark, SmtSolver};
@@ -150,7 +150,7 @@ enum Commands {
 	}
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
 	let cli = Cli::parse();
 
 	match &cli.command {
@@ -158,7 +158,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 			smt_dir
 		} => {
 			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
-			generate_smtlib_files(SmtRetriever::new(smt_dir)?)?;
+			let retriever = SmtRetriever::new(smt_dir.clone()).with_context(|| {
+				format!(
+					"failed to initialize SMT retriever for directory {}",
+					smt_dir.display()
+				)
+			})?;
+			generate_smtlib_files(retriever).with_context(|| {
+				format!("failed to generate SMTLIB files in {}", smt_dir.display())
+			})?;
 		}
 
 		Commands::Benchmark {
@@ -181,18 +189,22 @@ fn main() -> Result<(), Box<dyn Error>> {
 			let timeout = Duration::from_secs((*timeout_sec).unwrap_or(15 * 60));
 			let continue_on_fail = (*continue_on_fail).unwrap_or(false);
 			let encoding_type : EncodingType = encoding_type.as_deref().map_or(
-				EncodingType::BruteForce {
+				Ok(EncodingType::BruteForce {
 					simplified_maj_and_ch_functions : false,
 					alternative_add : false
-				},
-				|s| s.parse().expect("Failed to parse encoding type")
-			);
+				}),
+				|s : &str| {
+					s.parse().map_err(|err : String| {
+						anyhow::anyhow!("failed to parse encoding type '{s}': {err}")
+					})
+				}
+			)?;
 			let smt_dir = smt_dir.clone().unwrap_or(PathBuf::from("smt/"));
 			let is_rerun = is_rerun.unwrap_or(false);
 
 			let save_dir = if result_dir
 				.clone()
-				.is_some_and(|path| path.to_str().unwrap().to_lowercase() == "none")
+				.is_some_and(|path| path.to_str().is_some_and(|s| s.to_lowercase() == "none"))
 			{
 				None
 			} else if let Some(path) = result_dir.clone() {
@@ -201,23 +213,40 @@ fn main() -> Result<(), Box<dyn Error>> {
 				Some(PathBuf::from("results/"))
 			};
 
+			let retriever = SmtRetriever::new(smt_dir.clone()).with_context(|| {
+				format!(
+					"failed to initialize SMT retriever for directory {}",
+					smt_dir.display()
+				)
+			})?;
 			let runner = BenchmarkRunner::new(
 				stop_tolerance,
 				timeout,
-				SmtRetriever::new(smt_dir)?,
+				retriever,
 				save_dir,
 				continue_on_fail,
 				encoding_type,
 				is_rerun
 			);
 
-			runner.run_benchmarks(
-				solvers.clone(),
-				hash_functions.clone(),
-				collision_types.clone(),
-				round_range,
-				arg_set
-			)?;
+			runner
+				.run_benchmarks(
+					solvers.clone(),
+					hash_functions.clone(),
+					collision_types.clone(),
+					round_range,
+					arg_set
+				)
+				.with_context(|| {
+					format!(
+						"benchmark subcommand failed for solvers [{}]",
+						solvers
+							.iter()
+							.map(|solver| solver.to_string())
+							.collect::<Vec<_>>()
+							.join(", ")
+					)
+				})?;
 		}
 
 		Commands::Sha2 {
@@ -237,7 +266,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 						words.push(Word::from_str_radix(word, 16, *hash_function)?);
 					}
 
-					StartVector::CV(<[Word; 8]>::try_from(words).unwrap())
+					let start_vector = <[Word; 8]>::try_from(words).map_err(|_| {
+						anyhow::anyhow!(
+							"start vector must contain exactly 8 words for {hash_function}"
+						)
+					})?;
+
+					StartVector::CV(start_vector)
 				}
 			};
 
@@ -252,7 +287,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 				)?
 				.execute()?
 			} else {
-				return Err(Box::from("Either msg or msg_block must be provided"));
+				return Err(anyhow::anyhow!("Either msg or msg_block must be provided"));
 			};
 
 			println!("{}", result.hash);
@@ -265,14 +300,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 			let result_path = result_path.clone().unwrap_or(PathBuf::from("results/"));
 			let recursive = recursive.unwrap_or(true);
 
-			let benchmarks_with_files = load_mapped(&result_path, recursive)?;
+			let benchmarks_with_files =
+				load_mapped(&result_path, recursive).with_context(|| {
+					format!(
+						"failed to load benchmark results from {}",
+						result_path.display()
+					)
+				})?;
 			let show_file_names = benchmarks_with_files.len() > 1;
 			for (mut benchmark, file_path) in benchmarks_with_files {
 				let file_name = file_path
 					.file_name()
-					.unwrap()
-					.to_str()
-					.ok_or("Failed to read file")?;
+					.and_then(|name| name.to_str())
+					.with_context(|| {
+						format!("failed to read file name of {}", file_path.display())
+					})?;
 
 				if show_file_names {
 					println!("{file_name}");
@@ -296,6 +338,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 		} => {
 			let graph_dir = graph_dir.clone().unwrap_or(PathBuf::from("graphs/"));
 			let result_dir = result_dir.clone().unwrap_or(PathBuf::from("results/"));
+
+			let data_retriever = DataRetriever::new(result_dir.clone()).with_context(|| {
+				format!(
+					"failed to load benchmark results from {} for graphing",
+					result_dir.display()
+				)
+			})?;
 
 			let mut graph_renderer = GraphRenderer::new(
 				graph_dir.clone(),
@@ -354,20 +403,29 @@ fn main() -> Result<(), Box<dyn Error>> {
 				]),
 				2,
 				6,
-				DataRetriever::new(result_dir.clone())?
-			)?;
+				data_retriever
+			)
+			.with_context(|| {
+				format!(
+					"failed to initialize graph renderer for {}",
+					graph_dir.display()
+				)
+			})?;
 
-			graph_renderer.generate_all_graphs()?;
+			graph_renderer.generate_all_graphs().with_context(|| {
+				format!(
+					"graph subcommand failed for graphs in {} from results in {}",
+					graph_dir.display(),
+					result_dir.display()
+				)
+			})?;
 		}
 	}
 
 	Ok(())
 }
 
-fn load_mapped(
-	dir_location : &PathBuf,
-	recursive : bool
-) -> Result<Vec<(Benchmark, PathBuf)>, Box<dyn Error>> {
+fn load_mapped(dir_location : &PathBuf, recursive : bool) -> Result<Vec<(Benchmark, PathBuf)>> {
 	let mut map = Vec::new();
 
 	if dir_location.is_file() {
@@ -375,8 +433,13 @@ fn load_mapped(
 		return Ok(map);
 	}
 
-	for dir_entry in fs::read_dir(dir_location)?.flatten() {
-		let metadata = dir_entry.metadata()?;
+	for dir_entry in fs::read_dir(dir_location)
+		.with_context(|| format!("failed to read result directory {}", dir_location.display()))?
+		.flatten()
+	{
+		let metadata = dir_entry.metadata().with_context(|| {
+			format!("failed to read metadata for {}", dir_entry.path().display())
+		})?;
 		if recursive && metadata.is_dir() {
 			map.extend(load_mapped(&dir_entry.path(), true)?);
 		} else if metadata.is_file() {
