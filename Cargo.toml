@@ -10,7 +10,6 @@ license = "CC BY-NC-SA"
 [dependencies]
 anyhow.workspace = true
 plotters.workspace = true
-thiserror.workspace = true
 clap.workspace = true
 sha2-core.workspace = true
 sha2-verify.workspace = true

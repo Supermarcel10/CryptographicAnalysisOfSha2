@@ -432,7 +432,6 @@ dependencies = [
  "sha2-graph",
  "sha2-smt",
  "sha2-verify",
- "thiserror",
 ]
 
 [[package]]
