@@ -1,9 +1,9 @@
-use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
@@ -71,7 +71,7 @@ impl From<EncodingType> for String {
 }
 
 impl EncodingType {
-	pub fn get_diff(&self) -> Result<&str, Box<dyn Error>> {
+	pub fn get_diff(&self) -> Result<&str> {
 		use EncodingType::*;
 		match self {
 			DeltaXOR {
@@ -80,7 +80,7 @@ impl EncodingType {
 			DeltaSub {
 				..
 			} => Ok("bvsub"),
-			_ => Err(Box::from("get_diff not supported for encoding type"))
+			_ => Err(anyhow::anyhow!("get_diff not supported for encoding type"))
 		}
 	}
 
@@ -242,9 +242,10 @@ pub struct SmtRetriever {
 }
 
 impl SmtRetriever {
-	pub fn new(smt_dir : PathBuf) -> Result<Self, Box<dyn Error>> {
+	pub fn new(smt_dir : PathBuf) -> Result<Self> {
 		if !smt_dir.exists() {
-			fs::create_dir_all(smt_dir.clone())?;
+			fs::create_dir_all(&smt_dir)
+				.with_context(|| format!("failed to create SMT directory {}", smt_dir.display()))?;
 		}
 
 		Ok(SmtRetriever {
@@ -253,7 +254,7 @@ impl SmtRetriever {
 	}
 
 	#[allow(dead_code)]
-	pub fn with_default_dir() -> Result<Self, Box<dyn Error>> {
+	pub fn with_default_dir() -> Result<Self> {
 		SmtRetriever::new(PathBuf::from("smt/"))
 	}
 
@@ -270,5 +271,50 @@ impl SmtRetriever {
 		}
 
 		self.smt_dir.join(base + ".smt2")
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	fn unique_temp_path(name : &str) -> PathBuf {
+		std::env::temp_dir().join(format!("sha2-smt-retriever-{name}-{}", std::process::id()))
+	}
+
+	#[test]
+	fn new_creates_missing_dir() {
+		let dir = unique_temp_path("missing");
+		let _ = std::fs::remove_dir_all(&dir);
+
+		let retriever = SmtRetriever::new(dir.clone()).unwrap();
+
+		assert!(
+			dir.exists(),
+			"SmtRetriever::new should create {}",
+			dir.display()
+		);
+		assert_eq!(retriever.smt_dir, dir);
+
+		let _ = std::fs::remove_dir_all(&dir);
+	}
+
+	#[test]
+	fn new_unwritable_dir_reports_path() {
+		let blocker = unique_temp_path("blocker");
+		std::fs::write(&blocker, "blocker").unwrap();
+		let unwritable = blocker.join("subdir");
+
+		let err = SmtRetriever::new(unwritable.clone())
+			.err()
+			.expect("expected error for unwritable SMT dir");
+
+		assert!(
+			format!("{err:#}").contains(&unwritable.display().to_string()),
+			"error {err:#} missing path {}",
+			unwritable.display()
+		);
+
+		let _ = std::fs::remove_file(&blocker);
 	}
 }

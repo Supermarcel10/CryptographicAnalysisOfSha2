@@ -1,8 +1,9 @@
 use std::cmp::PartialEq;
-use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
-use crate::sha::structs::{HashError, Word};
+use anyhow::{Context, Result};
+
+use crate::sha::structs::Word;
 use crate::structs::hash_function::HashFunction;
 use crate::structs::hash_result::HashResult;
 use crate::structs::sha_state::ShaState;
@@ -75,23 +76,21 @@ impl StartVector {
 	/// Retrieves initial vector (IV), often referred to as H variables
 	#[rustfmt::skip]
 	pub fn get_vector(self, hash_function : HashFunction) -> [Word; 8] {
-		let vec = match (self, hash_function) {
-			(StartVector::IV, HashFunction::SHA224) => Word::from_u32_vec(vec![
-				0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
-				0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4,
-			]),
-			(StartVector::IV, HashFunction::SHA256) => Word::from_u32_vec(vec![
-				0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-				0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
-			]),
-			(StartVector::IV, HashFunction::SHA512) => Word::from_u64_vec(vec![
-				0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
-				0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179,
-			]),
-			(StartVector::CV(vec), _) => return vec
-		};
-
-		vec.try_into().expect("Failed to convert initial vector; vector size mismatch!")
+		match (self, hash_function) {
+			(StartVector::IV, HashFunction::SHA224) => [
+				Word::W32(0xc1059ed8), Word::W32(0x367cd507), Word::W32(0x3070dd17), Word::W32(0xf70e5939),
+				Word::W32(0xffc00b31), Word::W32(0x68581511), Word::W32(0x64f98fa7), Word::W32(0xbefa4fa4),
+			],
+			(StartVector::IV, HashFunction::SHA256) => [
+				Word::W32(0x6a09e667), Word::W32(0xbb67ae85), Word::W32(0x3c6ef372), Word::W32(0xa54ff53a),
+				Word::W32(0x510e527f), Word::W32(0x9b05688c), Word::W32(0x1f83d9ab), Word::W32(0x5be0cd19),
+			],
+			(StartVector::IV, HashFunction::SHA512) => [
+				Word::W64(0x6a09e667f3bcc908), Word::W64(0xbb67ae8584caa73b), Word::W64(0x3c6ef372fe94f82b), Word::W64(0xa54ff53a5f1d36f1),
+				Word::W64(0x510e527fade682d1), Word::W64(0x9b05688c2b3e6c1f), Word::W64(0x1f83d9abfb41bd6b), Word::W64(0x5be0cd19137e2179),
+			],
+			(StartVector::CV(vec), _) => vec
+		}
 	}
 }
 
@@ -107,32 +106,42 @@ impl MessageBlock {
 		src : &str,
 		radix : u32,
 		hash_function : HashFunction
-	) -> Result<MessageBlock, Box<dyn Error>> {
+	) -> Result<MessageBlock> {
 		let mut words = Vec::with_capacity(16);
 		for word_str in src.split_whitespace() {
-			words.push(Word::from_str_radix(word_str, radix, hash_function)?);
+			words.push(Word::from_str_radix(word_str, radix, hash_function).with_context(|| {
+				format!(
+					"failed to parse message block for {hash_function} with radix {radix} (message length {} chars)",
+					src.len()
+				)
+			})?);
 		}
 
 		if words.len() != 16 {
-			return Err(Box::from(format!(
+			return Err(anyhow::anyhow!(
 				"Message digest should be 16 words in length, parsed {} instead",
 				words.len()
-			)));
+			));
 		}
 
 		// Ensure all words are same size
 		let base_discriminant = std::mem::discriminant(&words[0]);
 		for word in words.iter() {
 			if base_discriminant != std::mem::discriminant(word) {
-				return Err(Box::from(
+				return Err(anyhow::anyhow!(
 					"Words length must be of the same size, parsed both u32 and u64"
 				));
 			}
 		}
 
-		Ok(MessageBlock(
-			<[Word; 16]>::try_from(words).expect("Failed to word Vec convert to array")
-		))
+		let array : [Word; 16] = words.try_into().map_err(|words : Vec<Word>| {
+			anyhow::anyhow!(
+				"Message digest should be 16 words in length, parsed {} instead",
+				words.len()
+			)
+		})?;
+
+		Ok(MessageBlock(array))
 	}
 }
 
@@ -164,9 +173,9 @@ impl Sha {
 	/// * `start_vector`: Vector to start with
 	///
 	/// # Returns
-	/// `Result<Sha<W>, HashError>`
+	/// `anyhow::Result<Sha>`
 	///
-	/// Returns SHA digest or HashError.
+	/// Returns SHA digest or error.
 	///
 	/// # Examples
 	///
@@ -178,11 +187,18 @@ impl Sha {
 		hash_function : HashFunction,
 		rounds : u8,
 		start_vector : StartVector
-	) -> Result<Self, HashError> {
-		hash_function.validate_rounds(rounds)?;
+	) -> Result<Self> {
+		hash_function.validate_rounds(rounds).with_context(|| {
+			format!("failed to create Sha for {hash_function} with {rounds} rounds")
+		})?;
 
 		let bytes = Self::pad_message(message.as_bytes(), hash_function);
-		let block = Self::bytes_to_block(&bytes, hash_function)?;
+		let block = Self::bytes_to_block(&bytes, hash_function).with_context(|| {
+			format!(
+				"failed to build message block for {hash_function} (message length {} bytes)",
+				message.len()
+			)
+		})?;
 
 		let state = start_vector.get_vector(hash_function);
 
@@ -204,9 +220,9 @@ impl Sha {
 	/// * `start_vector`: Vector to start with
 	///
 	/// # Returns
-	/// `Result<Sha<W>, HashError>`
+	/// `anyhow::Result<Sha>`
 	///
-	/// Returns SHA digest or HashError.
+	/// Returns SHA digest or error.
 	///
 	/// # Examples
 	///
@@ -225,8 +241,10 @@ impl Sha {
 		hash_function : HashFunction,
 		rounds : u8,
 		start_vector : StartVector
-	) -> Result<Self, HashError> {
-		hash_function.validate_rounds(rounds)?;
+	) -> Result<Self> {
+		hash_function.validate_rounds(rounds).with_context(|| {
+			format!("failed to create Sha for {hash_function} with {rounds} rounds")
+		})?;
 
 		let state = start_vector.get_vector(hash_function);
 
@@ -252,7 +270,7 @@ impl Sha {
 	///
 	/// let hash = sha_digest.execute();
 	/// ```
-	pub fn execute(mut self) -> Result<HashResult, HashError> {
+	pub fn execute(mut self) -> Result<HashResult> {
 		let k = self.hash_function.get_constant();
 		let mut w = vec![self.hash_function.default_word(); k.len()];
 		let mut states = Vec::<ShaState>::with_capacity(self.rounds as usize);
@@ -364,16 +382,19 @@ impl Sha {
 	/// * `bytes`: padded byte message
 	///
 	/// # Returns
-	/// `Result<[W; 16], HashError>` 16 blocks of words
-	fn bytes_to_block(
-		bytes : &[u8],
-		hash_function : HashFunction
-	) -> Result<MessageBlock, HashError> {
+	/// `anyhow::Result<[W; 16]>` 16 blocks of words
+	fn bytes_to_block(bytes : &[u8], hash_function : HashFunction) -> Result<MessageBlock> {
 		let mut words = [hash_function.default_word(); 16];
 		let size = hash_function.word_size().bytes();
 
 		for (i, chunk) in bytes.chunks_exact(size).enumerate() {
-			words[i] = Word::from_be_bytes(chunk)?;
+			words[i] = Word::from_be_bytes(chunk).with_context(|| {
+				format!(
+					"failed to convert {} bytes into word {} for {hash_function}",
+					chunk.len(),
+					i
+				)
+			})?;
 		}
 
 		Ok(MessageBlock(words))
@@ -626,13 +647,25 @@ mod tests {
 
 	#[test]
 	fn test_too_many_rounds() {
-		let result = Sha::from_string(MESSAGE, SHA224, 65, IV);
-		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
+		let err = Sha::from_string(MESSAGE, SHA224, 65, IV).unwrap_err();
+		assert!(
+			format!("{err:#}")
+				.contains("requested rounds 65 exceeds maximum rounds 64 for hash function"),
+			"unexpected error: {err:#}"
+		);
 
-		let result = Sha::from_string(MESSAGE, SHA256, 65, IV);
-		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
+		let err = Sha::from_string(MESSAGE, SHA256, 65, IV).unwrap_err();
+		assert!(
+			format!("{err:#}")
+				.contains("requested rounds 65 exceeds maximum rounds 64 for hash function"),
+			"unexpected error: {err:#}"
+		);
 
-		let result = Sha::from_string(MESSAGE, SHA512, 81, IV);
-		assert!(matches!(result, Err(HashError::TooManyRounds { .. })));
+		let err = Sha::from_string(MESSAGE, SHA512, 81, IV).unwrap_err();
+		assert!(
+			format!("{err:#}")
+				.contains("requested rounds 81 exceeds maximum rounds 80 for hash function"),
+			"unexpected error: {err:#}"
+		);
 	}
 }

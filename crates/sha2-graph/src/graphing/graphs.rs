@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
-use std::error::Error;
 use std::ops::Range;
 use std::path::PathBuf;
 
+use anyhow::{Context, Result};
 use num_traits::Float;
 use plotters::prelude::*;
 use sha2_bench::benchmark::{Benchmark, BenchmarkResult, SmtSolver};
@@ -23,13 +23,10 @@ impl GraphRenderer {
 	/// * `data`: Single run benchmark data.
 	///
 	/// # Returns
-	/// `Result<PathBuf, Box<dyn Error>>`
+	/// `anyhow::Result<PathBuf>`
 	///
 	/// Returns path of saved graph file, or error.
-	fn create_time_and_memory_chart(
-		&self,
-		data : Vec<Benchmark>
-	) -> Result<PathBuf, Box<dyn Error>> {
+	fn create_time_and_memory_chart(&self, data : Vec<Benchmark>) -> Result<PathBuf> {
 		if data.is_empty() {
 			println!(
 				"{}",
@@ -72,7 +69,12 @@ impl GraphRenderer {
 
 		let path_clone_bind = path.clone();
 		let root = SVGBackend::new(&path_clone_bind, self.output_size).into_drawing_area();
-		root.fill(&WHITE)?;
+		root.fill(&WHITE).with_context(|| {
+			format!(
+				"failed to initialize chart surface for graph {}",
+				path.display()
+			)
+		})?;
 
 		let title = format!("{solver_name}; Memory & Time vs Rounds");
 		let mut chart = ChartBuilder::on(&root)
@@ -134,7 +136,8 @@ impl GraphRenderer {
 		self.draw_legend(&mut chart)?;
 
 		// Write to PathBuf
-		root.present()?;
+		root.present()
+			.with_context(|| format!("failed to write graph {}", path.display()))?;
 		Ok(path)
 	}
 
@@ -149,7 +152,7 @@ impl GraphRenderer {
 	/// * `enforce`: Should minimums and a max range be respected?
 	///
 	/// # Returns
-	/// `Result<PathBuf, Box<dyn Error>>`
+	/// `anyhow::Result<PathBuf>`
 	///
 	/// Returns path of saved graph file, or error.
 	fn create_baseline_graph<L>(
@@ -160,7 +163,7 @@ impl GraphRenderer {
 		buffer : bool,
 		enforce : bool,
 		draw_background : bool
-	) -> Result<PathBuf, Box<dyn Error>>
+	) -> Result<PathBuf>
 	where
 		L : Clone + Ord + Into<String>
 	{
@@ -270,7 +273,12 @@ impl GraphRenderer {
 
 		let path_clone_bind = path.clone();
 		let root = SVGBackend::new(&path_clone_bind, self.output_size).into_drawing_area();
-		root.fill(&WHITE)?;
+		root.fill(&WHITE).with_context(|| {
+			format!(
+				"failed to initialize chart surface for graph {}",
+				path.display()
+			)
+		})?;
 
 		let mut chart = ChartBuilder::on(&root)
 			.x_label_area_size(45)
@@ -342,7 +350,8 @@ impl GraphRenderer {
 		self.draw_legend(&mut chart)?;
 
 		// Write to PathBuf
-		root.present()?;
+		root.present()
+			.with_context(|| format!("failed to write graph {}", path.display()))?;
 		Ok(path)
 	}
 
@@ -353,10 +362,10 @@ impl GraphRenderer {
 	/// * `data`: All runs combined.
 	///
 	/// # Returns
-	/// `Result<PathBuf, Box<dyn Error>>`
+	/// `anyhow::Result<PathBuf>`
 	///
 	/// Returns path of saved graph file, or error.
-	fn solver_comparison(&self, data : Vec<Benchmark>) -> Result<PathBuf, Box<dyn Error>> {
+	fn solver_comparison(&self, data : Vec<Benchmark>) -> Result<PathBuf> {
 		if data.is_empty() {
 			return Err(MissingData {
 				graph_name : "comparison",
@@ -393,7 +402,12 @@ impl GraphRenderer {
 
 		let path_clone_bind = path.clone();
 		let root = SVGBackend::new(&path_clone_bind, self.output_size).into_drawing_area();
-		root.fill(&WHITE)?;
+		root.fill(&WHITE).with_context(|| {
+			format!(
+				"failed to initialize chart surface for graph {}",
+				path.display()
+			)
+		})?;
 
 		let mut chart = ChartBuilder::on(&root)
 			.x_label_area_size(45)
@@ -444,7 +458,7 @@ impl GraphRenderer {
 	}
 
 	/// Collection function to generate all graphs.
-	pub fn generate_all_graphs(&mut self) -> Result<(), Box<dyn Error>> {
+	pub fn generate_all_graphs(&mut self) -> Result<()> {
 		use sha2_core::structs::collision_type::CollisionType::*;
 		use sha2_core::structs::hash_function::HashFunction::*;
 		use sha2_smt::smt_lib::smt_retriever::EncodingType::*;
@@ -477,7 +491,12 @@ impl GraphRenderer {
 					);
 					continue;
 				}
-				self.solver_comparison(baselines)?;
+				self.solver_comparison(baselines).with_context(|| {
+					format!(
+						"failed to generate solver comparison graphs in {}",
+						self.output_dir.display()
+					)
+				})?;
 			}
 		}
 
@@ -492,7 +511,13 @@ impl GraphRenderer {
 			},
 			true
 		)?;
-		self.create_time_and_memory_chart(bitwuzla_baseline_with_anomalies.clone())?;
+		self.create_time_and_memory_chart(bitwuzla_baseline_with_anomalies.clone())
+			.with_context(|| {
+				format!(
+					"failed to generate time and memory graph in {}",
+					self.output_dir.display()
+				)
+			})?;
 
 		// Generate Bitwuzla argument Graphs
 		let arg_categories = BTreeMap::from([
@@ -547,7 +572,13 @@ impl GraphRenderer {
 				true,
 				true,
 				true
-			)?;
+			)
+			.with_context(|| {
+				format!(
+					"failed to generate {category} args graph in {}",
+					self.output_dir.display()
+				)
+			})?;
 		}
 
 		// Generate Bitwuzla encoding graphs
@@ -572,7 +603,13 @@ impl GraphRenderer {
 			true,
 			true,
 			true
-		)?;
+		)
+		.with_context(|| {
+			format!(
+				"failed to generate Delta XOR encoding comparison graph in {}",
+				self.output_dir.display()
+			)
+		})?;
 
 		// DSUB
 		let dsub_encoding_data : BTreeMap<_, _> = encoding_data
@@ -588,7 +625,13 @@ impl GraphRenderer {
 			true,
 			true,
 			true
-		)?;
+		)
+		.with_context(|| {
+			format!(
+				"failed to generate Delta Sub encoding comparison graph in {}",
+				self.output_dir.display()
+			)
+		})?;
 
 		// Pure encoding comparison graph
 		let mut all_encodings : BTreeMap<EncodingType, Vec<Benchmark>> = BTreeMap::new();
@@ -606,7 +649,12 @@ impl GraphRenderer {
 				},
 				false
 			)
-			.expect("Failed to retrieve bruteforce simplified baseline");
+			.with_context(|| {
+				format!(
+					"failed to retrieve bruteforce simplified baseline for graphs in {}",
+					self.output_dir.display()
+				)
+			})?;
 
 		let bruteforce_alt_add = self
 			.data_retriever
@@ -620,7 +668,12 @@ impl GraphRenderer {
 				},
 				false
 			)
-			.expect("Failed to retrieve bruteforce alt add baseline");
+			.with_context(|| {
+				format!(
+					"failed to retrieve bruteforce alt add baseline for graphs in {}",
+					self.output_dir.display()
+				)
+			})?;
 
 		let bruteforce_alt_add_simpl = self
 			.data_retriever
@@ -634,7 +687,12 @@ impl GraphRenderer {
 				},
 				false
 			)
-			.expect("Failed to retrieve bruteforce alt add simplified baseline");
+			.with_context(|| {
+				format!(
+					"failed to retrieve bruteforce alt add simplified baseline for graphs in {}",
+					self.output_dir.display()
+				)
+			})?;
 
 		// Insert baselines
 		all_encodings.insert(
@@ -666,7 +724,13 @@ impl GraphRenderer {
 			true,
 			true,
 			true
-		)?;
+		)
+		.with_context(|| {
+			format!(
+				"failed to generate bruteforce encoding comparison graph in {}",
+				self.output_dir.display()
+			)
+		})?;
 
 		Ok(())
 	}

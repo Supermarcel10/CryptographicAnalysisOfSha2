@@ -1,6 +1,6 @@
-use std::error::Error;
 use std::ops::Add;
 
+use anyhow::Result;
 use num_traits::One;
 use plotters::coord::ranged1d::ValueFormatter;
 use plotters::prelude::*;
@@ -28,7 +28,7 @@ impl PointStyles {
 		data : Vec<(XT, YT)>,
 		color : Option<RGBAColor>,
 		point_thickness : u32
-	) -> Result<(), Box<dyn Error>>
+	) -> Result<()>
 	where
 		DB : DrawingBackend + 'a,
 		DB::ErrorType : 'static,
@@ -52,7 +52,7 @@ impl PointStyles {
 		data : Vec<(XT, YT)>,
 		color : Option<RGBAColor>,
 		point_thickness : u32
-	) -> Result<(), Box<dyn Error>>
+	) -> Result<()>
 	where
 		DB : DrawingBackend + 'a,
 		DB::ErrorType : 'static,
@@ -80,7 +80,7 @@ impl PointStyles {
 		color : Option<RGBAColor>,
 		point_thickness : u32,
 		shapes : Vec<CustomShape>
-	) -> Result<(), Box<dyn Error>>
+	) -> Result<()>
 	where
 		DB : DrawingBackend + 'a,
 		DB::ErrorType : 'static,

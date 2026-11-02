@@ -1,5 +1,4 @@
-use std::error::Error;
-
+use anyhow::{Context, Result};
 use sha2_core::sha::StartVector;
 use sha2_core::structs::collision_type::CollisionType;
 
@@ -29,7 +28,7 @@ impl SmtBuilder {
 		self.smt += &format!("(define-sort Word () (_ BitVec {bit_size}))\n");
 	}
 
-	pub(super) fn define_functions(&mut self) -> Result<(), Box<dyn Error>> {
+	pub(super) fn define_functions(&mut self) -> Result<()> {
 		let word_size = self.hash_function.word_size().bits();
 		let simplified = self.encoding.simplified_maj_and_ch_functions();
 
@@ -144,10 +143,7 @@ impl SmtBuilder {
 		}
 	}
 
-	pub(super) fn define_compression_for_message(
-		&mut self,
-		message : u8
-	) -> Result<(), Box<dyn Error>> {
+	pub(super) fn define_compression_for_message(&mut self, message : u8) -> Result<()> {
 		self.comment(&format!("MESSAGE {message}"));
 
 		let mut s = String::new();
@@ -178,7 +174,9 @@ impl SmtBuilder {
 						"(define-fun m{message}_{var}{i} () Word {e_add})\n"
 					))
 				} else {
-					let prev_var = get_previous_var(var);
+					let prev_var = get_previous_var(var).with_context(|| {
+						format!("failed to get previous working variable for '{var}'")
+					})?;
 					s.push_str(&format!(
 						"(define-fun m{message}_{var}{i} () Word {msg}{prev_var}{prev})\n"
 					))
@@ -212,7 +210,7 @@ impl SmtBuilder {
 		self.smt += &s;
 	}
 
-	pub(super) fn final_state_update(&mut self) -> Result<(), Box<dyn Error>> {
+	pub(super) fn final_state_update(&mut self) -> Result<()> {
 		self.comment("Final state update");
 
 		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);

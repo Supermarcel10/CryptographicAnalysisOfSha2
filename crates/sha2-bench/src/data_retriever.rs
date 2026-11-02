@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
-use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 
+use anyhow::{Context, Result};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 use sha2_smt::smt_lib::smt_retriever::EncodingType;
@@ -16,9 +16,14 @@ pub struct DataRetriever {
 }
 
 impl DataRetriever {
-	pub fn new(data_dir : PathBuf) -> Result<Self, Box<dyn Error>> {
+	pub fn new(data_dir : PathBuf) -> Result<Self> {
 		if !data_dir.exists() {
-			fs::create_dir_all(data_dir.clone())?;
+			fs::create_dir_all(data_dir.clone()).with_context(|| {
+				format!(
+					"failed to create benchmark data directory {}",
+					data_dir.display()
+				)
+			})?;
 		}
 
 		Ok(DataRetriever {
@@ -28,12 +33,18 @@ impl DataRetriever {
 	}
 
 	#[allow(dead_code)]
-	pub fn with_default_dir() -> Result<Self, Box<dyn Error>> {
+	pub fn with_default_dir() -> Result<Self> {
 		DataRetriever::new(PathBuf::from("results/"))
 	}
 
-	fn cache_all(&mut self) -> Result<(), Box<dyn Error>> {
-		let benchmarks : Vec<_> = Benchmark::load_all(&self.data_dir, true)?
+	fn cache_all(&mut self) -> Result<()> {
+		let benchmarks : Vec<_> = Benchmark::load_all(&self.data_dir, true)
+			.with_context(|| {
+				format!(
+					"failed to load benchmarks from data directory {}",
+					self.data_dir.display()
+				)
+			})?
 			.into_iter()
 			.filter(|b| b.is_valid != Some(false))
 			.collect();
@@ -50,14 +61,14 @@ impl DataRetriever {
 		hash_function : HashFunction,
 		collision_type : CollisionType,
 		prefer_test_reruns : bool
-	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+	) -> Result<Vec<Benchmark>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
 		}
 
 		let mut baselines = Vec::new();
 		let mut reruns = Vec::new();
-		for b in self.all_results.clone().unwrap() {
+		for b in self.all_results.clone().unwrap_or_default() {
 			if b.is_baseline
 				&& b.hash_function == hash_function
 				&& b.collision_type == collision_type
@@ -84,14 +95,14 @@ impl DataRetriever {
 		collision_type : CollisionType,
 		encoding_type : EncodingType,
 		prefer_test_reruns : bool
-	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+	) -> Result<Vec<Benchmark>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
 		}
 
 		let mut baselines = Vec::new();
 		let mut reruns = Vec::new();
-		for b in self.all_results.clone().unwrap() {
+		for b in self.all_results.clone().unwrap_or_default() {
 			if b.is_baseline
 				&& b.hash_function == hash_function
 				&& b.collision_type == collision_type
@@ -120,7 +131,7 @@ impl DataRetriever {
 		collision_type : CollisionType,
 		encoding_type : EncodingType,
 		prefer_test_reruns : bool
-	) -> Result<Vec<Benchmark>, Box<dyn Error>> {
+	) -> Result<Vec<Benchmark>> {
 		let all_baselines =
 			self.retrieve_all_baselines(hash_function, collision_type, prefer_test_reruns)?;
 
@@ -138,7 +149,7 @@ impl DataRetriever {
 		collision_type : CollisionType,
 		prefer_test_reruns : bool,
 		arg_identifier : &str
-	) -> Result<BTreeMap<SolverArg, Vec<Benchmark>>, Box<dyn Error>> {
+	) -> Result<BTreeMap<SolverArg, Vec<Benchmark>>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
 		}
@@ -152,7 +163,7 @@ impl DataRetriever {
 
 		let mut baselines = Vec::new();
 		let mut reruns = Vec::new();
-		for b in self.all_results.clone().unwrap() {
+		for b in self.all_results.clone().unwrap_or_default() {
 			if b.solver == solver
 				&& b.hash_function == hash_function
 				&& b.collision_type == collision_type
@@ -185,14 +196,14 @@ impl DataRetriever {
 		hash_function : HashFunction,
 		collision_type : CollisionType,
 		prefer_test_reruns : bool
-	) -> Result<BTreeMap<EncodingType, Vec<Benchmark>>, Box<dyn Error>> {
+	) -> Result<BTreeMap<EncodingType, Vec<Benchmark>>> {
 		if self.all_results.is_none() {
 			self.cache_all()?;
 		}
 
 		let mut baselines = Vec::new();
 		let mut reruns = Vec::new();
-		for b in self.all_results.clone().unwrap() {
+		for b in self.all_results.clone().unwrap_or_default() {
 			if b.solver == solver
 				&& b.hash_function == hash_function
 				&& b.collision_type == collision_type

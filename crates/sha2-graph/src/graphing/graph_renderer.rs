@@ -1,7 +1,7 @@
-use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 
+use anyhow::{Context, Result};
 use plotters::prelude::RGBAColor;
 use sha2_bench::data_retriever::DataRetriever;
 use sha2_core::structs::collision_type::CollisionType;
@@ -31,9 +31,14 @@ impl GraphRenderer {
 		line_thickness : u32,
 		point_thickness : u32,
 		data_retriever : DataRetriever
-	) -> Result<Self, Box<dyn Error>> {
+	) -> Result<Self> {
 		if !output_dir.exists() {
-			fs::create_dir_all(output_dir.clone())?;
+			fs::create_dir_all(output_dir.clone()).with_context(|| {
+				format!(
+					"failed to create graph output directory {}",
+					output_dir.display()
+				)
+			})?;
 		}
 
 		Ok(GraphRenderer {
@@ -49,7 +54,7 @@ impl GraphRenderer {
 	}
 
 	#[allow(dead_code)]
-	pub fn with_defaults() -> Result<Self, Box<dyn Error>> {
+	pub fn with_defaults() -> Result<Self> {
 		use LineStyle::*;
 
 		Ok(GraphRenderer {
@@ -109,7 +114,9 @@ impl GraphRenderer {
 			]),
 			line_thickness : 2,
 			point_thickness : 6,
-			data_retriever : DataRetriever::with_default_dir()?
+			data_retriever : DataRetriever::with_default_dir().with_context(|| {
+				"failed to load default benchmark data directory for graph renderer".to_string()
+			})?
 		})
 	}
 }
@@ -128,5 +135,48 @@ pub enum GraphRendererError<'a> {
 	MissingData {
 		graph_name : &'a str,
 		dataset_name : &'a str
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	fn unique_temp_path(name : &str) -> PathBuf {
+		std::env::temp_dir().join(format!("sha2-graph-renderer-{name}-{}", std::process::id()))
+	}
+
+	fn test_renderer(output_dir : PathBuf, data_dir : PathBuf) -> Result<GraphRenderer> {
+		GraphRenderer::new(
+			output_dir,
+			(1024, 768),
+			("test", 36),
+			("test", 14),
+			Vec::new().into_boxed_slice(),
+			2,
+			6,
+			DataRetriever::new(data_dir)?
+		)
+	}
+
+	#[test]
+	fn new_unwritable_dir_reports_path() {
+		let data_dir = unique_temp_path("data");
+		let blocker = unique_temp_path("blocker");
+		std::fs::write(&blocker, "blocker").unwrap();
+		let unwritable = blocker.join("subdir");
+
+		let err = test_renderer(unwritable.clone(), data_dir.clone())
+			.err()
+			.expect("expected error for unwritable graph dir");
+
+		assert!(
+			format!("{err:#}").contains(&unwritable.display().to_string()),
+			"error {err:#} missing path {}",
+			unwritable.display()
+		);
+
+		let _ = std::fs::remove_file(&blocker);
+		let _ = std::fs::remove_dir_all(&data_dir);
 	}
 }

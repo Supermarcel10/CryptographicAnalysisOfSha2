@@ -77,6 +77,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.104"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
+
+[[package]]
 name = "autocfg"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -401,6 +407,7 @@ dependencies = [
 name = "sha2-bench"
 version = "0.1.2"
 dependencies = [
+ "anyhow",
  "chrono",
  "nix",
  "regex",
@@ -417,6 +424,7 @@ dependencies = [
 name = "sha2-collision"
 version = "0.1.2"
 dependencies = [
+ "anyhow",
  "clap",
  "plotters",
  "sha2-bench",
@@ -424,13 +432,13 @@ dependencies = [
  "sha2-graph",
  "sha2-smt",
  "sha2-verify",
- "thiserror",
 ]
 
 [[package]]
 name = "sha2-core"
 version = "0.1.2"
 dependencies = [
+ "anyhow",
  "serde",
  "thiserror",
 ]
@@ -439,6 +447,7 @@ dependencies = [
 name = "sha2-graph"
 version = "0.1.2"
 dependencies = [
+ "anyhow",
  "num-traits",
  "plotters",
  "sha2-bench",
@@ -451,6 +460,7 @@ dependencies = [
 name = "sha2-smt"
 version = "0.1.2"
 dependencies = [
+ "anyhow",
  "serde",
  "sha2-core",
 ]
@@ -459,6 +469,7 @@ dependencies = [
 name = "sha2-verify"
 version = "0.1.2"
 dependencies = [
+ "anyhow",
  "sha2-core",
 ]
 

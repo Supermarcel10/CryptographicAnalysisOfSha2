@@ -1,6 +1,6 @@
-use std::error::Error;
 use std::ops::Add;
 
+use anyhow::Result;
 use num_traits::One;
 use plotters::chart::DualCoordChartContext;
 use plotters::coord::ranged1d::ValueFormatter;
@@ -20,11 +20,11 @@ impl GraphRenderer {
 	/// * `chart`: The chart to add axis to.
 	///
 	/// # Returns
-	/// `Result<(), Box<dyn Error>>`
+	/// `anyhow::Result<()>`
 	pub(super) fn set_x_axis_as_rounds<'a, DB, X, Y, XT, YT>(
 		&self,
 		chart : &mut ChartContext<'a, DB, Cartesian2d<X, Y>>
-	) -> Result<(), Box<dyn Error>>
+	) -> Result<()>
 	where
 		DB : DrawingBackend + 'a,
 		DB::ErrorType : 'static,
@@ -52,14 +52,14 @@ impl GraphRenderer {
 	/// * `formatter`: Formatter of Y-Axis, that takes Y-Axis type and returns String.
 	///
 	/// # Returns
-	/// `Result<(), Box<dyn Error>>`
+	/// `anyhow::Result<()>`
 	pub(super) fn set_y_axis<'a, DB, X, Y, XT, YT>(
 		&self,
 		chart : &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
 		label : &str,
 		color : Option<RGBAColor>,
 		formatter : Option<&dyn Fn(&YT) -> String>
-	) -> Result<(), Box<dyn Error>>
+	) -> Result<()>
 	where
 		DB : DrawingBackend + 'a,
 		DB::ErrorType : 'static,
@@ -94,14 +94,14 @@ impl GraphRenderer {
 	/// * `formatter`: Formatter of Y-Axis, that takes Y-Axis type and returns String.
 	///
 	/// # Returns
-	/// `Result<(), Box<dyn Error>>`
+	/// `anyhow::Result<()>`
 	pub(super) fn set_secondary_y_axis<'a, DB, X, Y1, Y2, XT, YT1, YT2>(
 		&self,
 		chart : &mut DualCoordChartContext<'a, DB, Cartesian2d<X, Y1>, Cartesian2d<X, Y2>>,
 		label : &str,
 		color : Option<RGBAColor>,
 		formatter : Option<&dyn Fn(&YT2) -> String>
-	) -> Result<(), Box<dyn Error>>
+	) -> Result<()>
 	where
 		DB : DrawingBackend + 'a,
 		DB::ErrorType : 'static,
@@ -136,7 +136,7 @@ impl GraphRenderer {
 	/// * `color`: Color of drawn line, or black by default.
 	///
 	/// # Returns
-	/// `Result<(), Box<dyn Error>>`
+	/// `anyhow::Result<()>`
 	pub(super) fn draw_series<'a, DB, X, Y, XT, YT>(
 		&self,
 		chart : &mut ChartContext<'a, DB, Cartesian2d<X, Y>>,
@@ -145,7 +145,7 @@ impl GraphRenderer {
 		discontinue_line : bool,
 		label : &str,
 		line_style : Option<LineStyle>
-	) -> Result<(), Box<dyn Error>>
+	) -> Result<()>
 	where
 		DB : DrawingBackend + 'a,
 		DB::ErrorType : 'static,
@@ -216,7 +216,7 @@ impl GraphRenderer {
 	/// * `color`: Color of drawn line, or black by default.
 	///
 	/// # Returns
-	/// `Result<(), Box<dyn Error>>`
+	/// `anyhow::Result<()>`
 	pub(super) fn draw_secondary_series<'a, DB, X, Y1, Y2, XT, YT1, YT2>(
 		&self,
 		chart : &mut DualCoordChartContext<'a, DB, Cartesian2d<X, Y1>, Cartesian2d<X, Y2>>,
@@ -225,7 +225,7 @@ impl GraphRenderer {
 		discontinue_line : bool,
 		label : &str,
 		color : Option<RGBAColor>
-	) -> Result<(), Box<dyn Error>>
+	) -> Result<()>
 	where
 		DB : DrawingBackend + 'a,
 		DB::ErrorType : 'static,
@@ -287,11 +287,11 @@ impl GraphRenderer {
 	/// * `chart`: The chart to draw on.
 	///
 	/// # Returns
-	/// `Result<(), Box<dyn Error>>`
+	/// `anyhow::Result<()>`
 	pub(super) fn draw_legend<'a, DB, CT>(
 		&self,
 		chart : &mut ChartContext<'a, DB, CT>
-	) -> Result<(), Box<dyn Error>>
+	) -> Result<()>
 	where
 		DB : DrawingBackend + 'a,
 		DB::ErrorType : 'static,

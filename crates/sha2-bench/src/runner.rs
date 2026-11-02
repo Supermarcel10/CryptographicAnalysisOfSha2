@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::io::{BufReader, Read};
 use std::ops::Range;
 use std::os::unix::prelude::CommandExt;
@@ -6,6 +5,7 @@ use std::path::PathBuf;
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 
+use anyhow::{Context, Result};
 use chrono::Local;
 use nix::sys::signal::{Signal, killpg};
 use nix::unistd::Pid;
@@ -15,12 +15,6 @@ use sha2_smt::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
 use wait_timeout::ChildExt;
 
 use crate::benchmark::{Benchmark, BenchmarkResult, SmtSolver, SolverArg};
-
-#[derive(thiserror::Error, Debug, PartialEq, Clone)]
-pub enum BenchmarkError {
-	#[error("solver {solver} was not found on the host system")]
-	SolverNotFound { solver : String }
-}
 
 pub struct BenchmarkRunner {
 	stop_tolerance : u8,
@@ -60,7 +54,7 @@ impl BenchmarkRunner {
 		collision_types : Vec<CollisionType>,
 		round_range : Range<u8>,
 		arguments : Vec<SolverArg>
-	) -> Result<(), Box<dyn Error>> {
+	) -> Result<()> {
 		for solver in solvers {
 			for hash_function in &hash_functions {
 				for collision_type in &collision_types {
@@ -101,7 +95,7 @@ impl BenchmarkRunner {
 		round_range : Range<u8>,
 		arg : Option<SolverArg>,
 		sequential_fails : &mut u8
-	) -> Result<(), Box<dyn Error>> {
+	) -> Result<()> {
 		// Ensure range max does not exceed hash function max rounds.
 		let hash_max = hash_function.max_rounds();
 		let min = round_range.clone().min().unwrap_or(1).max(1);
@@ -145,13 +139,15 @@ impl BenchmarkRunner {
 
 	fn handle_result(
 		&self,
-		result : &mut Result<Benchmark, Box<dyn Error>>,
+		result : &mut Result<Benchmark>,
 		sequential_fails : &mut u8
-	) -> Result<(), Box<dyn Error>> {
+	) -> Result<()> {
 		match result {
 			Ok(benchmark) => {
 				if let Some(path) = &self.benchmark_save_dir {
-					benchmark.save(path).expect("Failed to save benchmark!");
+					benchmark.save(path).with_context(|| {
+						format!("failed to save benchmark to {}", path.display())
+					})?;
 				}
 
 				match benchmark.result {
@@ -175,9 +171,9 @@ impl BenchmarkRunner {
 				Ok(())
 			}
 			Err(err) => {
-				println!("{}\n", err);
+				println!("{err}\n");
 				if !self.continue_on_failure {
-					Err(Box::from("Aborting benchmarks!"))
+					Err(anyhow::anyhow!("{err:#}\nAborting benchmarks!"))
 				} else {
 					println!("Continuing!\n\n");
 					Ok(())
@@ -197,12 +193,8 @@ impl BenchmarkRunner {
 		encoding : EncodingType,
 		smt_file : PathBuf,
 		arguments : Option<SolverArg>
-	) -> Result<Benchmark, Box<dyn Error>> {
-		if !check_command_present(&solver.command())? {
-			return Err(Box::from(BenchmarkError::SolverNotFound {
-				solver : solver.command()
-			}));
-		}
+	) -> Result<Benchmark> {
+		ensure_solver_present(&solver)?;
 
 		let mut full_args : Vec<SolverArg> = vec!["-v".into(), solver.command()];
 
@@ -213,7 +205,12 @@ impl BenchmarkRunner {
 			has_args = true;
 		}
 
-		let file_path = smt_file.to_str().ok_or("Failed to get smt file path")?;
+		let file_path = smt_file.to_str().ok_or_else(|| {
+			anyhow::anyhow!(
+				"failed to get smt file path for solver {solver} (file: {})",
+				smt_file.display()
+			)
+		})?;
 		full_args.extend(split_args);
 		full_args.push(file_path.into());
 
@@ -224,7 +221,13 @@ impl BenchmarkRunner {
 			.process_group(0)
 			.stdout(Stdio::piped())
 			.stderr(Stdio::piped())
-			.spawn()?;
+			.spawn()
+			.with_context(|| {
+				format!(
+					"failed to spawn solver {solver} (command: {})",
+					solver.command()
+				)
+			})?;
 
 		let pid = child.id();
 		let arg_str = if let Some(args) = &arguments {
@@ -242,20 +245,31 @@ impl BenchmarkRunner {
 		);
 
 		// Await process exit
-		let status = child.wait_timeout(self.timeout)?;
+		let status = child.wait_timeout(self.timeout).with_context(|| {
+			format!(
+				"failed to await solver {solver} (command: {})",
+				solver.command()
+			)
+		})?;
 		let execution_time = start_time.elapsed();
 
 		// Read output
 		let (cout, cerr) = match status {
 			None => {
-				killpg(Pid::from_raw(pid as i32), Signal::SIGKILL)?;
-				child.wait()?;
+				killpg(Pid::from_raw(pid as i32), Signal::SIGKILL).with_context(|| {
+					format!("failed to kill timed-out solver {solver} (pid: {pid})")
+				})?;
+				child.wait().with_context(|| {
+					format!("failed to reap timed-out solver {solver} (pid: {pid})")
+				})?;
 				(String::new(), String::new())
 			}
 			Some(_) => {
 				let cout = if let Some(stdout) = child.stdout.take() {
 					let mut cout = String::new();
-					BufReader::new(stdout).read_to_string(&mut cout)?;
+					BufReader::new(stdout)
+						.read_to_string(&mut cout)
+						.with_context(|| format!("failed to read stdout of solver {solver}"))?;
 					cout
 				} else {
 					String::new()
@@ -263,7 +277,9 @@ impl BenchmarkRunner {
 
 				let cerr = if let Some(stderr) = child.stderr.take() {
 					let mut cerr = String::new();
-					BufReader::new(stderr).read_to_string(&mut cerr)?;
+					BufReader::new(stderr)
+						.read_to_string(&mut cerr)
+						.with_context(|| format!("failed to read stderr of solver {solver}"))?;
 					cerr
 				} else {
 					String::new()
@@ -298,17 +314,16 @@ impl BenchmarkRunner {
 		})
 	}
 
-	fn categorize_status(
-		exit_status : Option<ExitStatus>,
-		cout : &str
-	) -> Result<BenchmarkResult, Box<dyn Error>> {
+	fn categorize_status(exit_status : Option<ExitStatus>, cout : &str) -> Result<BenchmarkResult> {
 		use BenchmarkResult::*;
 		use Signal::*;
 
 		Ok(match exit_status {
 			None => CPUOut,
 			Some(status) => {
-				let code = status.code().ok_or("Failed to retrieve status code!")?;
+				let code = status
+					.code()
+					.ok_or_else(|| anyhow::anyhow!("failed to retrieve solver status code"))?;
 				let outcome = cout.lines().next().unwrap_or("unknown").to_lowercase();
 
 				if outcome.contains("unsat") {
@@ -316,7 +331,8 @@ impl BenchmarkRunner {
 				} else if outcome.contains("sat") {
 					Sat
 				} else {
-					let signal = Signal::try_from(code)?;
+					let signal = Signal::try_from(code)
+						.with_context(|| format!("failed to interpret solver exit code {code}"))?;
 
 					match signal {
 						SIGABRT | SIGKILL | SIGSEGV => MemOut,
@@ -330,11 +346,28 @@ impl BenchmarkRunner {
 	}
 }
 
-fn check_command_present(command : &str) -> Result<bool, Box<dyn Error>> {
+fn ensure_solver_present(solver : &SmtSolver) -> Result<()> {
+	if !check_command_present(&solver.command()).with_context(|| {
+		format!(
+			"failed to check for solver {solver} (command: {})",
+			solver.command()
+		)
+	})? {
+		return Err(anyhow::anyhow!(
+			"solver {} was not found on the host system",
+			solver.command()
+		));
+	}
+
+	Ok(())
+}
+
+fn check_command_present(command : &str) -> Result<bool> {
 	let output = Command::new("sh")
 		.arg("-c")
 		.arg(format!("command -v {}", command))
-		.output()?;
+		.output()
+		.with_context(|| format!("failed to check for solver command {command}"))?;
 
 	Ok(output.status.success())
 }
@@ -346,4 +379,23 @@ fn max_resident_set_size(cerr : &str) -> Option<u64> {
 	let value = line.split(':').nth(1)?.trim().parse::<u64>().ok()?;
 	// Convert kB to bytes
 	Some(value * 1024)
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn absent_solver_command_reports_not_present() {
+		let present = check_command_present("definitely-not-an-installed-solver-xyz").unwrap();
+
+		assert!(!present, "bogus solver command reported as present");
+	}
+
+	#[test]
+	fn existing_shell_command_reports_present() {
+		let present = check_command_present("sh").unwrap();
+
+		assert!(present, "shell command 'sh' reported as absent");
+	}
 }

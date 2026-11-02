@@ -1,9 +1,8 @@
-use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
-use sha2_core::sha::HashError;
+use anyhow::{Context, Result};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 
@@ -28,7 +27,7 @@ impl SmtBuilder {
 		rounds : u8,
 		collision_type : CollisionType,
 		encoding : EncodingType
-	) -> Result<Self, HashError> {
+	) -> Result<Self> {
 		hash_function.validate_rounds(rounds)?;
 
 		Ok(SmtBuilder {
@@ -40,15 +39,17 @@ impl SmtBuilder {
 		})
 	}
 
-	fn to_file(&self, file_path : PathBuf) -> Result<File, std::io::Error> {
-		let mut file = File::create(file_path)?;
+	fn to_file(&self, file_path : PathBuf) -> Result<File> {
+		let mut file = File::create(&file_path)
+			.with_context(|| format!("failed to create SMT file {}", file_path.display()))?;
 
-		file.write_all(self.smt.as_bytes())?;
+		file.write_all(self.smt.as_bytes())
+			.with_context(|| format!("failed to write SMT file {}", file_path.display()))?;
 
 		Ok(file)
 	}
 
-	fn write_encoding(&mut self) -> Result<(), Box<dyn Error>> {
+	fn write_encoding(&mut self) -> Result<()> {
 		use EncodingType::*;
 
 		match self.encoding {
@@ -70,7 +71,7 @@ impl SmtBuilder {
 	}
 }
 
-pub fn generate_smtlib_files(smt_retriever : SmtRetriever) -> Result<(), Box<dyn Error>> {
+pub fn generate_smtlib_files(smt_retriever : SmtRetriever) -> Result<()> {
 	use CollisionType::*;
 	use HashFunction::*;
 
