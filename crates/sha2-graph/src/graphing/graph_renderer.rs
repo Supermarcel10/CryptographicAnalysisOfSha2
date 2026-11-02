@@ -1,7 +1,7 @@
-use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 
+use anyhow::{Context, Result};
 use plotters::prelude::RGBAColor;
 use sha2_bench::data_retriever::DataRetriever;
 use sha2_core::structs::collision_type::CollisionType;
@@ -31,9 +31,14 @@ impl GraphRenderer {
 		line_thickness : u32,
 		point_thickness : u32,
 		data_retriever : DataRetriever
-	) -> Result<Self, Box<dyn Error>> {
+	) -> Result<Self> {
 		if !output_dir.exists() {
-			fs::create_dir_all(output_dir.clone())?;
+			fs::create_dir_all(output_dir.clone()).with_context(|| {
+				format!(
+					"failed to create graph output directory {}",
+					output_dir.display()
+				)
+			})?;
 		}
 
 		Ok(GraphRenderer {
@@ -49,7 +54,7 @@ impl GraphRenderer {
 	}
 
 	#[allow(dead_code)]
-	pub fn with_defaults() -> Result<Self, Box<dyn Error>> {
+	pub fn with_defaults() -> Result<Self> {
 		use LineStyle::*;
 
 		Ok(GraphRenderer {
@@ -109,7 +114,9 @@ impl GraphRenderer {
 			]),
 			line_thickness : 2,
 			point_thickness : 6,
-			data_retriever : DataRetriever::with_default_dir()?
+			data_retriever : DataRetriever::with_default_dir().with_context(|| {
+				"failed to load default benchmark data directory for graph renderer".to_string()
+			})?
 		})
 	}
 }
