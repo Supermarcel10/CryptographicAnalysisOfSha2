@@ -500,4 +500,179 @@ mod tests {
 			builder.smt
 		);
 	}
+
+	fn generated(collision_type : CollisionType) -> String {
+		let mut builder = base4_builder(collision_type, 1);
+		builder
+			.base4_encoding()
+			.expect("base4 generation must succeed without a solver");
+		builder.smt
+	}
+
+	fn section_positions(smt : &str) -> Vec<usize> {
+		[
+			";; SETUP",
+			";; TYPE",
+			";; FUNCTIONS",
+			";; CONSTANTS",
+			";; MESSAGE EXPANSION",
+			";; MESSAGE COMPRESSION",
+			";; BASE-4 CONDITIONS",
+			";; BASE-4 PROPAGATION LEMMAS",
+			";; ASSERTIONS",
+			";; GO!"
+		]
+		.iter()
+		.map(|marker| {
+			smt.find(marker)
+				.expect("generated output missing a section")
+		})
+		.collect()
+	}
+
+	#[test]
+	fn full_generation_contains_proven_function_definitions() {
+		let smt = generated(CollisionType::Standard);
+
+		assert!(
+			smt.contains(
+				"(define-fun b4band_d ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word\n\t(bvand Xd Yd))"
+			),
+			"missing verbatim b4band_d definition, got:\n{}",
+			smt
+		);
+		assert!(
+			smt.contains(
+				"(define-fun b4bor_a ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word\n\t(bvand Xa Ya))"
+			),
+			"missing verbatim b4bor_a definition, got:\n{}",
+			smt
+		);
+		assert!(
+			smt.contains(
+				"(define-fun b4bxor_a ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word\n\t(bvor (bvand Xa Ya) (bvand Xb Yb) (bvand Xc Yc) (bvand Xd Yd)))"
+			),
+			"missing verbatim b4bxor_a definition, got:\n{}",
+			smt
+		);
+	}
+
+	#[test]
+	fn full_generation_contains_cv_and_first_round_pairs() {
+		let smt = generated(CollisionType::Standard);
+
+		assert!(
+			smt.contains("(define-fun B4_cv_a_A () Word (bvand (bvnot a0) (bvnot a0)))"),
+			"missing shared chaining-value pair, got:\n{}",
+			smt
+		);
+		assert!(
+			smt.contains("(define-fun B4_w0_A () Word (bvand (bvnot m0_w0) (bvnot m1_w0)))"),
+			"missing first-round message pair, got:\n{}",
+			smt
+		);
+	}
+
+	#[test]
+	fn standard_generation_asserts_messages_not_same_and_hash_same() {
+		let smt = generated(CollisionType::Standard);
+		let ones = format!("#b{}", "1".repeat(32));
+
+		assert!(
+			smt.contains("; Assert messages not the same (absolute and base-4 form)"),
+			"missing messages-not-same assertion block, got:\n{}",
+			smt
+		);
+		assert!(
+			smt.contains("\t(distinct m0_w0 m1_w0)\n"),
+			"missing absolute message-difference assertion, got:\n{}",
+			smt
+		);
+		assert!(
+			smt.contains(&format!("(distinct (bvor B4_w0_A B4_w0_D) {ones})")),
+			"missing base-4 message-difference assertion, got:\n{}",
+			smt
+		);
+		assert!(
+			!smt.contains("; Assert starting vectors (CV) not the same"),
+			"standard collision must not assert CV difference, got:\n{}",
+			smt
+		);
+
+		assert!(
+			smt.contains("; Assert output hash is the same (absolute and base-4 form)"),
+			"missing hash-same assertion block, got:\n{}",
+			smt
+		);
+		assert!(
+			smt.contains("\t(= m0_hash0 m1_hash0)\n"),
+			"missing absolute hash-equality assertion, got:\n{}",
+			smt
+		);
+		assert!(
+			smt.contains(&format!("(= (bvor B4_hash0_A B4_hash0_D) {ones})")),
+			"missing base-4 hash-equality assertion, got:\n{}",
+			smt
+		);
+
+		assert!(
+			smt.contains("(check-sat)"),
+			"missing check-sat, got:\n{}",
+			smt
+		);
+		assert!(
+			section_positions(&smt).is_sorted(),
+			"sections out of order, got:\n{}",
+			smt
+		);
+	}
+
+	#[test]
+	fn free_start_generation_asserts_cv_not_same_and_hash_same() {
+		let smt = generated(CollisionType::FreeStart);
+		let ones = format!("#b{}", "1".repeat(32));
+
+		assert!(
+			smt.contains("; Assert starting vectors (CV) not the same (absolute and base-4 form)"),
+			"missing CV-not-same assertion block, got:\n{}",
+			smt
+		);
+		assert!(
+			smt.contains("\t(distinct m0_a0 m1_a0)\n"),
+			"missing absolute CV-difference assertion, got:\n{}",
+			smt
+		);
+		assert!(
+			smt.contains(&format!("(distinct (bvor B4_cv_a_A B4_cv_a_D) {ones})")),
+			"missing base-4 CV-difference assertion, got:\n{}",
+			smt
+		);
+		assert!(
+			!smt.contains("; Assert messages not the same"),
+			"free-start collision must not assert message difference, got:\n{}",
+			smt
+		);
+
+		assert!(
+			smt.contains("(define-fun B4_cv_a_A () Word (bvand (bvnot m0_a0) (bvnot m1_a0)))"),
+			"free-start chaining value must pair both CVs in generated output, got:\n{}",
+			smt
+		);
+		assert!(
+			smt.contains("\t(= m0_hash0 m1_hash0)\n"),
+			"missing absolute hash-equality assertion, got:\n{}",
+			smt
+		);
+
+		assert!(
+			smt.contains("(check-sat)"),
+			"missing check-sat, got:\n{}",
+			smt
+		);
+		assert!(
+			section_positions(&smt).is_sorted(),
+			"sections out of order, got:\n{}",
+			smt
+		);
+	}
 }

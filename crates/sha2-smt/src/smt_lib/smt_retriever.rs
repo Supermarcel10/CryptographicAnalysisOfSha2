@@ -300,6 +300,35 @@ mod tests {
 	}
 
 	#[test]
+	fn from_str_rejects_unknown_spelling() {
+		let err = "bogus"
+			.parse::<EncodingType>()
+			.expect_err("unknown spelling must be rejected");
+		assert!(
+			err.contains("Unknown encoding type"),
+			"unexpected error shape: {err}"
+		);
+		assert!(
+			"".parse::<EncodingType>().is_err(),
+			"empty spelling must be rejected"
+		);
+	}
+
+	#[test]
+	fn all_permutations_include_base4_for_every_flag_combination() {
+		let all = EncodingType::get_all_permutations();
+
+		assert_eq!(all.len(), 16, "expected 4 encodings x 4 flag combinations");
+		assert_eq!(
+			all.iter()
+				.filter(|encoding| matches!(encoding, Base4 { .. }))
+				.count(),
+			4,
+			"expected one Base4 entry per flag combination"
+		);
+	}
+
+	#[test]
 	fn new_creates_missing_dir() {
 		let dir = unique_temp_path("missing");
 		let _ = std::fs::remove_dir_all(&dir);
