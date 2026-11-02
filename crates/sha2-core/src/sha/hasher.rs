@@ -176,12 +176,6 @@ impl Sha {
 	/// `anyhow::Result<Sha>`
 	///
 	/// Returns SHA digest or error.
-	///
-	/// # Examples
-	///
-	/// ```ignore
-	/// let sha_digest = Sha::from_string("abc", SHA256, 64, IV);
-	/// ```
 	pub fn from_string(
 		message : &str,
 		hash_function : HashFunction,
@@ -223,19 +217,6 @@ impl Sha {
 	/// `anyhow::Result<Sha>`
 	///
 	/// Returns SHA digest or error.
-	///
-	/// # Examples
-	///
-	/// ```ignore
-	/// let message: [u32; 16] = [
-	///     0xc61d6de7, 0x755336e8, 0x5e61d618, 0x18036de6,
-	///     0xa79f2f1d, 0xf2b44c7b, 0x4c0ef36b, 0xa85d45cf,
-	///     0xf72b8c2f, 0x0def947c, 0xa0eab159, 0x8021370c,
-	///     0x4b0d8011, 0x7aad07f6, 0x33cd6902, 0x3bad5d64,
-	/// ];
-	///
-	/// let sha_digest = Sha::from_hash(message, SHA256, 64, IV);
-	/// ```
 	pub fn from_message_block(
 		block : MessageBlock,
 		hash_function : HashFunction,
@@ -262,14 +243,6 @@ impl Sha {
 	/// `HashResult<W>`
 	///
 	/// Returns HashResult of words.
-	///
-	/// # Examples
-	///
-	/// ```ignore
-	/// let sha_digest = Sha::from_hash(message, SHA256, 64, IV)?;
-	///
-	/// let hash = sha_digest.execute();
-	/// ```
 	pub fn execute(mut self) -> Result<HashResult> {
 		let k = self.hash_function.get_constant();
 		let mut w = vec![self.hash_function.default_word(); k.len()];
@@ -345,13 +318,6 @@ impl Sha {
 	///
 	/// # Returns
 	/// `Vec<u8, Global>`
-	///
-	/// # Examples
-	///
-	/// ```ignore
-	/// let message = b"abc";
-	/// let padded_message = Self::pad_message(message, HashFunction::SHA256);
-	/// ```
 	fn pad_message(message : &[u8], hash_function : HashFunction) -> Vec<u8> {
 		// Example message "ABC" (3 char, 24b) for SHA 256
 		// | Original Message | Single 1 | Padding (0's)             | Length (64b)          |
