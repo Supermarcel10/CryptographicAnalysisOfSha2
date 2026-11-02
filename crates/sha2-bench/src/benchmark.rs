@@ -36,7 +36,6 @@ pub enum SmtSolver {
 	Yices2,
 	Bitwuzla,
 	Boolector,
-	// STP, // STP Does not support SMTLIB 2.6!
 	Colibri2,
 	MathSAT
 }
@@ -159,107 +158,6 @@ mod tests {
 	}
 }
 
-// TODO: TO TEST:
-// Z3:
-// core.minimize (bool) minimize computed core (default: false)
-//
-//    bce (bool) eliminate blocked clauses (default: false)
-//
-//    ate (bool) asymmetric tautology elimination (default: true)
-//
-//    abce (bool) eliminate blocked clauses using asymmetric literals (default: false)
-//
-//     acce (bool) eliminate covered clauses using asymmetric added literals (default: false)
-//
-//     anf (bool) enable ANF based simplification in-processing (default: false)
-//
-//    binspr (bool) enable SPR inferences of binary propagation redundant clauses. This inprocessing
-// step eliminates models (default: false)
-//
-//    cce (bool) eliminate covered clauses (default: false)
-//
-// 		cut (bool) enable AIG based simplification in-processing (default: false)
-//
-//    threads (unsigned int) number of parallel threads to use (default: 1)
-//
-//    cancel_backup_file (symbol) file to save partial search state if search is canceled
-//
-// 		enable_sls (bool) enable SLS tuning during weighted maxsat (default: false)
-//
-//    enable (bool) enable parallel solver by default on selected tactics (QF_BV) (default: false)
-//
-//    check_lemmas (bool) check lemmas on the fly using an independent nlsat solver (default: false)
-//
-//    blast_distinct (bool) expand a distinct predicate into a quadratic number of disequalities
-// (default: false)
-//
-//    blast_eq_value (bool) blast (some) Bit-vector equalities into bits (default: false)
-//
-//    bv_extract_prop (bool) attempt to partially propagate extraction inwards (default: false)
-//
-//    bv_not_simpl (bool) apply simplifications for bvnot (default: false)
-//
-// 		bv_sort_ac (bool) sort the arguments of all AC operators (default: false)
-//
-//    elim_and (bool) conjunctions are rewritten using negation and disjunctions (default: false)
-//
-//[module] sls, description: Experimental Stochastic Local Search Solver (for QFBV only).
-//
-
-// CVC5:
-//  --arith-rewrite-equalities
-//                          turns on the preprocessing rewrite turning equalities
-//                          into a conjunction of inequalities [*]
-//   --arith-static-learning
-//                          do arithmetic static learning for ite terms based on
-//                          bounds when static learning is enabled [*]
-//   --dio-solver           turns on Linear Diophantine Equation solver (Griggio,
-//                          JSAT 2012) (EXPERTS only) [*]
-//  --dio-decomps          let skolem variables for integer divisibility
-//                          constraints leak from the dio solver (EXPERTS only) [*]
-//  --new-prop             use the new row propagation system (EXPERTS only) [*]
-//  --nl-cov               whether to use the cylindrical algebraic coverings
-//                          solver for non-linear arithmetic [*]
-//  --use-approx           attempt to use an approximate solver (EXPERTS only) [*]
-//  --use-fcsimplex        use focusing and converging simplex (FMCAD 2013
-//                          submission) (EXPERTS only) [*]
-//   --use-soi              use sum of infeasibility simplex (FMCAD 2013
-//                          submission) (EXPERTS only) [*]
-//  --plugin-share-skolems true if we permit sharing theory lemmas and SAT clauses
-//                          with skolems (EXPERTS only) [*]
-//  --bitblast=MODE        choose bitblasting mode, see --bitblast=help
-//  --bool-to-bv=MODE      convert booleans to bit-vectors of size 1 at various
-//                          levels of aggressiveness, see --bool-to-bv=help
-//  --bv-assert-input      assert input assertions on user-level 0 instead of
-//                          assuming them in the bit-vector SAT solver (EXPERTS
-//                          only) [*]
-//  --bv-eager-eval        perform eager context-dependent evaluation for
-//                          applications of bv kinds in the equality engine [*]
-//  --bv-eq-engine         enable equality engine when possible in bitvector
-//                          theory (EXPERTS only) [*]
-//   --bv-gauss-elim        simplify formula via Gaussian Elimination if applicable
-//                          (EXPERTS only) [*]
-//   --bv-propagate         use bit-vector propagation in the bit-blaster (EXPERTS
-//                          only) [*]
-//   --bv-rw-extend-eq      enable additional rewrites over zero/sign extend over
-//                          equalities with constants (useful on
-//                          BV/2017-Preiner-scholl-smt08) (EXPERTS only) [*]
-//   --bv-sat-solver=MODE   choose which sat solver to use, see
-//                          --bv-sat-solver=help
-//   --bv-solver=MODE       choose bit-vector solver, see --bv-solver=help
-//  --minisat-simplification=MODE
-//                          Simplifications to be performed by Minisat. (EXPERTS
-//                          only)
-
-// - Different arguments for each solver
-// - Different kernels (https://askubuntu.com/a/126671)
-// - Different memory timings
-// - CPU Core Clock difference
-// - Run to run variance
-
-// TODO: Yices2
-// TODO: Boolector
-
 impl Display for SmtSolver {
 	fn fmt(&self, f : &mut Formatter<'_>) -> std::fmt::Result {
 		use SmtSolver::*;
@@ -273,7 +171,6 @@ impl Display for SmtSolver {
 				Yices2 => "Yices2",
 				Bitwuzla => "Bitwuzla",
 				Boolector => "Boolector",
-				// STP => "STP",
 				Colibri2 => "Colibri2",
 				MathSAT => "MathSAT"
 			}
@@ -291,7 +188,6 @@ impl SmtSolver {
 			Yices2 => "yices-smt2",
 			Bitwuzla => "bitwuzla",
 			Boolector => "boolector",
-			// STP => "stp",
 			Colibri2 => "./solvers/colibri2",
 			MathSAT => "./solvers/mathsat"
 		}

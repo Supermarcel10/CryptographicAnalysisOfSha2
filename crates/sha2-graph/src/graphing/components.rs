@@ -266,7 +266,6 @@ impl GraphRenderer {
 				series
 			);
 
-			// TODO: Refactor!
 			if with_points {
 				chart.draw_secondary_series(PointSeries::of_element(
 					split,
