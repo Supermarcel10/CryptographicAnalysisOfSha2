@@ -374,3 +374,22 @@ fn max_resident_set_size(cerr : &str) -> Option<u64> {
 	// Convert kB to bytes
 	Some(value * 1024)
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn absent_solver_command_reports_not_present() {
+		let present = check_command_present("definitely-not-an-installed-solver-xyz").unwrap();
+
+		assert!(!present, "bogus solver command reported as present");
+	}
+
+	#[test]
+	fn existing_shell_command_reports_present() {
+		let present = check_command_present("sh").unwrap();
+
+		assert!(present, "shell command 'sh' reported as absent");
+	}
+}

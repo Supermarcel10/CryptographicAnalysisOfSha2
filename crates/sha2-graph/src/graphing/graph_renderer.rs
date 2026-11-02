@@ -137,3 +137,46 @@ pub enum GraphRendererError<'a> {
 		dataset_name : &'a str
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	fn unique_temp_path(name : &str) -> PathBuf {
+		std::env::temp_dir().join(format!("sha2-graph-renderer-{name}-{}", std::process::id()))
+	}
+
+	fn test_renderer(output_dir : PathBuf, data_dir : PathBuf) -> Result<GraphRenderer> {
+		GraphRenderer::new(
+			output_dir,
+			(1024, 768),
+			("test", 36),
+			("test", 14),
+			Vec::new().into_boxed_slice(),
+			2,
+			6,
+			DataRetriever::new(data_dir)?
+		)
+	}
+
+	#[test]
+	fn new_unwritable_dir_reports_path() {
+		let data_dir = unique_temp_path("data");
+		let blocker = unique_temp_path("blocker");
+		std::fs::write(&blocker, "blocker").unwrap();
+		let unwritable = blocker.join("subdir");
+
+		let err = test_renderer(unwritable.clone(), data_dir.clone())
+			.err()
+			.expect("expected error for unwritable graph dir");
+
+		assert!(
+			format!("{err:#}").contains(&unwritable.display().to_string()),
+			"error {err:#} missing path {}",
+			unwritable.display()
+		);
+
+		let _ = std::fs::remove_file(&blocker);
+		let _ = std::fs::remove_dir_all(&data_dir);
+	}
+}
