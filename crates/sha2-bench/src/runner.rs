@@ -194,17 +194,7 @@ impl BenchmarkRunner {
 		smt_file : PathBuf,
 		arguments : Option<SolverArg>
 	) -> Result<Benchmark> {
-		if !check_command_present(&solver.command()).with_context(|| {
-			format!(
-				"failed to check for solver {solver} (command: {})",
-				solver.command()
-			)
-		})? {
-			return Err(anyhow::anyhow!(
-				"solver {} was not found on the host system",
-				solver.command()
-			));
-		}
+		ensure_solver_present(&solver)?;
 
 		let mut full_args : Vec<SolverArg> = vec!["-v".into(), solver.command()];
 
@@ -354,6 +344,22 @@ impl BenchmarkRunner {
 			}
 		})
 	}
+}
+
+fn ensure_solver_present(solver : &SmtSolver) -> Result<()> {
+	if !check_command_present(&solver.command()).with_context(|| {
+		format!(
+			"failed to check for solver {solver} (command: {})",
+			solver.command()
+		)
+	})? {
+		return Err(anyhow::anyhow!(
+			"solver {} was not found on the host system",
+			solver.command()
+		));
+	}
+
+	Ok(())
 }
 
 fn check_command_present(command : &str) -> Result<bool> {
