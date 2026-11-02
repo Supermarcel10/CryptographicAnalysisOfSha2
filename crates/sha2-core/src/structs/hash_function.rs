@@ -1,7 +1,9 @@
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use crate::sha::{HashError, Word};
+use anyhow::Result;
+
+use crate::sha::Word;
 use crate::structs::size::Size;
 
 #[derive(
@@ -87,14 +89,13 @@ impl HashFunction {
 	/// * `hash_function`: Hash function to validate against
 	///
 	/// # Returns
-	/// `Result<(), HashError>`
-	pub fn validate_rounds(&self, rounds : u8) -> Result<(), HashError> {
+	/// `anyhow::Result<()>`
+	pub fn validate_rounds(&self, rounds : u8) -> Result<()> {
 		let max_rounds = self.max_rounds();
 		if rounds > max_rounds {
-			return Err(HashError::TooManyRounds {
-				requested : rounds,
-				maximum : max_rounds
-			});
+			return Err(anyhow::anyhow!(
+				"requested rounds {rounds} exceeds maximum rounds {max_rounds} for hash function"
+			));
 		}
 
 		Ok(())

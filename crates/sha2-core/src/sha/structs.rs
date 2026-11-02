@@ -1,18 +1,9 @@
 use std::fmt::{Display, Formatter, LowerHex};
-use std::num::ParseIntError;
+
+use anyhow::Result;
 
 use crate::bit_differential::BitDifferential;
 use crate::structs::hash_function::HashFunction;
-
-#[derive(thiserror::Error, Debug, PartialEq, Clone)]
-pub enum HashError {
-	#[error("requested rounds {requested} exceeds maximum rounds {maximum} for hash function")]
-	TooManyRounds { requested : u8, maximum : u8 },
-	#[error("failed to convert bytes into valid word")]
-	FailedToConvertBytes,
-	#[error("attempted to {operation} on two different word sizes")]
-	WordMismatch { operation : String }
-}
 
 #[derive(
 	Debug,
@@ -84,34 +75,31 @@ impl BitDifferential for Word {
 		match (self, rhs) {
 			(W32(l), W32(r)) => l.bit_diff(r),
 			(W64(l), W64(r)) => l.bit_diff(r),
-			(..) => HashError::WordMismatch {
-				operation : String::from("bit diff")
-			}
-			.to_string()
+			(..) => String::from("attempted to bit diff on two different word sizes")
 		}
 	}
 }
 
 impl Word {
-	pub(super) fn ch(e : Self, f : Self, g : Self) -> Result<Self, HashError> {
+	pub(super) fn ch(e : Self, f : Self, g : Self) -> Result<Self> {
 		use Word::*;
 		match (e, f, g) {
 			(W32(e), W32(f), W32(g)) => Ok(W32((e & f) ^ (!e & g))),
 			(W64(e), W64(f), W64(g)) => Ok(W64((e & f) ^ (!e & g))),
-			(..) => Err(HashError::WordMismatch {
-				operation : String::from("ch")
-			})
+			(..) => Err(anyhow::anyhow!(
+				"attempted to ch on two different word sizes"
+			))
 		}
 	}
 
-	pub(super) fn maj(a : Self, b : Self, c : Self) -> Result<Self, HashError> {
+	pub(super) fn maj(a : Self, b : Self, c : Self) -> Result<Self> {
 		use Word::*;
 		match (a, b, c) {
 			(W32(a), W32(b), W32(c)) => Ok(W32((a & b) ^ (a & c) ^ (b & c))),
 			(W64(a), W64(b), W64(c)) => Ok(W64((a & b) ^ (a & c) ^ (b & c))),
-			(..) => Err(HashError::WordMismatch {
-				operation : String::from("maj")
-			})
+			(..) => Err(anyhow::anyhow!(
+				"attempted to maj on two different word sizes"
+			))
 		}
 	}
 
@@ -159,29 +147,44 @@ impl Word {
 		src : &str,
 		radix : u32,
 		hash_function : HashFunction
-	) -> Result<Word, ParseIntError> {
+	) -> Result<Word> {
+		use anyhow::Context;
 		use HashFunction::*;
 		match hash_function {
-			SHA224 | SHA256 => Ok(Word::W32(u32::from_str_radix(src, radix)?)),
-			SHA512 => Ok(Word::W64(u64::from_str_radix(src, radix)?))
+			SHA224 | SHA256 => Ok(Word::W32(u32::from_str_radix(src, radix).with_context(|| {
+				format!("failed to parse '{src}' with radix {radix} for {hash_function}")
+			})?)),
+			SHA512 => Ok(Word::W64(u64::from_str_radix(src, radix).with_context(|| {
+				format!("failed to parse '{src}' with radix {radix} for {hash_function}")
+			})?))
 		}
 	}
 
-	pub(super) fn wrapping_add(self, rhs : Word) -> Result<Self, HashError> {
+	pub(super) fn wrapping_add(self, rhs : Word) -> Result<Self> {
 		match (self, rhs) {
 			(Word::W32(l), Word::W32(r)) => Ok(Word::W32(l.wrapping_add(r))),
 			(Word::W64(l), Word::W64(r)) => Ok(Word::W64(l.wrapping_add(r))),
-			(..) => Err(HashError::WordMismatch {
-				operation : String::from("wrapping add")
-			})
+			(..) => Err(anyhow::anyhow!(
+				"attempted to wrapping add on two different word sizes"
+			))
 		}
 	}
 
-	pub(super) fn from_be_bytes(bytes : &[u8]) -> Result<Self, HashError> {
+	pub(super) fn from_be_bytes(bytes : &[u8]) -> Result<Self> {
 		match bytes.len() {
-			4 => Ok(Word::W32(u32::from_be_bytes(bytes.try_into().unwrap()))),
-			8 => Ok(Word::W64(u64::from_be_bytes(bytes.try_into().unwrap()))),
-			_ => Err(HashError::FailedToConvertBytes)
+			4 => {
+				let array : [u8; 4] = bytes.try_into().map_err(|_| {
+					anyhow::anyhow!("failed to convert bytes into valid word")
+				})?;
+				Ok(Word::W32(u32::from_be_bytes(array)))
+			}
+			8 => {
+				let array : [u8; 8] = bytes.try_into().map_err(|_| {
+					anyhow::anyhow!("failed to convert bytes into valid word")
+				})?;
+				Ok(Word::W64(u64::from_be_bytes(array)))
+			}
+			_ => Err(anyhow::anyhow!("failed to convert bytes into valid word"))
 		}
 	}
 
@@ -206,13 +209,13 @@ mod tests {
 		let f = W32(40);
 		let g = W32(60);
 
-		assert_eq!(Word::ch(e, f, g), Ok(W32(40)));
+		assert_eq!(Word::ch(e, f, g).unwrap(), W32(40));
 
 		let e = W64(20);
 		let f = W64(40);
 		let g = W64(60);
 
-		assert_eq!(Word::ch(e, f, g), Ok(W64(40)));
+		assert_eq!(Word::ch(e, f, g).unwrap(), W64(40));
 	}
 
 	#[test]
