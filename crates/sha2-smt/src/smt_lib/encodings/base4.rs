@@ -71,7 +71,9 @@ impl SmtBuilder {
 	}
 
 	fn define_base4_functions(&mut self) {
-		self.comment("Base-4 AND/OR/XOR condition propagation (proven in proofs/encoding_{and,or,xor}.smt2)");
+		self.comment(
+			"Base-4 AND/OR/XOR condition propagation (proven in proofs/encoding_{and,or,xor}.smt2)"
+		);
 
 		// AND: d = Xd&Yd; b = (Xf&Yf)&~d; c = (Xg&Yg)&~d; a = ~(d|b|c).
 		self.smt += "(define-fun b4band_b ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
@@ -219,8 +221,7 @@ impl SmtBuilder {
 				let (g0, g1) = inputs('g');
 				let (e, f, g) = (masks('e'), masks('f'), masks('g'));
 				// ~e swaps a<->d and b<->c.
-				let not_e : [String; 4] =
-					[e[3].clone(), e[2].clone(), e[1].clone(), e[0].clone()];
+				let not_e : [String; 4] = [e[3].clone(), e[2].clone(), e[1].clone(), e[0].clone()];
 
 				let t1 = combine("b4band", &e, &f);
 				let t2 = combine("b4band", &not_e, &g);
@@ -236,7 +237,10 @@ impl SmtBuilder {
 					(assert (= {chb} {cb}))\n\
 					(assert (= {chc} {cc}))\n\
 					(assert (= {chd} {cd}))\n",
-					cha = ch[0], chb = ch[1], chc = ch[2], chd = ch[3]
+					cha = ch[0],
+					chb = ch[1],
+					chc = ch[2],
+					chd = ch[3]
 				);
 			}
 
@@ -263,7 +267,10 @@ impl SmtBuilder {
 					(assert (= {majb} {mb}))\n\
 					(assert (= {majc} {mc}))\n\
 					(assert (= {majd} {md}))\n",
-					maja = maj[0], majb = maj[1], majc = maj[2], majd = maj[3]
+					maja = maj[0],
+					majb = maj[1],
+					majc = maj[2],
+					majd = maj[3]
 				);
 			}
 		}
