@@ -451,7 +451,6 @@ impl GraphRenderer {
 			)?;
 		}
 
-		// TODO: Do secondary legend with the result types
 		self.draw_legend(&mut chart)?;
 
 		Ok(path)
