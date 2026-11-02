@@ -4,7 +4,6 @@ use sha2_core::structs::collision_type::CollisionType;
 use crate::smt_lib::builder::SmtBuilder;
 use crate::smt_lib::utilities::msg_prefix;
 
-#[allow(unreachable_code)]
 #[allow(dead_code)]
 impl SmtBuilder {
 	fn define_base4_differential_constants(&mut self) {
@@ -71,6 +70,40 @@ impl SmtBuilder {
 		)
 	}
 
+	fn define_base4_functions(&mut self) {
+		self.comment("Base-4 AND/OR/XOR condition propagation (proven in proofs/encoding_{and,or,xor}.smt2)");
+
+		// AND: d = Xd&Yd; b = (Xf&Yf)&~d; c = (Xg&Yg)&~d; a = ~(d|b|c).
+		self.smt += "(define-fun b4band_b ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvand (bvor Xb Xd) (bvor Yb Yd) (bvnot (bvand Xd Yd))))\n";
+		self.smt += "(define-fun b4band_c ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvand (bvor Xc Xd) (bvor Yc Yd) (bvnot (bvand Xd Yd))))\n";
+		self.smt += "(define-fun b4band_d ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvand Xd Yd))\n";
+		self.smt += "(define-fun b4band_a ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvnot (bvor (b4band_d Xa Xb Xc Xd Ya Yb Yc Yd) (b4band_b Xa Xb Xc Xd Ya Yb Yc Yd) (b4band_c Xa Xb Xc Xd Ya Yb Yc Yd))))\n";
+
+		// OR: a = Xa&Ya; b = ~(Xg|Yg|a); c = ~(Xf|Yf|a); d = ~(a|b|c)
+		self.smt += "(define-fun b4bor_a ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvand Xa Ya))\n";
+		self.smt += "(define-fun b4bor_b ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvnot (bvor (bvor Xc Xd) (bvor Yc Yd) (bvand Xa Ya))))\n";
+		self.smt += "(define-fun b4bor_c ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvnot (bvor (bvor Xb Xd) (bvor Yb Yd) (bvand Xa Ya))))\n";
+		self.smt += "(define-fun b4bor_d ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvnot (bvor (b4bor_a Xa Xb Xc Xd Ya Yb Yc Yd) (b4bor_b Xa Xb Xc Xd Ya Yb Yc Yd) (b4bor_c Xa Xb Xc Xd Ya Yb Yc Yd))))\n";
+
+		// XOR: pairwise matching of (a, b, c, d) membership
+		self.smt += "(define-fun b4bxor_a ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvor (bvand Xa Ya) (bvand Xb Yb) (bvand Xc Yc) (bvand Xd Yd)))\n";
+		self.smt += "(define-fun b4bxor_b ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvor (bvand Xa Yb) (bvand Xb Ya) (bvand Xc Yd) (bvand Xd Yc)))\n";
+		self.smt += "(define-fun b4bxor_c ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvor (bvand Xa Yc) (bvand Xc Ya) (bvand Xb Yd) (bvand Xd Yb)))\n";
+		self.smt += "(define-fun b4bxor_d ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	(bvor (bvand Xa Yd) (bvand Xd Ya) (bvand Xb Yc) (bvand Xc Yb)))\n";
+	}
+
 	fn define_base4_pair(&mut self, tag : &str, left : &str, right : &str) {
 		self.smt += &format!(
 			"(define-fun B4_{tag}_A () Word (bvand (bvnot {left}) (bvnot {right})))\n\
@@ -123,8 +156,164 @@ impl SmtBuilder {
 		}
 	}
 
+	fn assert_base4_propagation_lemmas(&mut self) {
+		let comb = if self.encoding.simplified_maj_and_ch_functions() {
+			"b4bor"
+		} else {
+			"b4bxor"
+		};
+
+		for i in 1..=self.rounds {
+			let p : u64 = (i - 1).into();
+			let ct = self.collision_type;
+
+			// Absolute inputs of both messages.
+			let inputs = |var : char| {
+				(
+					format!("{}{var}{p}", msg_prefix(0, p, ct)),
+					format!("{}{var}{p}", msg_prefix(1, p, ct))
+				)
+			};
+
+			// Condition masks of the input pair.
+			let masks = |var : char| {
+				let tag = if var == 'w' {
+					format!("w{p}")
+				} else if p == 0 {
+					format!("cv_{var}")
+				} else {
+					format!("s{var}{p}")
+				};
+				[
+					format!("B4_{tag}_A"),
+					format!("B4_{tag}_B"),
+					format!("B4_{tag}_C"),
+					format!("B4_{tag}_D")
+				]
+			};
+
+			// Combined two mask quadruples with the given operator family.
+			let combine = |op : &str, x : &[String; 4], y : &[String; 4]| {
+				['a', 'b', 'c', 'd'].map(|o| {
+					format!(
+						"({op}_{o} {} {} {} {} {} {} {} {})",
+						x[0], x[1], x[2], x[3], y[0], y[1], y[2], y[3]
+					)
+				})
+			};
+
+			// Actual masks of the absolute output pair (out0, out1).
+			let actual = |out0 : &str, out1 : &str| {
+				[
+					format!("(bvand (bvnot {out0}) (bvnot {out1}))"),
+					format!("(bvand (bvnot {out0}) {out1})"),
+					format!("(bvand {out0} (bvnot {out1}))"),
+					format!("(bvand {out0} {out1})")
+				]
+			};
+
+			// Ch(e, f, g)
+			{
+				let (e0, e1) = inputs('e');
+				let (f0, f1) = inputs('f');
+				let (g0, g1) = inputs('g');
+				let (e, f, g) = (masks('e'), masks('f'), masks('g'));
+				// ~e swaps a<->d and b<->c.
+				let not_e : [String; 4] =
+					[e[3].clone(), e[2].clone(), e[1].clone(), e[0].clone()];
+
+				let t1 = combine("b4band", &e, &f);
+				let t2 = combine("b4band", &not_e, &g);
+				let ch = combine(comb, &t1, &t2);
+				let [ca, cb, cc, cd] = actual(
+					&format!("(ch {e0} {f0} {g0})"),
+					&format!("(ch {e1} {f1} {g1})")
+				);
+
+				self.smt += &format!(
+					"; Base-4 Ch propagation, round {i}\n\
+					(assert (= {cha} {ca}))\n\
+					(assert (= {chb} {cb}))\n\
+					(assert (= {chc} {cc}))\n\
+					(assert (= {chd} {cd}))\n",
+					cha = ch[0], chb = ch[1], chc = ch[2], chd = ch[3]
+				);
+			}
+
+			// Maj(a, b, c)
+			{
+				let (a0, a1) = inputs('a');
+				let (b0, b1) = inputs('b');
+				let (c0, c1) = inputs('c');
+				let (a, b, c) = (masks('a'), masks('b'), masks('c'));
+
+				let t_ab = combine("b4band", &a, &b);
+				let t_ac = combine("b4band", &a, &c);
+				let t_bc = combine("b4band", &b, &c);
+				let t_abc = combine(comb, &t_ab, &t_ac);
+				let maj = combine(comb, &t_abc, &t_bc);
+				let [ma, mb, mc, md] = actual(
+					&format!("(maj {a0} {b0} {c0})"),
+					&format!("(maj {a1} {b1} {c1})")
+				);
+
+				self.smt += &format!(
+					"; Base-4 Maj propagation, round {i}\n\
+					(assert (= {maja} {ma}))\n\
+					(assert (= {majb} {mb}))\n\
+					(assert (= {majc} {mc}))\n\
+					(assert (= {majd} {md}))\n",
+					maja = maj[0], majb = maj[1], majc = maj[2], majd = maj[3]
+				);
+			}
+		}
+	}
+
+	fn assert_messages_not_same_base4(&mut self) {
+		self.comment("Assert messages not the same (absolute and base-4 form)");
+
+		let ones = self.b4_ones();
+		let mut s = String::new();
+		for i in 0..self.rounds.min(16) {
+			s += &format!("\t(distinct m0_w{i} m1_w{i})\n");
+			s += &format!("\t(distinct (bvor B4_w{i}_A B4_w{i}_D) {ones})\n");
+		}
+
+		if self.rounds == 1 {
+			self.smt += &format!("(assert (and\n{s}))\n");
+		} else if self.rounds > 1 {
+			self.smt += &format!("(assert (or\n{s}))\n");
+		}
+	}
+
+	fn assert_initial_vector_not_same_base4(&mut self) {
+		self.comment("Assert starting vectors (CV) not the same (absolute and base-4 form)");
+
+		let ones = self.b4_ones();
+		let mut s = String::new();
+		for var in 'a'..='h' {
+			s += &format!("\t(distinct m0_{var}0 m1_{var}0)\n");
+			s += &format!("\t(distinct (bvor B4_cv_{var}_A B4_cv_{var}_D) {ones})\n");
+		}
+
+		self.smt += &format!("(assert (or\n{s}))\n");
+	}
+
+	fn assert_hash_same_base4(&mut self) {
+		self.comment("Assert output hash is the same (absolute and base-4 form)");
+
+		let ones = self.b4_ones();
+		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
+		let mut s = String::new();
+		for i in 0..final_size {
+			s += &format!("\t(= m0_hash{i} m1_hash{i})\n");
+			s += &format!("\t(= (bvor B4_hash{i}_A B4_hash{i}_D) {ones})\n");
+		}
+
+		self.smt += format!("(assert (and\n{s}))\n").as_str();
+	}
+
 	pub fn base4_encoding(&mut self) -> Result<()> {
-		todo!(); //TODO: Implement
 		self.title("SETUP");
 		self.set_logic();
 
@@ -132,18 +321,42 @@ impl SmtBuilder {
 		self.define_word_type();
 
 		self.title("FUNCTIONS");
+		self.define_base4_functions();
+		self.break_line();
 		self.define_functions()?;
 
 		self.title("CONSTANTS");
-		self.define_base4_differential_constants();
+		self.define_constants();
 		self.break_line();
-		self.define_base4_differential_initial_vector();
+		self.define_initial_vector();
 
 		self.title("MESSAGE EXPANSION");
+		self.define_expansion_for_message(0);
+		self.break_line();
+		self.define_expansion_for_message(1);
 
 		self.title("MESSAGE COMPRESSION");
+		self.define_compression_for_message(0)?;
+		self.break_line();
+		self.define_compression_for_message(1)?;
+		self.break_line();
+		self.final_state_update()?;
+
+		self.title("BASE-4 CONDITIONS");
+		self.define_base4_conditions();
+
+		self.title("BASE-4 PROPAGATION LEMMAS");
+		self.assert_base4_propagation_lemmas();
 
 		self.title("ASSERTIONS");
+		if self.collision_type == CollisionType::FreeStart {
+			self.assert_initial_vector_not_same_base4();
+		} else {
+			self.assert_messages_not_same_base4();
+		}
+		self.break_line();
+
+		self.assert_hash_same_base4();
 
 		self.check_sat();
 		self.get_full_model();
