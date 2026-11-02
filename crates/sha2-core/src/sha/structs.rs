@@ -143,20 +143,16 @@ impl Word {
 		slice.into_iter().map(Word::W64).collect()
 	}
 
-	pub fn from_str_radix(
-		src : &str,
-		radix : u32,
-		hash_function : HashFunction
-	) -> Result<Word> {
-		use anyhow::Context;
+	pub fn from_str_radix(src : &str, radix : u32, hash_function : HashFunction) -> Result<Word> {
 		use HashFunction::*;
+		use anyhow::Context;
 		match hash_function {
-			SHA224 | SHA256 => Ok(Word::W32(u32::from_str_radix(src, radix).with_context(|| {
-				format!("failed to parse '{src}' with radix {radix} for {hash_function}")
-			})?)),
-			SHA512 => Ok(Word::W64(u64::from_str_radix(src, radix).with_context(|| {
-				format!("failed to parse '{src}' with radix {radix} for {hash_function}")
-			})?))
+			SHA224 | SHA256 => Ok(Word::W32(u32::from_str_radix(src, radix).with_context(
+				|| format!("failed to parse '{src}' with radix {radix} for {hash_function}")
+			)?)),
+			SHA512 => Ok(Word::W64(u64::from_str_radix(src, radix).with_context(
+				|| format!("failed to parse '{src}' with radix {radix} for {hash_function}")
+			)?))
 		}
 	}
 
@@ -173,15 +169,15 @@ impl Word {
 	pub(super) fn from_be_bytes(bytes : &[u8]) -> Result<Self> {
 		match bytes.len() {
 			4 => {
-				let array : [u8; 4] = bytes.try_into().map_err(|_| {
-					anyhow::anyhow!("failed to convert bytes into valid word")
-				})?;
+				let array : [u8; 4] = bytes
+					.try_into()
+					.map_err(|_| anyhow::anyhow!("failed to convert bytes into valid word"))?;
 				Ok(Word::W32(u32::from_be_bytes(array)))
 			}
 			8 => {
-				let array : [u8; 8] = bytes.try_into().map_err(|_| {
-					anyhow::anyhow!("failed to convert bytes into valid word")
-				})?;
+				let array : [u8; 8] = bytes
+					.try_into()
+					.map_err(|_| anyhow::anyhow!("failed to convert bytes into valid word"))?;
 				Ok(Word::W64(u64::from_be_bytes(array)))
 			}
 			_ => Err(anyhow::anyhow!("failed to convert bytes into valid word"))

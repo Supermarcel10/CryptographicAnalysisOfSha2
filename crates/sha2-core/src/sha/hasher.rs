@@ -383,10 +383,7 @@ impl Sha {
 	///
 	/// # Returns
 	/// `anyhow::Result<[W; 16]>` 16 blocks of words
-	fn bytes_to_block(
-		bytes : &[u8],
-		hash_function : HashFunction
-	) -> Result<MessageBlock> {
+	fn bytes_to_block(bytes : &[u8], hash_function : HashFunction) -> Result<MessageBlock> {
 		let mut words = [hash_function.default_word(); 16];
 		let size = hash_function.word_size().bytes();
 
@@ -652,25 +649,22 @@ mod tests {
 	fn test_too_many_rounds() {
 		let err = Sha::from_string(MESSAGE, SHA224, 65, IV).unwrap_err();
 		assert!(
-			format!("{err:#}").contains(
-				"requested rounds 65 exceeds maximum rounds 64 for hash function"
-			),
+			format!("{err:#}")
+				.contains("requested rounds 65 exceeds maximum rounds 64 for hash function"),
 			"unexpected error: {err:#}"
 		);
 
 		let err = Sha::from_string(MESSAGE, SHA256, 65, IV).unwrap_err();
 		assert!(
-			format!("{err:#}").contains(
-				"requested rounds 65 exceeds maximum rounds 64 for hash function"
-			),
+			format!("{err:#}")
+				.contains("requested rounds 65 exceeds maximum rounds 64 for hash function"),
 			"unexpected error: {err:#}"
 		);
 
 		let err = Sha::from_string(MESSAGE, SHA512, 81, IV).unwrap_err();
 		assert!(
-			format!("{err:#}").contains(
-				"requested rounds 81 exceeds maximum rounds 80 for hash function"
-			),
+			format!("{err:#}")
+				.contains("requested rounds 81 exceeds maximum rounds 80 for hash function"),
 			"unexpected error: {err:#}"
 		);
 	}
