@@ -4,6 +4,9 @@
 ### Rust Build Output
 /target/
 
+### Temporary Markdown Files
+*.tmp.md
+
 ### Project Specific
 /graphs/test*.*
 *.smt2
