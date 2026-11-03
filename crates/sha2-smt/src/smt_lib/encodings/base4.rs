@@ -7,6 +7,8 @@ use crate::smt_lib::utilities::msg_prefix;
 
 impl SmtEncoding for Base4Encoding {
 	fn generate(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// Full-section override: base-4's 4-way structure inserts CONDITIONS
+		// and PROPAGATION sections with no default-hook equivalent.
 		builder.title("SETUP");
 		builder.set_logic();
 
@@ -14,26 +16,16 @@ impl SmtEncoding for Base4Encoding {
 		builder.define_word_type();
 
 		builder.title("FUNCTIONS");
-		builder.define_base4_functions();
-		builder.break_line();
-		builder.define_functions()?;
+		self.emit_functions(builder)?;
 
 		builder.title("CONSTANTS");
-		builder.define_constants();
-		builder.break_line();
-		builder.define_initial_vector();
+		self.emit_constants(builder)?;
 
 		builder.title("MESSAGE EXPANSION");
-		builder.define_expansion_for_message(0);
-		builder.break_line();
-		builder.define_expansion_for_message(1);
+		self.emit_expansion(builder)?;
 
 		builder.title("MESSAGE COMPRESSION");
-		builder.define_compression_for_message(0)?;
-		builder.break_line();
-		builder.define_compression_for_message(1)?;
-		builder.break_line();
-		builder.final_state_update()?;
+		self.emit_compression(builder)?;
 
 		builder.title("BASE-4 CONDITIONS");
 		builder.define_base4_conditions();
@@ -42,6 +34,52 @@ impl SmtEncoding for Base4Encoding {
 		builder.assert_base4_propagation_lemmas();
 
 		builder.title("ASSERTIONS");
+		self.emit_assertions(builder)?;
+
+		builder.check_sat();
+		builder.get_full_model();
+
+		Ok(())
+	}
+
+	fn emit_functions(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// Base-4 prepends its proven b4band/b4bor/b4bxor definitions.
+		builder.define_base4_functions();
+		builder.break_line();
+		builder.define_functions()
+	}
+
+	fn emit_constants(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// No differential IV: base-4 tracks message pairs, not delta words.
+		builder.define_constants();
+		builder.break_line();
+		builder.define_initial_vector();
+
+		Ok(())
+	}
+
+	fn emit_expansion(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// Absolute schedule only: base-4 conditions derive from word pairs.
+		builder.define_expansion_for_message(0);
+		builder.break_line();
+		builder.define_expansion_for_message(1);
+
+		Ok(())
+	}
+
+	fn emit_compression(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// No differential working variables or final state in base-4.
+		builder.define_compression_for_message(0)?;
+		builder.break_line();
+		builder.define_compression_for_message(1)?;
+		builder.break_line();
+		builder.final_state_update()?;
+
+		Ok(())
+	}
+
+	fn emit_assertions(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// 4-way asserts pair absolute and mask conditions per word.
 		if builder.collision_type == CollisionType::FreeStart {
 			builder.assert_initial_vector_not_same_base4();
 		} else {
@@ -51,67 +89,11 @@ impl SmtEncoding for Base4Encoding {
 
 		builder.assert_hash_same_base4();
 
-		builder.check_sat();
-		builder.get_full_model();
-
 		Ok(())
 	}
 }
 
-#[allow(dead_code)]
 impl SmtBuilder {
-	fn define_base4_differential_constants(&mut self) {
-		self.comment("Define K constant differential");
-
-		let word_size = self.hash_function.word_size().bits();
-		for i in 0..self.rounds {
-			self.smt += &format!(
-				"(define-fun delta_k{i}_A () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_B () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_C () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_D () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_E () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_F () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_G () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-		}
-	}
-
-	fn define_base4_differential_initial_vector(&mut self) {
-		self.comment("Define H constant differential (IV/CV)");
-
-		let word_size = self.hash_function.word_size().bits();
-		for var in 'a'..='h' {
-			if self.collision_type == CollisionType::Standard {
-				self.smt += &format!(
-					"(define-fun delta_{var}0 () Word #b{})\n",
-					"0".repeat(word_size)
-				);
-			} else {
-				self.smt += &format!("(declare-fun delta_{var}0 () Word)\n");
-			}
-		}
-	}
-
 	fn b4_ones(&self) -> String {
 		format!("#b{}", "1".repeat(self.hash_function.word_size().bits()))
 	}
