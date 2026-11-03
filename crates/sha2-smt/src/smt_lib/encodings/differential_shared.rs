@@ -4,7 +4,10 @@ use sha2_core::structs::collision_type::CollisionType;
 use crate::smt_lib::builder::SmtBuilder;
 
 impl SmtBuilder {
-	pub(super) fn define_calculated_differential_initial_vector(&mut self, diff : &str) -> Result<()> {
+	pub(super) fn define_calculated_differential_initial_vector(
+		&mut self,
+		diff : &str
+	) -> Result<()> {
 		self.comment("Initial Vector difference");
 
 		let word_size = self.hash_function.word_size().bits();

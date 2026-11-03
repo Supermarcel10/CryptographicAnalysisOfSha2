@@ -6,6 +6,9 @@ use anyhow::{Context, Result};
 use sha2_core::structs::collision_type::CollisionType;
 use sha2_core::structs::hash_function::HashFunction;
 
+use crate::smt_lib::encodings::encoding::{
+	Base4Encoding, BruteForceEncoding, DsubEncoding, DxorEncoding, SmtEncoding
+};
 use crate::smt_lib::smt_retriever::{EncodingType, SmtRetriever};
 
 pub struct SmtBuilder {
@@ -55,19 +58,17 @@ impl SmtBuilder {
 		match self.encoding {
 			BruteForce {
 				..
-			} => self.brute_force_encoding()?,
+			} => BruteForceEncoding.generate(self),
 			DeltaXOR {
 				..
-			} => self.dxor_encoding()?,
+			} => DxorEncoding.generate(self),
 			DeltaSub {
 				..
-			} => self.dsub_encoding()?,
+			} => DsubEncoding.generate(self),
 			Base4 {
 				..
-			} => self.base4_encoding()?
-		};
-
-		Ok(())
+			} => Base4Encoding.generate(self)
+		}
 	}
 }
 

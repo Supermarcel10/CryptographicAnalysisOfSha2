@@ -1,62 +1,18 @@
 use anyhow::Result;
-use sha2_core::structs::collision_type::CollisionType;
 
 use crate::smt_lib::builder::SmtBuilder;
+use crate::smt_lib::encodings::encoding::{DxorEncoding, SmtEncoding};
 
 impl SmtBuilder {
+	/// W1 test-compat alias: the differential recipe lives on `SmtEncoding`.
 	pub fn dxor_encoding(&mut self) -> Result<()> {
-		let encoding = self.encoding;
-		let diff = encoding.get_diff()?;
-
-		self.title("SETUP");
-		self.set_logic();
-
-		self.title("TYPE");
-		self.define_word_type();
-
-		self.title("FUNCTIONS");
-		self.define_functions()?;
-
-		self.title("CONSTANTS");
-		self.define_constants();
-		self.break_line();
-		self.define_initial_vector();
-		self.define_calculated_differential_initial_vector(diff)?;
-
-		self.title("MESSAGE EXPANSION");
-		self.define_differential_words(diff)?;
-
-		self.title("MESSAGE COMPRESSION");
-		self.define_compression_for_message(0)?;
-		self.break_line();
-		self.define_compression_for_message(1)?;
-		self.break_line();
-		self.define_differential_for_working_variables(diff)?;
-
-		self.break_line();
-		self.final_state_update()?;
-		self.break_line();
-		self.define_differential_final_state(diff)?;
-
-		self.title("ASSERTIONS");
-		if self.collision_type == CollisionType::FreeStart {
-			self.assert_initial_vector_different();
-		} else {
-			self.assert_message_difference();
-		}
-		self.break_line();
-
-		self.assert_hash_difference_equal();
-
-		self.check_sat();
-		self.get_full_model();
-
-		Ok(())
+		DxorEncoding.generate(self)
 	}
 }
 
 #[cfg(test)]
 mod tests {
+	use sha2_core::structs::collision_type::CollisionType;
 	use sha2_core::structs::hash_function::HashFunction;
 
 	use super::*;
