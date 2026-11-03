@@ -4,9 +4,10 @@ use sha2_core::structs::collision_type::CollisionType;
 use crate::smt_lib::builder::SmtBuilder;
 
 impl SmtBuilder {
-	pub(super) fn define_calculated_differential_initial_vector(&mut self) -> Result<()> {
-		let encoding = self.encoding;
-		let diff = encoding.get_diff()?;
+	pub(super) fn define_calculated_differential_initial_vector(
+		&mut self,
+		diff : &str
+	) -> Result<()> {
 		self.comment("Initial Vector difference");
 
 		let word_size = self.hash_function.word_size().bits();
@@ -25,10 +26,7 @@ impl SmtBuilder {
 		Ok(())
 	}
 
-	pub(super) fn define_differential_words(&mut self) -> Result<()> {
-		let encoding = self.encoding;
-		let diff = encoding.get_diff()?;
-
+	pub(super) fn define_differential_words(&mut self, diff : &str) -> Result<()> {
 		self.define_expansion_for_message(0);
 		self.break_line();
 		self.define_expansion_for_message(1);
@@ -61,9 +59,7 @@ impl SmtBuilder {
 		Ok(())
 	}
 
-	pub(super) fn define_differential_for_working_variables(&mut self) -> Result<()> {
-		let encoding = self.encoding;
-		let diff = encoding.get_diff()?;
+	pub(super) fn define_differential_for_working_variables(&mut self, diff : &str) -> Result<()> {
 		self.comment("Variable Differential");
 
 		for i in 1..=self.rounds {
@@ -77,9 +73,7 @@ impl SmtBuilder {
 		Ok(())
 	}
 
-	pub(super) fn define_differential_final_state(&mut self) -> Result<()> {
-		let encoding = self.encoding;
-		let diff = encoding.get_diff()?;
+	pub(super) fn define_differential_final_state(&mut self, diff : &str) -> Result<()> {
 		self.comment("Final state difference");
 
 		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);

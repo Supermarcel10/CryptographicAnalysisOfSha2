@@ -71,19 +71,6 @@ impl From<EncodingType> for String {
 }
 
 impl EncodingType {
-	pub fn get_diff(&self) -> Result<&str> {
-		use EncodingType::*;
-		match self {
-			DeltaXOR {
-				..
-			} => Ok("bvxor"),
-			DeltaSub {
-				..
-			} => Ok("bvsub"),
-			_ => Err(anyhow::anyhow!("get_diff not supported for encoding type"))
-		}
-	}
-
 	pub fn simplified_maj_and_ch_functions(&self) -> bool {
 		use EncodingType::*;
 		*match self {
