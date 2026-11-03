@@ -5,6 +5,9 @@ use crate::smt_lib::builder::SmtBuilder;
 
 impl SmtBuilder {
 	pub fn dsub_encoding(&mut self) -> Result<()> {
+		let encoding = self.encoding;
+		let diff = encoding.get_diff()?;
+
 		self.title("SETUP");
 		self.set_logic();
 
@@ -18,22 +21,22 @@ impl SmtBuilder {
 		self.define_constants();
 		self.break_line();
 		self.define_initial_vector();
-		self.define_calculated_differential_initial_vector()?;
+		self.define_calculated_differential_initial_vector(diff)?;
 
 		self.title("MESSAGE EXPANSION");
-		self.define_differential_words()?;
+		self.define_differential_words(diff)?;
 
 		self.title("MESSAGE COMPRESSION");
 		self.define_compression_for_message(0)?;
 		self.break_line();
 		self.define_compression_for_message(1)?;
 		self.break_line();
-		self.define_differential_for_working_variables()?;
+		self.define_differential_for_working_variables(diff)?;
 
 		self.break_line();
 		self.final_state_update()?;
 		self.break_line();
-		self.define_differential_final_state()?;
+		self.define_differential_final_state(diff)?;
 
 		self.title("ASSERTIONS");
 		if self.collision_type == CollisionType::FreeStart {
