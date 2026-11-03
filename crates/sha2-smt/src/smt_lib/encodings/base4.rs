@@ -2,8 +2,10 @@ use anyhow::Result;
 use sha2_core::structs::collision_type::CollisionType;
 
 use crate::smt_lib::builder::SmtBuilder;
-use crate::smt_lib::encodings::encoding::{Base4Encoding, SmtEncoding};
+use crate::smt_lib::encodings::encoding::SmtEncoding;
 use crate::smt_lib::utilities::msg_prefix;
+
+pub struct Base4Encoding;
 
 impl SmtEncoding for Base4Encoding {
 	fn generate(&self, builder : &mut SmtBuilder) -> Result<()> {

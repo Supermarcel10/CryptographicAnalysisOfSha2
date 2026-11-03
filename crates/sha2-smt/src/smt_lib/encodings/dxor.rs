@@ -1,10 +1,22 @@
+use crate::smt_lib::encodings::encoding::SmtEncoding;
+
+pub struct DxorEncoding;
+
+impl SmtEncoding for DxorEncoding {
+	fn diff_op(&self) -> &'static str {
+		"bvxor"
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use sha2_core::structs::collision_type::CollisionType;
 	use sha2_core::structs::hash_function::HashFunction;
 
+	use super::DxorEncoding;
 	use crate::smt_lib::builder::SmtBuilder;
-	use crate::smt_lib::encodings::encoding::{DsubEncoding, DxorEncoding, SmtEncoding};
+	use crate::smt_lib::encodings::dsub::DsubEncoding;
+	use crate::smt_lib::encodings::encoding::SmtEncoding;
 	use crate::smt_lib::smt_retriever::EncodingType;
 
 	fn dxor_builder(collision_type : CollisionType, rounds : u8) -> SmtBuilder {
