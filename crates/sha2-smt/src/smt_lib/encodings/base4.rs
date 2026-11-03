@@ -9,6 +9,8 @@ pub struct Base4Encoding;
 
 impl SmtEncoding for Base4Encoding {
 	fn generate(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// Full-section override: base-4's 4-way structure inserts CONDITIONS
+		// and PROPAGATION sections with no default-hook equivalent.
 		builder.title("SETUP");
 		builder.set_logic();
 
@@ -16,365 +18,349 @@ impl SmtEncoding for Base4Encoding {
 		builder.define_word_type();
 
 		builder.title("FUNCTIONS");
-		builder.define_base4_functions();
-		builder.break_line();
-		builder.define_functions()?;
+		self.emit_functions(builder)?;
 
 		builder.title("CONSTANTS");
-		builder.define_constants();
-		builder.break_line();
-		builder.define_initial_vector();
+		self.emit_constants(builder)?;
 
 		builder.title("MESSAGE EXPANSION");
-		builder.define_expansion_for_message(0);
-		builder.break_line();
-		builder.define_expansion_for_message(1);
+		self.emit_expansion(builder)?;
 
 		builder.title("MESSAGE COMPRESSION");
-		builder.define_compression_for_message(0)?;
-		builder.break_line();
-		builder.define_compression_for_message(1)?;
-		builder.break_line();
-		builder.final_state_update()?;
+		self.emit_compression(builder)?;
 
 		builder.title("BASE-4 CONDITIONS");
-		builder.define_base4_conditions();
+		define_base4_conditions(builder);
 
 		builder.title("BASE-4 PROPAGATION LEMMAS");
-		builder.assert_base4_propagation_lemmas();
+		assert_base4_propagation_lemmas(builder);
 
 		builder.title("ASSERTIONS");
-		if builder.collision_type == CollisionType::FreeStart {
-			builder.assert_initial_vector_not_same_base4();
-		} else {
-			builder.assert_messages_not_same_base4();
-		}
-		builder.break_line();
-
-		builder.assert_hash_same_base4();
+		self.emit_assertions(builder)?;
 
 		builder.check_sat();
 		builder.get_full_model();
 
 		Ok(())
 	}
+
+	fn emit_functions(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// Base-4 prepends its proven b4band/b4bor/b4bxor definitions.
+		define_base4_functions(builder);
+		builder.break_line();
+		builder.define_functions()
+	}
+
+	fn emit_constants(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// No differential IV: base-4 tracks message pairs, not delta words.
+		builder.define_constants();
+		builder.break_line();
+		builder.define_initial_vector();
+
+		Ok(())
+	}
+
+	fn emit_expansion(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// Absolute schedule only: base-4 conditions derive from word pairs.
+		builder.define_expansion_for_message(0);
+		builder.break_line();
+		builder.define_expansion_for_message(1);
+
+		Ok(())
+	}
+
+	fn emit_compression(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// No differential working variables or final state in base-4.
+		builder.define_compression_for_message(0)?;
+		builder.break_line();
+		builder.define_compression_for_message(1)?;
+		builder.break_line();
+		builder.final_state_update()?;
+
+		Ok(())
+	}
+
+	fn emit_assertions(&self, builder : &mut SmtBuilder) -> Result<()> {
+		// 4-way asserts pair absolute and mask conditions per word.
+		if builder.collision_type == CollisionType::FreeStart {
+			assert_initial_vector_not_same_base4(builder);
+		} else {
+			assert_messages_not_same_base4(builder);
+		}
+		builder.break_line();
+
+		assert_hash_same_base4(builder);
+
+		Ok(())
+	}
 }
 
-#[allow(dead_code)]
-impl SmtBuilder {
-	fn define_base4_differential_constants(&mut self) {
-		self.comment("Define K constant differential");
+fn b4_ones(builder : &SmtBuilder) -> String {
+	format!("#b{}", "1".repeat(builder.hash_function.word_size().bits()))
+}
 
-		let word_size = self.hash_function.word_size().bits();
-		for i in 0..self.rounds {
-			self.smt += &format!(
-				"(define-fun delta_k{i}_A () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_B () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_C () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_D () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_E () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_F () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-			self.smt += &format!(
-				"(define-fun delta_k{i}_G () Word #b{})\n",
-				"0".repeat(word_size)
-			);
-		}
-	}
+/// Absolute SMT expression of working variable `var` of `message` at `round`.
+fn b4_abs(builder : &SmtBuilder, message : u8, var : char, round : u64) -> String {
+	format!(
+		"{}{var}{round}",
+		msg_prefix(message, round, builder.collision_type)
+	)
+}
 
-	fn define_base4_differential_initial_vector(&mut self) {
-		self.comment("Define H constant differential (IV/CV)");
+fn define_base4_functions(builder : &mut SmtBuilder) {
+	builder.comment(
+		"Base-4 AND/OR/XOR condition propagation (proven in proofs/encoding_{and,or,xor}.smt2)"
+	);
 
-		let word_size = self.hash_function.word_size().bits();
-		for var in 'a'..='h' {
-			if self.collision_type == CollisionType::Standard {
-				self.smt += &format!(
-					"(define-fun delta_{var}0 () Word #b{})\n",
-					"0".repeat(word_size)
-				);
-			} else {
-				self.smt += &format!("(declare-fun delta_{var}0 () Word)\n");
-			}
-		}
-	}
-
-	fn b4_ones(&self) -> String {
-		format!("#b{}", "1".repeat(self.hash_function.word_size().bits()))
-	}
-
-	/// Absolute SMT expression of working variable `var` of `message` at `round`.
-	fn b4_abs(&self, message : u8, var : char, round : u64) -> String {
-		format!(
-			"{}{var}{round}",
-			msg_prefix(message, round, self.collision_type)
-		)
-	}
-
-	fn define_base4_functions(&mut self) {
-		self.comment(
-			"Base-4 AND/OR/XOR condition propagation (proven in proofs/encoding_{and,or,xor}.smt2)"
-		);
-
-		// AND: d = Xd&Yd; b = (Xf&Yf)&~d; c = (Xg&Yg)&~d; a = ~(d|b|c).
-		self.smt += "(define-fun b4band_b ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	// AND: d = Xd&Yd; b = (Xf&Yf)&~d; c = (Xg&Yg)&~d; a = ~(d|b|c).
+	builder.smt += "(define-fun b4band_b ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvand (bvor Xb Xd) (bvor Yb Yd) (bvnot (bvand Xd Yd))))\n";
-		self.smt += "(define-fun b4band_c ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	builder.smt += "(define-fun b4band_c ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvand (bvor Xc Xd) (bvor Yc Yd) (bvnot (bvand Xd Yd))))\n";
-		self.smt += "(define-fun b4band_d ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	builder.smt += "(define-fun b4band_d ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvand Xd Yd))\n";
-		self.smt += "(define-fun b4band_a ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	builder.smt += "(define-fun b4band_a ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvnot (bvor (b4band_d Xa Xb Xc Xd Ya Yb Yc Yd) (b4band_b Xa Xb Xc Xd Ya Yb Yc Yd) (b4band_c Xa Xb Xc Xd Ya Yb Yc Yd))))\n";
 
-		// OR: a = Xa&Ya; b = ~(Xg|Yg|a); c = ~(Xf|Yf|a); d = ~(a|b|c)
-		self.smt += "(define-fun b4bor_a ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	// OR: a = Xa&Ya; b = ~(Xg|Yg|a); c = ~(Xf|Yf|a); d = ~(a|b|c)
+	builder.smt += "(define-fun b4bor_a ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvand Xa Ya))\n";
-		self.smt += "(define-fun b4bor_b ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	builder.smt += "(define-fun b4bor_b ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvnot (bvor (bvor Xc Xd) (bvor Yc Yd) (bvand Xa Ya))))\n";
-		self.smt += "(define-fun b4bor_c ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	builder.smt += "(define-fun b4bor_c ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvnot (bvor (bvor Xb Xd) (bvor Yb Yd) (bvand Xa Ya))))\n";
-		self.smt += "(define-fun b4bor_d ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	builder.smt += "(define-fun b4bor_d ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvnot (bvor (b4bor_a Xa Xb Xc Xd Ya Yb Yc Yd) (b4bor_b Xa Xb Xc Xd Ya Yb Yc Yd) (b4bor_c Xa Xb Xc Xd Ya Yb Yc Yd))))\n";
 
-		// XOR: pairwise matching of (a, b, c, d) membership
-		self.smt += "(define-fun b4bxor_a ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	// XOR: pairwise matching of (a, b, c, d) membership
+	builder.smt += "(define-fun b4bxor_a ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvor (bvand Xa Ya) (bvand Xb Yb) (bvand Xc Yc) (bvand Xd Yd)))\n";
-		self.smt += "(define-fun b4bxor_b ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	builder.smt += "(define-fun b4bxor_b ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvor (bvand Xa Yb) (bvand Xb Ya) (bvand Xc Yd) (bvand Xd Yc)))\n";
-		self.smt += "(define-fun b4bxor_c ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	builder.smt += "(define-fun b4bxor_c ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvor (bvand Xa Yc) (bvand Xc Ya) (bvand Xb Yd) (bvand Xd Yb)))\n";
-		self.smt += "(define-fun b4bxor_d ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
+	builder.smt += "(define-fun b4bxor_d ((Xa Word) (Xb Word) (Xc Word) (Xd Word) (Ya Word) (Yb Word) (Yc Word) (Yd Word)) Word
 	(bvor (bvand Xa Yd) (bvand Xd Ya) (bvand Xb Yc) (bvand Xc Yb)))\n";
-	}
+}
 
-	fn define_base4_pair(&mut self, tag : &str, left : &str, right : &str) {
-		self.smt += &format!(
-			"(define-fun B4_{tag}_A () Word (bvand (bvnot {left}) (bvnot {right})))\n\
+fn define_base4_pair(builder : &mut SmtBuilder, tag : &str, left : &str, right : &str) {
+	builder.smt += &format!(
+		"(define-fun B4_{tag}_A () Word (bvand (bvnot {left}) (bvnot {right})))\n\
 			(define-fun B4_{tag}_B () Word (bvand (bvnot {left}) {right}))\n\
 			(define-fun B4_{tag}_C () Word (bvand {left} (bvnot {right})))\n\
 			(define-fun B4_{tag}_D () Word (bvand {left} {right}))\n"
+	);
+}
+
+fn define_base4_conditions(builder : &mut SmtBuilder) {
+	builder.comment("Base-4 condition masks for the chaining value");
+	for var in 'a'..='h' {
+		let (left, right) = match builder.collision_type {
+			CollisionType::FreeStart => (format!("m0_{var}0"), format!("m1_{var}0")),
+			_ => {
+				let shared = format!("{var}0");
+				(shared.clone(), shared)
+			}
+		};
+		define_base4_pair(builder, &format!("cv_{var}"), &left, &right);
+	}
+
+	builder.break_line();
+	builder.comment("Base-4 condition masks for the message schedule");
+	for i in 0..builder.rounds {
+		define_base4_pair(
+			builder,
+			&format!("w{i}"),
+			&format!("m0_w{i}"),
+			&format!("m1_w{i}")
 		);
 	}
 
-	fn define_base4_conditions(&mut self) {
-		self.comment("Base-4 condition masks for the chaining value");
-		for var in 'a'..='h' {
-			let (left, right) = match self.collision_type {
-				CollisionType::FreeStart => (format!("m0_{var}0"), format!("m1_{var}0")),
-				_ => {
-					let shared = format!("{var}0");
-					(shared.clone(), shared)
-				}
-			};
-			self.define_base4_pair(&format!("cv_{var}"), &left, &right);
-		}
-
-		self.break_line();
-		self.comment("Base-4 condition masks for the message schedule");
-		for i in 0..self.rounds {
-			self.define_base4_pair(&format!("w{i}"), &format!("m0_w{i}"), &format!("m1_w{i}"));
-		}
-
-		if self.rounds > 0 {
-			self.break_line();
-			self.comment("Base-4 condition masks for the working variables");
-			for i in 1..=self.rounds {
-				for var in 'a'..='h' {
-					let left = self.b4_abs(0, var, i.into());
-					let right = self.b4_abs(1, var, i.into());
-					self.define_base4_pair(&format!("s{var}{i}"), &left, &right);
-				}
+	if builder.rounds > 0 {
+		builder.break_line();
+		builder.comment("Base-4 condition masks for the working variables");
+		for i in 1..=builder.rounds {
+			for var in 'a'..='h' {
+				let left = b4_abs(builder, 0, var, i.into());
+				let right = b4_abs(builder, 1, var, i.into());
+				define_base4_pair(builder, &format!("s{var}{i}"), &left, &right);
 			}
-		}
-
-		self.break_line();
-		self.comment("Base-4 condition masks for the final hash");
-		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
-		for i in 0..final_size {
-			self.define_base4_pair(
-				&format!("hash{i}"),
-				&format!("m0_hash{i}"),
-				&format!("m1_hash{i}")
-			);
 		}
 	}
 
-	fn assert_base4_propagation_lemmas(&mut self) {
-		let comb = if self.encoding.simplified_maj_and_ch_functions() {
-			"b4bor"
-		} else {
-			"b4bxor"
+	builder.break_line();
+	builder.comment("Base-4 condition masks for the final hash");
+	let final_size = builder.hash_function.truncate_to_length().unwrap_or(8);
+	for i in 0..final_size {
+		define_base4_pair(
+			builder,
+			&format!("hash{i}"),
+			&format!("m0_hash{i}"),
+			&format!("m1_hash{i}")
+		);
+	}
+}
+
+fn assert_base4_propagation_lemmas(builder : &mut SmtBuilder) {
+	let comb = if builder.encoding.simplified_maj_and_ch_functions() {
+		"b4bor"
+	} else {
+		"b4bxor"
+	};
+
+	for i in 1..=builder.rounds {
+		let p : u64 = (i - 1).into();
+		let ct = builder.collision_type;
+
+		// Absolute inputs of both messages.
+		let inputs = |var : char| {
+			(
+				format!("{}{var}{p}", msg_prefix(0, p, ct)),
+				format!("{}{var}{p}", msg_prefix(1, p, ct))
+			)
 		};
 
-		for i in 1..=self.rounds {
-			let p : u64 = (i - 1).into();
-			let ct = self.collision_type;
+		// Condition masks of the input pair.
+		let masks = |var : char| {
+			let tag = if var == 'w' {
+				format!("w{p}")
+			} else if p == 0 {
+				format!("cv_{var}")
+			} else {
+				format!("s{var}{p}")
+			};
+			[
+				format!("B4_{tag}_A"),
+				format!("B4_{tag}_B"),
+				format!("B4_{tag}_C"),
+				format!("B4_{tag}_D")
+			]
+		};
 
-			// Absolute inputs of both messages.
-			let inputs = |var : char| {
-				(
-					format!("{}{var}{p}", msg_prefix(0, p, ct)),
-					format!("{}{var}{p}", msg_prefix(1, p, ct))
+		// Combined two mask quadruples with the given operator family.
+		let combine = |op : &str, x : &[String; 4], y : &[String; 4]| {
+			['a', 'b', 'c', 'd'].map(|o| {
+				format!(
+					"({op}_{o} {} {} {} {} {} {} {} {})",
+					x[0], x[1], x[2], x[3], y[0], y[1], y[2], y[3]
 				)
-			};
+			})
+		};
 
-			// Condition masks of the input pair.
-			let masks = |var : char| {
-				let tag = if var == 'w' {
-					format!("w{p}")
-				} else if p == 0 {
-					format!("cv_{var}")
-				} else {
-					format!("s{var}{p}")
-				};
-				[
-					format!("B4_{tag}_A"),
-					format!("B4_{tag}_B"),
-					format!("B4_{tag}_C"),
-					format!("B4_{tag}_D")
-				]
-			};
+		// Actual masks of the absolute output pair (out0, out1).
+		let actual = |out0 : &str, out1 : &str| {
+			[
+				format!("(bvand (bvnot {out0}) (bvnot {out1}))"),
+				format!("(bvand (bvnot {out0}) {out1})"),
+				format!("(bvand {out0} (bvnot {out1}))"),
+				format!("(bvand {out0} {out1})")
+			]
+		};
 
-			// Combined two mask quadruples with the given operator family.
-			let combine = |op : &str, x : &[String; 4], y : &[String; 4]| {
-				['a', 'b', 'c', 'd'].map(|o| {
-					format!(
-						"({op}_{o} {} {} {} {} {} {} {} {})",
-						x[0], x[1], x[2], x[3], y[0], y[1], y[2], y[3]
-					)
-				})
-			};
+		// Ch(e, f, g)
+		{
+			let (e0, e1) = inputs('e');
+			let (f0, f1) = inputs('f');
+			let (g0, g1) = inputs('g');
+			let (e, f, g) = (masks('e'), masks('f'), masks('g'));
+			// ~e swaps a<->d and b<->c.
+			let not_e : [String; 4] = [e[3].clone(), e[2].clone(), e[1].clone(), e[0].clone()];
 
-			// Actual masks of the absolute output pair (out0, out1).
-			let actual = |out0 : &str, out1 : &str| {
-				[
-					format!("(bvand (bvnot {out0}) (bvnot {out1}))"),
-					format!("(bvand (bvnot {out0}) {out1})"),
-					format!("(bvand {out0} (bvnot {out1}))"),
-					format!("(bvand {out0} {out1})")
-				]
-			};
+			let t1 = combine("b4band", &e, &f);
+			let t2 = combine("b4band", &not_e, &g);
+			let ch = combine(comb, &t1, &t2);
+			let [ca, cb, cc, cd] = actual(
+				&format!("(ch {e0} {f0} {g0})"),
+				&format!("(ch {e1} {f1} {g1})")
+			);
 
-			// Ch(e, f, g)
-			{
-				let (e0, e1) = inputs('e');
-				let (f0, f1) = inputs('f');
-				let (g0, g1) = inputs('g');
-				let (e, f, g) = (masks('e'), masks('f'), masks('g'));
-				// ~e swaps a<->d and b<->c.
-				let not_e : [String; 4] = [e[3].clone(), e[2].clone(), e[1].clone(), e[0].clone()];
-
-				let t1 = combine("b4band", &e, &f);
-				let t2 = combine("b4band", &not_e, &g);
-				let ch = combine(comb, &t1, &t2);
-				let [ca, cb, cc, cd] = actual(
-					&format!("(ch {e0} {f0} {g0})"),
-					&format!("(ch {e1} {f1} {g1})")
-				);
-
-				self.smt += &format!(
-					"; Base-4 Ch propagation, round {i}\n\
+			builder.smt += &format!(
+				"; Base-4 Ch propagation, round {i}\n\
 					(assert (= {cha} {ca}))\n\
 					(assert (= {chb} {cb}))\n\
 					(assert (= {chc} {cc}))\n\
 					(assert (= {chd} {cd}))\n",
-					cha = ch[0],
-					chb = ch[1],
-					chc = ch[2],
-					chd = ch[3]
-				);
-			}
+				cha = ch[0],
+				chb = ch[1],
+				chc = ch[2],
+				chd = ch[3]
+			);
+		}
 
-			// Maj(a, b, c)
-			{
-				let (a0, a1) = inputs('a');
-				let (b0, b1) = inputs('b');
-				let (c0, c1) = inputs('c');
-				let (a, b, c) = (masks('a'), masks('b'), masks('c'));
+		// Maj(a, b, c)
+		{
+			let (a0, a1) = inputs('a');
+			let (b0, b1) = inputs('b');
+			let (c0, c1) = inputs('c');
+			let (a, b, c) = (masks('a'), masks('b'), masks('c'));
 
-				let t_ab = combine("b4band", &a, &b);
-				let t_ac = combine("b4band", &a, &c);
-				let t_bc = combine("b4band", &b, &c);
-				let t_abc = combine(comb, &t_ab, &t_ac);
-				let maj = combine(comb, &t_abc, &t_bc);
-				let [ma, mb, mc, md] = actual(
-					&format!("(maj {a0} {b0} {c0})"),
-					&format!("(maj {a1} {b1} {c1})")
-				);
+			let t_ab = combine("b4band", &a, &b);
+			let t_ac = combine("b4band", &a, &c);
+			let t_bc = combine("b4band", &b, &c);
+			let t_abc = combine(comb, &t_ab, &t_ac);
+			let maj = combine(comb, &t_abc, &t_bc);
+			let [ma, mb, mc, md] = actual(
+				&format!("(maj {a0} {b0} {c0})"),
+				&format!("(maj {a1} {b1} {c1})")
+			);
 
-				self.smt += &format!(
-					"; Base-4 Maj propagation, round {i}\n\
+			builder.smt += &format!(
+				"; Base-4 Maj propagation, round {i}\n\
 					(assert (= {maja} {ma}))\n\
 					(assert (= {majb} {mb}))\n\
 					(assert (= {majc} {mc}))\n\
 					(assert (= {majd} {md}))\n",
-					maja = maj[0],
-					majb = maj[1],
-					majc = maj[2],
-					majd = maj[3]
-				);
-			}
+				maja = maj[0],
+				majb = maj[1],
+				majc = maj[2],
+				majd = maj[3]
+			);
 		}
 	}
+}
 
-	fn assert_messages_not_same_base4(&mut self) {
-		self.comment("Assert messages not the same (absolute and base-4 form)");
+fn assert_messages_not_same_base4(builder : &mut SmtBuilder) {
+	builder.comment("Assert messages not the same (absolute and base-4 form)");
 
-		let ones = self.b4_ones();
-		let mut s = String::new();
-		for i in 0..self.rounds.min(16) {
-			s += &format!("\t(distinct m0_w{i} m1_w{i})\n");
-			s += &format!("\t(distinct (bvor B4_w{i}_A B4_w{i}_D) {ones})\n");
-		}
-
-		if self.rounds == 1 {
-			self.smt += &format!("(assert (and\n{s}))\n");
-		} else if self.rounds > 1 {
-			self.smt += &format!("(assert (or\n{s}))\n");
-		}
+	let ones = b4_ones(builder);
+	let mut s = String::new();
+	for i in 0..builder.rounds.min(16) {
+		s += &format!("\t(distinct m0_w{i} m1_w{i})\n");
+		s += &format!("\t(distinct (bvor B4_w{i}_A B4_w{i}_D) {ones})\n");
 	}
 
-	fn assert_initial_vector_not_same_base4(&mut self) {
-		self.comment("Assert starting vectors (CV) not the same (absolute and base-4 form)");
+	if builder.rounds == 1 {
+		builder.smt += &format!("(assert (and\n{s}))\n");
+	} else if builder.rounds > 1 {
+		builder.smt += &format!("(assert (or\n{s}))\n");
+	}
+}
 
-		let ones = self.b4_ones();
-		let mut s = String::new();
-		for var in 'a'..='h' {
-			s += &format!("\t(distinct m0_{var}0 m1_{var}0)\n");
-			s += &format!("\t(distinct (bvor B4_cv_{var}_A B4_cv_{var}_D) {ones})\n");
-		}
+fn assert_initial_vector_not_same_base4(builder : &mut SmtBuilder) {
+	builder.comment("Assert starting vectors (CV) not the same (absolute and base-4 form)");
 
-		self.smt += &format!("(assert (or\n{s}))\n");
+	let ones = b4_ones(builder);
+	let mut s = String::new();
+	for var in 'a'..='h' {
+		s += &format!("\t(distinct m0_{var}0 m1_{var}0)\n");
+		s += &format!("\t(distinct (bvor B4_cv_{var}_A B4_cv_{var}_D) {ones})\n");
 	}
 
-	fn assert_hash_same_base4(&mut self) {
-		self.comment("Assert output hash is the same (absolute and base-4 form)");
+	builder.smt += &format!("(assert (or\n{s}))\n");
+}
 
-		let ones = self.b4_ones();
-		let final_size = self.hash_function.truncate_to_length().unwrap_or(8);
-		let mut s = String::new();
-		for i in 0..final_size {
-			s += &format!("\t(= m0_hash{i} m1_hash{i})\n");
-			s += &format!("\t(= (bvor B4_hash{i}_A B4_hash{i}_D) {ones})\n");
-		}
+fn assert_hash_same_base4(builder : &mut SmtBuilder) {
+	builder.comment("Assert output hash is the same (absolute and base-4 form)");
 
-		self.smt += format!("(assert (and\n{s}))\n").as_str();
+	let ones = b4_ones(builder);
+	let final_size = builder.hash_function.truncate_to_length().unwrap_or(8);
+	let mut s = String::new();
+	for i in 0..final_size {
+		s += &format!("\t(= m0_hash{i} m1_hash{i})\n");
+		s += &format!("\t(= (bvor B4_hash{i}_A B4_hash{i}_D) {ones})\n");
 	}
+
+	builder.smt += format!("(assert (and\n{s}))\n").as_str();
 }
 
 #[cfg(test)]
@@ -401,26 +387,26 @@ mod tests {
 	fn ones_mask_matches_word_size() {
 		let builder = base4_builder(CollisionType::Standard, 1);
 
-		assert_eq!(builder.b4_ones(), format!("#b{}", "1".repeat(32)));
+		assert_eq!(b4_ones(&builder), format!("#b{}", "1".repeat(32)));
 	}
 
 	#[test]
 	fn absolute_naming_uses_message_prefix() {
 		let standard = base4_builder(CollisionType::Standard, 1);
-		assert_eq!(standard.b4_abs(0, 'a', 0), "a0");
-		assert_eq!(standard.b4_abs(1, 'a', 0), "a0");
-		assert_eq!(standard.b4_abs(0, 'e', 3), "m0_e3");
-		assert_eq!(standard.b4_abs(1, 'h', 3), "m1_h3");
+		assert_eq!(b4_abs(&standard, 0, 'a', 0), "a0");
+		assert_eq!(b4_abs(&standard, 1, 'a', 0), "a0");
+		assert_eq!(b4_abs(&standard, 0, 'e', 3), "m0_e3");
+		assert_eq!(b4_abs(&standard, 1, 'h', 3), "m1_h3");
 
 		let free_start = base4_builder(CollisionType::FreeStart, 1);
-		assert_eq!(free_start.b4_abs(0, 'a', 0), "m0_a0");
-		assert_eq!(free_start.b4_abs(1, 'h', 0), "m1_h0");
+		assert_eq!(b4_abs(&free_start, 0, 'a', 0), "m0_a0");
+		assert_eq!(b4_abs(&free_start, 1, 'h', 0), "m1_h0");
 	}
 
 	#[test]
 	fn pair_definition_shape() {
 		let mut builder = base4_builder(CollisionType::Standard, 1);
-		builder.define_base4_pair("w0", "m0_w0", "m1_w0");
+		define_base4_pair(&mut builder, "w0", "m0_w0", "m1_w0");
 
 		assert_eq!(
 			builder.smt,
@@ -434,7 +420,7 @@ mod tests {
 	#[test]
 	fn conditions_cover_cv_message_working_vars_and_hash() {
 		let mut builder = base4_builder(CollisionType::Standard, 1);
-		builder.define_base4_conditions();
+		define_base4_conditions(&mut builder);
 
 		assert!(
 			builder
@@ -476,7 +462,7 @@ mod tests {
 	#[test]
 	fn conditions_use_separate_cvs_for_free_start() {
 		let mut builder = base4_builder(CollisionType::FreeStart, 1);
-		builder.define_base4_conditions();
+		define_base4_conditions(&mut builder);
 
 		assert!(
 			builder
@@ -490,7 +476,7 @@ mod tests {
 	#[test]
 	fn conditions_skip_working_variables_for_zero_rounds() {
 		let mut builder = base4_builder(CollisionType::Standard, 0);
-		builder.define_base4_conditions();
+		define_base4_conditions(&mut builder);
 
 		assert!(
 			!builder.smt.contains("working variables"),
