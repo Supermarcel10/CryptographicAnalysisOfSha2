@@ -168,9 +168,3 @@ impl SmtEncoding for BruteForceEncoding {
 		Ok(())
 	}
 }
-
-impl SmtEncoding for Base4Encoding {
-	fn generate(&self, builder : &mut SmtBuilder) -> Result<()> {
-		builder.base4_encoding()
-	}
-}

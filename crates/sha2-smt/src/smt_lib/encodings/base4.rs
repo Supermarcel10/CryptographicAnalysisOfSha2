@@ -2,7 +2,61 @@ use anyhow::Result;
 use sha2_core::structs::collision_type::CollisionType;
 
 use crate::smt_lib::builder::SmtBuilder;
+use crate::smt_lib::encodings::encoding::{Base4Encoding, SmtEncoding};
 use crate::smt_lib::utilities::msg_prefix;
+
+impl SmtEncoding for Base4Encoding {
+	fn generate(&self, builder : &mut SmtBuilder) -> Result<()> {
+		builder.title("SETUP");
+		builder.set_logic();
+
+		builder.title("TYPE");
+		builder.define_word_type();
+
+		builder.title("FUNCTIONS");
+		builder.define_base4_functions();
+		builder.break_line();
+		builder.define_functions()?;
+
+		builder.title("CONSTANTS");
+		builder.define_constants();
+		builder.break_line();
+		builder.define_initial_vector();
+
+		builder.title("MESSAGE EXPANSION");
+		builder.define_expansion_for_message(0);
+		builder.break_line();
+		builder.define_expansion_for_message(1);
+
+		builder.title("MESSAGE COMPRESSION");
+		builder.define_compression_for_message(0)?;
+		builder.break_line();
+		builder.define_compression_for_message(1)?;
+		builder.break_line();
+		builder.final_state_update()?;
+
+		builder.title("BASE-4 CONDITIONS");
+		builder.define_base4_conditions();
+
+		builder.title("BASE-4 PROPAGATION LEMMAS");
+		builder.assert_base4_propagation_lemmas();
+
+		builder.title("ASSERTIONS");
+		if builder.collision_type == CollisionType::FreeStart {
+			builder.assert_initial_vector_not_same_base4();
+		} else {
+			builder.assert_messages_not_same_base4();
+		}
+		builder.break_line();
+
+		builder.assert_hash_same_base4();
+
+		builder.check_sat();
+		builder.get_full_model();
+
+		Ok(())
+	}
+}
 
 #[allow(dead_code)]
 impl SmtBuilder {
@@ -319,57 +373,6 @@ impl SmtBuilder {
 
 		self.smt += format!("(assert (and\n{s}))\n").as_str();
 	}
-
-	pub fn base4_encoding(&mut self) -> Result<()> {
-		self.title("SETUP");
-		self.set_logic();
-
-		self.title("TYPE");
-		self.define_word_type();
-
-		self.title("FUNCTIONS");
-		self.define_base4_functions();
-		self.break_line();
-		self.define_functions()?;
-
-		self.title("CONSTANTS");
-		self.define_constants();
-		self.break_line();
-		self.define_initial_vector();
-
-		self.title("MESSAGE EXPANSION");
-		self.define_expansion_for_message(0);
-		self.break_line();
-		self.define_expansion_for_message(1);
-
-		self.title("MESSAGE COMPRESSION");
-		self.define_compression_for_message(0)?;
-		self.break_line();
-		self.define_compression_for_message(1)?;
-		self.break_line();
-		self.final_state_update()?;
-
-		self.title("BASE-4 CONDITIONS");
-		self.define_base4_conditions();
-
-		self.title("BASE-4 PROPAGATION LEMMAS");
-		self.assert_base4_propagation_lemmas();
-
-		self.title("ASSERTIONS");
-		if self.collision_type == CollisionType::FreeStart {
-			self.assert_initial_vector_not_same_base4();
-		} else {
-			self.assert_messages_not_same_base4();
-		}
-		self.break_line();
-
-		self.assert_hash_same_base4();
-
-		self.check_sat();
-		self.get_full_model();
-
-		Ok(())
-	}
 }
 
 #[cfg(test)]
@@ -503,8 +506,8 @@ mod tests {
 
 	fn generated(collision_type : CollisionType) -> String {
 		let mut builder = base4_builder(collision_type, 1);
-		builder
-			.base4_encoding()
+		Base4Encoding
+			.generate(&mut builder)
 			.expect("base4 generation must succeed without a solver");
 		builder.smt
 	}

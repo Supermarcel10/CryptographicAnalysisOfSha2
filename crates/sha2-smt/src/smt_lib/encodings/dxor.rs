@@ -1,21 +1,10 @@
-use anyhow::Result;
-
-use crate::smt_lib::builder::SmtBuilder;
-use crate::smt_lib::encodings::encoding::{DxorEncoding, SmtEncoding};
-
-impl SmtBuilder {
-	/// W1 test-compat alias: the differential recipe lives on `SmtEncoding`.
-	pub fn dxor_encoding(&mut self) -> Result<()> {
-		DxorEncoding.generate(self)
-	}
-}
-
 #[cfg(test)]
 mod tests {
 	use sha2_core::structs::collision_type::CollisionType;
 	use sha2_core::structs::hash_function::HashFunction;
 
-	use super::*;
+	use crate::smt_lib::builder::SmtBuilder;
+	use crate::smt_lib::encodings::encoding::{DsubEncoding, DxorEncoding, SmtEncoding};
 	use crate::smt_lib::smt_retriever::EncodingType;
 
 	fn dxor_builder(collision_type : CollisionType, rounds : u8) -> SmtBuilder {
@@ -50,8 +39,8 @@ mod tests {
 
 	fn generated(collision_type : CollisionType, rounds : u8) -> String {
 		let mut builder = dxor_builder(collision_type, rounds);
-		builder
-			.dxor_encoding()
+		DxorEncoding
+			.generate(&mut builder)
 			.expect("dxor generation must succeed without a solver");
 		builder.smt
 	}
@@ -186,7 +175,8 @@ mod tests {
 				let dxor = generated(collision_type, rounds);
 
 				let mut dsub = dsub_builder(collision_type, rounds);
-				dsub.dsub_encoding()
+				DsubEncoding
+					.generate(&mut dsub)
 					.expect("dsub generation must succeed without a solver");
 
 				assert_ne!(

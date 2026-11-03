@@ -589,7 +589,7 @@ impl GraphRenderer {
 		)?;
 
 		// DXOR
-		let dxor_encoding_data : BTreeMap<_, _> = encoding_data
+		let dxor_data : BTreeMap<_, _> = encoding_data
 			.clone()
 			.into_iter()
 			.filter(|(e, _)| matches!(e, DeltaXOR { .. }))
@@ -597,7 +597,7 @@ impl GraphRenderer {
 
 		self.create_baseline_graph(
 			bitwuzla_baseline.clone(),
-			dxor_encoding_data,
+			dxor_data,
 			"Delta XOR Encoding Comparison",
 			true,
 			true,
@@ -611,7 +611,7 @@ impl GraphRenderer {
 		})?;
 
 		// DSUB
-		let dsub_encoding_data : BTreeMap<_, _> = encoding_data
+		let dsub_data : BTreeMap<_, _> = encoding_data
 			.clone()
 			.into_iter()
 			.filter(|(e, _)| matches!(e, DeltaSub { .. }))
@@ -619,7 +619,7 @@ impl GraphRenderer {
 
 		self.create_baseline_graph(
 			bitwuzla_baseline.clone(),
-			dsub_encoding_data,
+			dsub_data,
 			"Delta Sub Encoding Comparison",
 			true,
 			true,
