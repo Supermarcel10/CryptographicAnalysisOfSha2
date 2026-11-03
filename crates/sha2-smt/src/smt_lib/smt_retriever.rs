@@ -141,11 +141,10 @@ impl EncodingType {
 					simplified_maj_and_ch_functions,
 					alternative_add
 				});
-				// TODO: Uncomment once implemented
-				// vec.push(Base4 {
-				// 	simplified_maj_and_ch_functions,
-				// 	alternative_add,
-				// });
+				vec.push(Base4 {
+					simplified_maj_and_ch_functions,
+					alternative_add
+				});
 			}
 		}
 
@@ -280,6 +279,53 @@ mod tests {
 
 	fn unique_temp_path(name : &str) -> PathBuf {
 		std::env::temp_dir().join(format!("sha2-smt-retriever-{name}-{}", std::process::id()))
+	}
+
+	#[test]
+	fn from_str_parses_base4_spelling() {
+		assert_eq!(
+			"base4".parse::<EncodingType>(),
+			Ok(Base4 {
+				simplified_maj_and_ch_functions : false,
+				alternative_add : false
+			})
+		);
+		assert_eq!(
+			"base4:true:1".parse::<EncodingType>(),
+			Ok(Base4 {
+				simplified_maj_and_ch_functions : true,
+				alternative_add : true
+			})
+		);
+	}
+
+	#[test]
+	fn from_str_rejects_unknown_spelling() {
+		let err = "bogus"
+			.parse::<EncodingType>()
+			.expect_err("unknown spelling must be rejected");
+		assert!(
+			err.contains("Unknown encoding type"),
+			"unexpected error shape: {err}"
+		);
+		assert!(
+			"".parse::<EncodingType>().is_err(),
+			"empty spelling must be rejected"
+		);
+	}
+
+	#[test]
+	fn all_permutations_include_base4_for_every_flag_combination() {
+		let all = EncodingType::get_all_permutations();
+
+		assert_eq!(all.len(), 16, "expected 4 encodings x 4 flag combinations");
+		assert_eq!(
+			all.iter()
+				.filter(|encoding| matches!(encoding, Base4 { .. }))
+				.count(),
+			4,
+			"expected one Base4 entry per flag combination"
+		);
 	}
 
 	#[test]
